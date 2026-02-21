@@ -1,708 +1,1331 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barangay Masagana — Official Website</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --navy: #0a1628;
-    --deep: #0d1f3c;
-    --blue: #1a4b8c;
-    --sky: #2d7dd2;
-    --gold: #f0a500;
-    --amber: #ffcc44;
-    --cream: #faf6ef;
-    --white: #ffffff;
-    --gray: #8896a8;
-    --border: rgba(255,255,255,0.08);
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--navy);
-    color: var(--white);
-    overflow-x: hidden;
-  }
-
-  /* ─── NAV ─── */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 60px;
-    background: rgba(10,22,40,0.85);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-  }
-  .nav-logo {
-    display: flex; align-items: center; gap: 14px;
-  }
-  .nav-seal {
-    width: 44px; height: 44px;
-    background: var(--gold);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-  .nav-text { line-height: 1.2; }
-  .nav-text span { display: block; }
-  .nav-text .brgy { font-size: 11px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; font-family: 'DM Mono', monospace; }
-  .nav-text .name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; }
-  .nav-links { display: flex; gap: 36px; list-style: none; }
-  .nav-links a { text-decoration: none; color: rgba(255,255,255,0.7); font-size: 14px; letter-spacing: 0.5px; transition: color 0.2s; }
-  .nav-links a:hover { color: var(--gold); }
-  .nav-cta {
-    background: var(--gold); color: var(--navy); padding: 10px 24px;
-    border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none;
-    transition: background 0.2s, transform 0.2s;
-  }
-  .nav-cta:hover { background: var(--amber); transform: translateY(-1px); }
-
-  /* ─── HERO ─── */
-  .hero {
-    min-height: 100vh;
-    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
-    padding: 120px 60px 80px;
-    position: relative; overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute; top: 0; right: 0;
-    width: 60%; height: 100%;
-    background: linear-gradient(135deg, var(--blue) 0%, var(--sky) 50%, #1e90c8 100%);
-    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
-    opacity: 0.25;
-  }
-  .hero-bg-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-  .hero-left { position: relative; z-index: 2; }
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(240,165,0,0.1); border: 1px solid rgba(240,165,0,0.3);
-    padding: 6px 16px; border-radius: 100px;
-    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px;
-    color: var(--gold); text-transform: uppercase; margin-bottom: 32px;
-    animation: fadeUp 0.8s ease both;
-  }
-  .hero-tag::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(42px, 5vw, 68px);
-    line-height: 1.1; font-weight: 900;
-    animation: fadeUp 0.8s 0.1s ease both;
-  }
-  h1 em { font-style: italic; color: var(--gold); }
-  .hero-sub {
-    margin-top: 24px; font-size: 17px; line-height: 1.7;
-    color: rgba(255,255,255,0.65); max-width: 460px;
-    animation: fadeUp 0.8s 0.2s ease both;
-  }
-  .hero-actions {
-    display: flex; gap: 16px; margin-top: 48px; flex-wrap: wrap;
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-  .btn-primary {
-    background: var(--gold); color: var(--navy);
-    padding: 16px 36px; border-radius: 8px; font-size: 15px; font-weight: 500;
-    text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
-  }
-  .btn-primary:hover { background: var(--amber); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(240,165,0,0.3); }
-  .btn-secondary {
-    border: 1px solid rgba(255,255,255,0.2); color: var(--white);
-    padding: 16px 36px; border-radius: 8px; font-size: 15px;
-    text-decoration: none; transition: all 0.2s;
-  }
-  .btn-secondary:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
-
-  .hero-right {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; gap: 16px;
-    padding-left: 60px;
-    animation: fadeUp 0.8s 0.2s ease both;
-  }
-  .hero-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px 28px;
-    backdrop-filter: blur(8px);
-    transition: transform 0.3s, border-color 0.3s;
-  }
-  .hero-card:hover { transform: translateX(6px); border-color: rgba(240,165,0,0.3); }
-  .hero-card-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 6px; }
-  .hero-card-value { font-size: 28px; font-family: 'Playfair Display', serif; font-weight: 700; }
-  .hero-card-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
-  .hero-card.accent { background: rgba(240,165,0,0.1); border-color: rgba(240,165,0,0.2); }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ─── TICKER ─── */
-  .ticker {
-    background: var(--gold); color: var(--navy); padding: 10px 0;
-    overflow: hidden; white-space: nowrap;
-  }
-  .ticker-inner {
-    display: inline-flex; gap: 0; animation: ticker 30s linear infinite;
-  }
-  .ticker-inner span { padding: 0 40px; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; }
-  .ticker-inner span::before { content: '◆  '; color: var(--navy); opacity: 0.4; }
-  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-  /* ─── SERVICES ─── */
-  section { padding: 100px 60px; }
-  .section-tag {
-    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px;
-    color: var(--gold); text-transform: uppercase; margin-bottom: 16px;
-  }
-  .section-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(32px, 4vw, 52px); font-weight: 900; line-height: 1.1;
-    max-width: 600px;
-  }
-  .section-title em { font-style: italic; color: var(--gold); }
-
-  .services { background: var(--deep); }
-  .services-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px; gap: 32px; }
-  .services-desc { color: rgba(255,255,255,0.6); font-size: 16px; line-height: 1.7; max-width: 380px; }
-
-  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-  .service-card {
-    background: rgba(255,255,255,0.04); padding: 40px 36px;
-    border: 1px solid var(--border);
-    transition: all 0.3s; position: relative; overflow: hidden;
-  }
-  .service-card::after {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-    background: var(--gold); transform: scaleX(0); transform-origin: left;
-    transition: transform 0.3s;
-  }
-  .service-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-4px); }
-  .service-card:hover::after { transform: scaleX(1); }
-  .service-icon { font-size: 32px; margin-bottom: 20px; }
-  .service-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 12px; }
-  .service-desc { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.55); }
-  .service-link { margin-top: 24px; font-size: 13px; color: var(--gold); text-decoration: none; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 6px; }
-
-  /* ─── ANNOUNCEMENTS ─── */
-  .announcements { background: var(--navy); }
-  .ann-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; margin-top: 64px; }
-  .ann-featured {
-    background: linear-gradient(135deg, var(--blue), var(--sky));
-    border-radius: 16px; padding: 48px; position: relative; overflow: hidden;
-  }
-  .ann-featured::before {
-    content: '"'; font-family: 'Playfair Display', serif; font-size: 200px;
-    position: absolute; top: -40px; right: 20px; color: rgba(255,255,255,0.05);
-    line-height: 1;
-  }
-  .ann-feat-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 16px; }
-  .ann-feat-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; }
-  .ann-feat-body { font-size: 15px; color: rgba(255,255,255,0.75); line-height: 1.7; }
-  .ann-feat-date { margin-top: 24px; font-size: 12px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.5); }
-
-  .ann-list { display: flex; flex-direction: column; gap: 0; }
-  .ann-item {
-    padding: 24px 0; border-bottom: 1px solid var(--border);
-    display: flex; gap: 20px; align-items: flex-start;
-    transition: padding-left 0.3s;
-  }
-  .ann-item:hover { padding-left: 8px; }
-  .ann-date-box { text-align: center; min-width: 48px; }
-  .ann-month { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
-  .ann-day { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1; color: var(--white); }
-  .ann-content .ann-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
-  .ann-content .ann-preview { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; }
-  .ann-category { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; background: rgba(240,165,0,0.15); color: var(--gold); border-radius: 4px; padding: 2px 8px; margin-bottom: 6px; text-transform: uppercase; }
-
-  /* ─── OFFICIALS ─── */
-  .officials { background: var(--deep); }
-  .officials-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 64px; }
-  .official-card {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    border-radius: 12px; padding: 32px 24px; text-align: center;
-    transition: all 0.3s;
-  }
-  .official-card:hover { transform: translateY(-6px); border-color: rgba(240,165,0,0.3); background: rgba(255,255,255,0.07); }
-  .official-avatar {
-    width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px;
-    display: flex; align-items: center; justify-content: center; font-size: 28px;
-    font-weight: 700; font-family: 'Playfair Display', serif;
-    background: linear-gradient(135deg, var(--blue), var(--sky));
-    border: 3px solid rgba(255,255,255,0.1);
-  }
-  .official-card.captain .official-avatar { background: linear-gradient(135deg, #8B6914, var(--gold)); border-color: rgba(240,165,0,0.3); }
-  .official-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-  .official-role { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; }
-
-  /* ─── STATS ─── */
-  .stats { background: var(--gold); color: var(--navy); padding: 80px 60px; }
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
-  .stat-item { padding: 32px 40px; border-right: 1px solid rgba(0,0,0,0.1); text-align: center; }
-  .stat-item:last-child { border-right: none; }
-  .stat-num { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 900; line-height: 1; }
-  .stat-label { font-size: 13px; font-weight: 500; opacity: 0.7; margin-top: 8px; letter-spacing: 0.5px; }
-
-  /* ─── CONTACT ─── */
-  .contact { background: var(--navy); }
-  .contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-top: 64px; align-items: start; }
-  .contact-info { display: flex; flex-direction: column; gap: 32px; }
-  .contact-item { display: flex; gap: 20px; align-items: flex-start; }
-  .contact-icon { width: 48px; height: 48px; background: rgba(240,165,0,0.1); border: 1px solid rgba(240,165,0,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-  .contact-item-title { font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
-  .contact-item-val { font-size: 15px; color: rgba(255,255,255,0.8); }
-
-  .contact-form { display: flex; flex-direction: column; gap: 16px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 8px; }
-  label { font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; }
-  input, textarea, select {
-    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-    border-radius: 8px; padding: 14px 16px; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px;
-    transition: border-color 0.2s, background 0.2s; outline: none;
-  }
-  input:focus, textarea:focus, select:focus { border-color: rgba(240,165,0,0.5); background: rgba(255,255,255,0.07); }
-  textarea { resize: vertical; min-height: 120px; }
-  select option { background: var(--navy); }
-  .form-submit {
-    background: var(--gold); color: var(--navy); border: none;
-    padding: 16px 36px; border-radius: 8px; font-size: 15px; font-weight: 500;
-    cursor: pointer; transition: all 0.2s; align-self: flex-start;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .form-submit:hover { background: var(--amber); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(240,165,0,0.3); }
-
-  /* ─── FOOTER ─── */
-  footer {
-    background: #060e1c; padding: 60px; border-top: 1px solid var(--border);
-    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px;
-  }
-  .footer-brand .brand-name { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 12px 0 16px; }
-  .footer-brand p { font-size: 14px; color: rgba(255,255,255,0.4); line-height: 1.7; max-width: 300px; }
-  .footer-col h4 { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 20px; }
-  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .footer-col a { font-size: 14px; color: rgba(255,255,255,0.5); text-decoration: none; transition: color 0.2s; }
-  .footer-col a:hover { color: var(--gold); }
-  .footer-bottom { background: #060e1c; padding: 20px 60px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .footer-bottom p { font-size: 12px; color: rgba(255,255,255,0.3); font-family: 'DM Mono', monospace; }
-
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 960px) {
-    nav { padding: 16px 24px; }
-    .nav-links { display: none; }
-    .hero { grid-template-columns: 1fr; padding: 100px 24px 60px; }
-    .hero-right { padding-left: 0; flex-direction: row; flex-wrap: wrap; }
-    .hero-card { flex: 1 1 160px; }
-    section { padding: 60px 24px; }
-    .services-grid { grid-template-columns: 1fr; }
-    .services-header { flex-direction: column; align-items: flex-start; }
-    .ann-layout { grid-template-columns: 1fr; }
-    .officials-grid { grid-template-columns: repeat(2, 1fr); }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .contact-layout { grid-template-columns: 1fr; }
-    .form-row { grid-template-columns: 1fr; }
-    footer { grid-template-columns: 1fr; gap: 40px; padding: 40px 24px; }
-    .footer-bottom { padding: 20px 24px; flex-direction: column; gap: 8px; text-align: center; }
-    .stats { padding: 60px 24px; }
-  }
-</style>
-</head>
-<body>
-
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">
-    <div class="nav-seal">🏛</div>
-    <div class="nav-text">
-      <span class="brgy">Barangay</span>
-      <span class="name">Masagana</span>
-    </div>
-  </div>
-  <ul class="nav-links">
-    <li><a href="#services">Services</a></li>
-    <li><a href="#announcements">News</a></li>
-    <li><a href="#officials">Officials</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
-  <a href="#contact" class="nav-cta">Request Document</a>
-</nav>
-
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-bg-grid"></div>
-  <div class="hero-left">
-    <div class="hero-tag">Serving our community since 1952</div>
-    <h1>Your <em>Barangay,</em><br>Your Home.</h1>
-    <p class="hero-sub">Barangay Masagana is committed to transparent governance, efficient service delivery, and the collective well-being of every resident in our community.</p>
-    <div class="hero-actions">
-      <a href="#services" class="btn-primary">Explore Services →</a>
-      <a href="#announcements" class="btn-secondary">View Announcements</a>
-    </div>
-  </div>
-  <div class="hero-right">
-    <div class="hero-card accent">
-      <div class="hero-card-label">Population</div>
-      <div class="hero-card-value">12,480</div>
-      <div class="hero-card-sub">Registered residents</div>
-    </div>
-    <div class="hero-card">
-      <div class="hero-card-label">Households</div>
-      <div class="hero-card-value">3,204</div>
-      <div class="hero-card-sub">Across 8 puroks</div>
-    </div>
-    <div class="hero-card">
-      <div class="hero-card-label">Services Available</div>
-      <div class="hero-card-value">24</div>
-      <div class="hero-card-sub">Documents & clearances</div>
-    </div>
-  </div>
-</section>
-
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-inner">
-    <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
-    <span>Free Medical Mission — March 15, 2026</span>
-    <span>Pulong-Pulong on Peace & Order — March 20</span>
-    <span>AICS Applications now open at the Hall</span>
-    <span>Road Clearing Operations every Friday</span>
-    <span>Senior Citizens ID renewal underway</span>
-    <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
-    <span>Free Medical Mission — March 15, 2026</span>
-    <span>Pulong-Pulong on Peace & Order — March 20</span>
-    <span>AICS Applications now open at the Hall</span>
-    <span>Road Clearing Operations every Friday</span>
-    <span>Senior Citizens ID renewal underway</span>
-  </div>
-</div>
-
-<!-- SERVICES -->
-<section class="services" id="services">
-  <div class="services-header">
-    <div>
-      <div class="section-tag">What we offer</div>
-      <h2 class="section-title">Barangay <em>Services</em></h2>
-    </div>
-    <p class="services-desc">All government services you need, accessible right here in your barangay. Fast, efficient, and transparent.</p>
-  </div>
-  <div class="services-grid">
-    <div class="service-card">
-      <div class="service-icon">📄</div>
-      <div class="service-title">Barangay Clearance</div>
-      <div class="service-desc">Obtain your barangay clearance for employment, business permits, and other legal purposes. Processing takes 1–2 working days.</div>
-      <a href="#contact" class="service-link">Request now →</a>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🆔</div>
-      <div class="service-title">Residency Certificate</div>
-      <div class="service-desc">Official proof of residency issued by the barangay. Required for school enrollment, utility applications, and government transactions.</div>
-      <a href="#contact" class="service-link">Request now →</a>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🏢</div>
-      <div class="service-title">Business Permit</div>
-      <div class="service-desc">Barangay business clearance required for all business establishments operating within the barangay jurisdiction.</div>
-      <a href="#contact" class="service-link">Request now →</a>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">⚖️</div>
-      <div class="service-title">Lupon Tagapamayapa</div>
-      <div class="service-desc">Barangay justice system for settling disputes and conflicts amicably. Mediation and conciliation services available.</div>
-      <a href="#contact" class="service-link">Learn more →</a>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">🩺</div>
-      <div class="service-title">Health Services</div>
-      <div class="service-desc">Free health consultations, vaccinations, and medicines through the Barangay Health Center. Open weekdays 8AM–4PM.</div>
-      <a href="#contact" class="service-link">Learn more →</a>
-    </div>
-    <div class="service-card">
-      <div class="service-icon">👴</div>
-      <div class="service-title">Senior Citizens</div>
-      <div class="service-desc">Programs and benefits for senior citizens including ID registration, monthly stipends, and free medicines under AICS.</div>
-      <a href="#contact" class="service-link">Learn more →</a>
-    </div>
-  </div>
-</section>
-
-<!-- ANNOUNCEMENTS -->
-<section class="announcements" id="announcements">
-  <div class="section-tag">Stay informed</div>
-  <h2 class="section-title">Latest <em>News &</em> Announcements</h2>
-  <div class="ann-layout">
-    <div class="ann-featured">
-      <div class="ann-feat-tag">📌 Featured Announcement</div>
-      <div class="ann-feat-title">Free Medical Mission & Health Fair — March 15, 2026</div>
-      <div class="ann-feat-body">In partnership with the City Health Office and local medical volunteers, Barangay Masagana will hold a free medical mission offering consultations, blood pressure monitoring, blood sugar testing, dental services, and free medicines to all qualified residents. Bring your barangay ID.</div>
-      <div class="ann-feat-date">Posted: February 18, 2026 · Venue: Barangay Basketball Court</div>
-    </div>
-    <div class="ann-list">
-      <div class="ann-item">
-        <div class="ann-date-box">
-          <div class="ann-month">Mar</div>
-          <div class="ann-day">20</div>
-        </div>
-        <div class="ann-content">
-          <div class="ann-category">Peace & Order</div>
-          <div class="ann-title">Pulong-Pulong: Community Peace & Order Assembly</div>
-          <div class="ann-preview">All purok leaders and residents are invited to join the quarterly peace and order dialogue.</div>
-        </div>
-      </div>
-      <div class="ann-item">
-        <div class="ann-date-box">
-          <div class="ann-month">Mar</div>
-          <div class="ann-day">10</div>
-        </div>
-        <div class="ann-content">
-          <div class="ann-category">Livelihood</div>
-          <div class="ann-title">DOLE Livelihood Skills Training — Registration Open</div>
-          <div class="ann-preview">Free skills training on food processing and handicraft making. Limited slots available.</div>
-        </div>
-      </div>
-      <div class="ann-item">
-        <div class="ann-date-box">
-          <div class="ann-month">Feb</div>
-          <div class="ann-day">28</div>
-        </div>
-        <div class="ann-content">
-          <div class="ann-category">Infrastructure</div>
-          <div class="ann-title">Road Rehabilitation along Masagana Street Begins</div>
-          <div class="ann-preview">Expect road closures along Masagana St. during the rehabilitation period. Alternative routes posted.</div>
-        </div>
-      </div>
-      <div class="ann-item">
-        <div class="ann-date-box">
-          <div class="ann-month">Feb</div>
-          <div class="ann-day">14</div>
-        </div>
-        <div class="ann-content">
-          <div class="ann-category">AICS</div>
-          <div class="ann-title">Ayuda & AICS Applications Now Open</div>
-          <div class="ann-preview">Qualified residents may now file for AICS assistance at the Barangay Hall. Bring required documents.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- STATS -->
-<div class="stats">
-  <div class="stats-grid">
-    <div class="stat-item">
-      <div class="stat-num">98%</div>
-      <div class="stat-label">Document Processing Rate</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">₱4.2M</div>
-      <div class="stat-label">Annual Barangay Budget</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">8</div>
-      <div class="stat-label">Sitios & Puroks</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">24+</div>
-      <div class="stat-label">Programs & Services</div>
-    </div>
-  </div>
-</div>
-
-<!-- OFFICIALS -->
-<section class="officials" id="officials">
-  <div class="section-tag">Your leaders</div>
-  <h2 class="section-title">Barangay <em>Officials</em></h2>
-  <div class="officials-grid">
-    <div class="official-card captain">
-      <div class="official-avatar">PG</div>
-      <div class="official-name">Hon. Pedro G. Reyes</div>
-      <div class="official-role">Punong Barangay</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">ML</div>
-      <div class="official-name">Hon. Maria L. Santos</div>
-      <div class="official-role">Kagawad — Health</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">JD</div>
-      <div class="official-name">Hon. Jose D. Cruz</div>
-      <div class="official-role">Kagawad — Peace & Order</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">RC</div>
-      <div class="official-name">Hon. Rosa C. Lim</div>
-      <div class="official-role">Kagawad — Infrastructure</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">AB</div>
-      <div class="official-name">Hon. Andres B. Torres</div>
-      <div class="official-role">Kagawad — Livelihood</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">EV</div>
-      <div class="official-name">Hon. Elena V. Flores</div>
-      <div class="official-role">Kagawad — Education</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">CM</div>
-      <div class="official-name">Crisanto M. Bautista</div>
-      <div class="official-role">Barangay Secretary</div>
-    </div>
-    <div class="official-card">
-      <div class="official-avatar">LG</div>
-      <div class="official-name">Lucia G. Navarro</div>
-      <div class="official-role">Barangay Treasurer</div>
-    </div>
-  </div>
-</section>
-
-<!-- CONTACT -->
-<section class="contact" id="contact">
-  <div class="section-tag">Get in touch</div>
-  <h2 class="section-title">Visit or <em>Contact</em> Us</h2>
-  <div class="contact-layout">
-    <div class="contact-info">
-      <div class="contact-item">
-        <div class="contact-icon">📍</div>
-        <div>
-          <div class="contact-item-title">Address</div>
-          <div class="contact-item-val">123 Masagana Street, Brgy. Masagana<br>Quezon City, Metro Manila 1100</div>
-        </div>
-      </div>
-      <div class="contact-item">
-        <div class="contact-icon">📞</div>
-        <div>
-          <div class="contact-item-title">Phone</div>
-          <div class="contact-item-val">(02) 8123-4567<br>0917-123-4567 (Globe)</div>
-        </div>
-      </div>
-      <div class="contact-item">
-        <div class="contact-icon">📧</div>
-        <div>
-          <div class="contact-item-title">Email</div>
-          <div class="contact-item-val">masagana@qc.gov.ph</div>
-        </div>
-      </div>
-      <div class="contact-item">
-        <div class="contact-icon">🕐</div>
-        <div>
-          <div class="contact-item-title">Office Hours</div>
-          <div class="contact-item-val">Monday – Friday<br>8:00 AM – 5:00 PM</div>
-        </div>
-      </div>
-    </div>
-    <div class="contact-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="fname">First Name</label>
-          <input type="text" id="fname" placeholder="Juan">
-        </div>
-        <div class="form-group">
-          <label for="lname">Last Name</label>
-          <input type="text" id="lname" placeholder="dela Cruz">
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="juan@email.com">
-      </div>
-      <div class="form-group">
-        <label for="service">Type of Request</label>
-        <select id="service">
-          <option value="">Select a service...</option>
-          <option>Barangay Clearance</option>
-          <option>Certificate of Residency</option>
-          <option>Business Clearance</option>
-          <option>Indigency Certificate</option>
-          <option>Lupon / Dispute Resolution</option>
-          <option>General Inquiry</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="message">Message or Details</label>
-        <textarea id="message" placeholder="Please describe your request or inquiry..."></textarea>
-      </div>
-      <button class="form-submit">Submit Request →</button>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-brand">
-    <div class="nav-seal">🏛</div>
-    <div class="brand-name">Barangay Masagana</div>
-    <p>Serving the residents of Barangay Masagana with integrity, transparency, and dedication to public service since 1952.</p>
-  </div>
-  <div class="footer-col">
-    <h4>Services</h4>
-    <ul>
-      <li><a href="#">Barangay Clearance</a></li>
-      <li><a href="#">Certificate of Residency</a></li>
-      <li><a href="#">Business Clearance</a></li>
-      <li><a href="#">Indigency Certificate</a></li>
-      <li><a href="#">Health Services</a></li>
-    </ul>
-  </div>
-  <div class="footer-col">
-    <h4>Quick Links</h4>
-    <ul>
-      <li><a href="#announcements">Announcements</a></li>
-      <li><a href="#officials">Officials</a></li>
-      <li><a href="#">Transparency Seal</a></li>
-      <li><a href="#">FOI Requests</a></li>
-      <li><a href="#contact">Contact Us</a></li>
-    </ul>
-  </div>
-</footer>
-<div class="footer-bottom">
-  <p>© 2026 Barangay Masagana, Quezon City. All rights reserved.</p>
-  <p>Powered by the Local Government of Quezon City</p>
-</div>
-
-<script>
-  // Smooth scroll for nav links
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
-
-  // Fade-in on scroll
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.transform = 'translateY(0)';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Barangay Masagana — Official Website</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-    });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.service-card, .ann-item, .official-card, .stat-item').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(el);
-  });
+      body {
+        font-family: Arial, sans-serif;
+        background: #ffffff;
+        color: #111111;
+        overflow-x: hidden;
+      }
 
-  // Form submit
-  document.querySelector('.form-submit').addEventListener('click', () => {
-    alert('✅ Your request has been submitted. The barangay will contact you within 1–2 business days.');
-  });
-</script>
-</body>
+      /* ─── NAV ─── */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 40px;
+        background: #ffffff;
+        border-bottom: 1px solid #cccccc;
+      }
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+      }
+      .nav-seal {
+        width: 40px;
+        height: 40px;
+        background: #dddddd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .nav-text .brgy {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: block;
+        color: #555;
+      }
+      .nav-text .name {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .nav-links {
+        display: flex;
+        gap: 28px;
+        list-style: none;
+      }
+      .nav-links a {
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+      }
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+      .nav-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .nav-login {
+        border: 1px solid #999;
+        color: #333;
+        padding: 8px 18px;
+        border-radius: 4px;
+        font-size: 14px;
+        text-decoration: none;
+      }
+      .nav-login:hover {
+        background: #f0f0f0;
+      }
+      .nav-cta {
+        background: #333;
+        color: #fff;
+        padding: 8px 18px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .nav-cta:hover {
+        background: #555;
+      }
+
+      /* ─── AUTH GATE MODAL ─── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 40px 36px;
+        max-width: 420px;
+        width: 90%;
+        transform: translateY(16px);
+        transition: transform 0.2s;
+        position: relative;
+        text-align: center;
+      }
+      .modal-overlay.active .modal {
+        transform: translateY(0);
+      }
+      .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #999;
+      }
+      .modal-close:hover {
+        color: #333;
+      }
+      .modal-icon {
+        font-size: 40px;
+        margin-bottom: 14px;
+      }
+      .modal-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .modal-body {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 8px;
+      }
+      .modal-service-name {
+        display: inline-block;
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 4px;
+        margin-bottom: 24px;
+        color: #333;
+      }
+      .modal-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .modal-btn-primary {
+        background: #333;
+        color: #fff;
+        padding: 13px;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        display: block;
+      }
+      .modal-btn-primary:hover {
+        background: #555;
+      }
+      .modal-btn-secondary {
+        border: 1px solid #ccc;
+        color: #333;
+        padding: 13px;
+        border-radius: 6px;
+        font-size: 15px;
+        text-decoration: none;
+        display: block;
+      }
+      .modal-btn-secondary:hover {
+        background: #f5f5f5;
+      }
+      .modal-divider {
+        color: #aaa;
+        font-size: 13px;
+        margin: 2px 0;
+      }
+
+      /* ─── HERO ─── */
+      .hero {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        padding: 120px 40px 80px;
+        background: #f9f9f9;
+        border-bottom: 1px solid #ddd;
+      }
+      .hero-tag {
+        display: inline-block;
+        background: #eeeeee;
+        border: 1px solid #ccc;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 52px;
+        line-height: 1.1;
+        font-weight: 900;
+        margin-bottom: 20px;
+      }
+      .hero-sub {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #444;
+        max-width: 440px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 14px;
+        margin-top: 36px;
+        flex-wrap: wrap;
+      }
+      .btn-primary {
+        background: #222;
+        color: #fff;
+        padding: 14px 32px;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .btn-primary:hover {
+        background: #444;
+      }
+      .btn-secondary {
+        border: 1px solid #aaa;
+        color: #333;
+        padding: 14px 32px;
+        border-radius: 6px;
+        font-size: 15px;
+        text-decoration: none;
+      }
+      .btn-secondary:hover {
+        background: #f0f0f0;
+      }
+      .hero-right {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding-left: 48px;
+      }
+      .hero-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 22px 26px;
+      }
+      .hero-card-label {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #777;
+        margin-bottom: 4px;
+      }
+      .hero-card-value {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .hero-card-sub {
+        font-size: 13px;
+        color: #888;
+        margin-top: 2px;
+      }
+
+      /* ─── TICKER ─── */
+      .ticker {
+        background: #eeeeee;
+        color: #333;
+        padding: 10px 0;
+        overflow: hidden;
+        white-space: nowrap;
+        border-bottom: 1px solid #ddd;
+      }
+      .ticker-inner {
+        display: inline-flex;
+        animation: ticker 30s linear infinite;
+      }
+      .ticker-inner span {
+        padding: 0 40px;
+        font-size: 13px;
+      }
+      .ticker-inner span::before {
+        content: "◆  ";
+        opacity: 0.4;
+      }
+      @keyframes ticker {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      /* ─── SECTIONS ─── */
+      section {
+        padding: 80px 40px;
+      }
+      .section-tag {
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #777;
+        margin-bottom: 12px;
+      }
+      .section-title {
+        font-size: 40px;
+        font-weight: 900;
+        line-height: 1.1;
+        max-width: 560px;
+        margin-bottom: 0;
+      }
+
+      /* ─── SERVICES ─── */
+      .services {
+        background: #f5f5f5;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+      }
+      .services-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 24px;
+        gap: 24px;
+      }
+      .services-desc {
+        color: #555;
+        font-size: 15px;
+        line-height: 1.7;
+        max-width: 360px;
+      }
+      .services-auth-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        color: #444;
+      }
+      .notice-icon {
+        font-size: 18px;
+      }
+      .services-auth-notice a {
+        color: #333;
+      }
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: #ddd;
+      }
+      .service-card {
+        background: #fff;
+        padding: 32px 28px;
+        cursor: pointer;
+        position: relative;
+        transition: background 0.15s;
+      }
+      .service-card:hover {
+        background: #f9f9f9;
+      }
+      .service-lock {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+        color: #666;
+      }
+      .service-icon {
+        font-size: 28px;
+        margin-bottom: 14px;
+      }
+      .service-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .service-desc {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #555;
+      }
+      .service-link {
+        margin-top: 18px;
+        font-size: 13px;
+        color: #333;
+        display: inline-block;
+      }
+
+      /* ─── ANNOUNCEMENTS ─── */
+      .announcements {
+        background: #fff;
+        border-top: 1px solid #ddd;
+      }
+      .ann-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 48px;
+        align-items: start;
+        margin-top: 48px;
+      }
+      .ann-featured {
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 36px;
+      }
+      .ann-feat-tag {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #666;
+        margin-bottom: 12px;
+      }
+      .ann-feat-title {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin-bottom: 14px;
+      }
+      .ann-feat-body {
+        font-size: 14px;
+        color: #444;
+        line-height: 1.7;
+      }
+      .ann-feat-date {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #888;
+      }
+      .ann-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .ann-item {
+        padding: 20px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      .ann-item:hover {
+        background: #fafafa;
+      }
+      .ann-date-box {
+        text-align: center;
+        min-width: 44px;
+      }
+      .ann-month {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #888;
+      }
+      .ann-day {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .ann-content .ann-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .ann-content .ann-preview {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.5;
+      }
+      .ann-category {
+        display: inline-block;
+        background: #eee;
+        border: 1px solid #ddd;
+        font-size: 10px;
+        letter-spacing: 1px;
+        border-radius: 3px;
+        padding: 2px 7px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        color: #555;
+      }
+
+      /* ─── STATS ─── */
+      .stats {
+        background: #eeeeee;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        padding: 60px 40px;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .stat-item {
+        padding: 24px 32px;
+        border-right: 1px solid #ccc;
+        text-align: center;
+      }
+      .stat-item:last-child {
+        border-right: none;
+      }
+      .stat-num {
+        font-size: 48px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 13px;
+        color: #666;
+        margin-top: 6px;
+      }
+
+      /* ─── OFFICIALS ─── */
+      .officials {
+        background: #f9f9f9;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+      }
+      .officials-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-top: 48px;
+      }
+      .official-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 24px;
+        text-align: center;
+      }
+      .official-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        background: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        border: 2px solid #bbb;
+      }
+      .official-name {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .official-role {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #777;
+      }
+
+      /* ─── CONTACT ─── */
+      .contact {
+        background: #fff;
+        border-top: 1px solid #ddd;
+      }
+      .contact-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        margin-top: 48px;
+        align-items: start;
+      }
+      .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .contact-item {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .contact-icon {
+        width: 42px;
+        height: 42px;
+        background: #eee;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .contact-item-title {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 3px;
+      }
+      .contact-item-val {
+        font-size: 14px;
+        color: #333;
+      }
+      .contact-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #666;
+      }
+      input,
+      textarea,
+      select {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 12px 14px;
+        color: #111;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: #888;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 110px;
+      }
+      .form-submit {
+        background: #222;
+        color: #fff;
+        border: none;
+        padding: 14px 32px;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        align-self: flex-start;
+      }
+      .form-submit:hover {
+        background: #444;
+      }
+
+      /* ─── FOOTER ─── */
+      footer {
+        background: #f0f0f0;
+        padding: 48px 40px;
+        border-top: 1px solid #ddd;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 48px;
+      }
+      .footer-brand .brand-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 10px 0 12px;
+      }
+      .footer-brand p {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.7;
+        max-width: 280px;
+      }
+      .footer-col h4 {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 16px;
+      }
+      .footer-col ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .footer-col a {
+        font-size: 14px;
+        color: #444;
+        text-decoration: none;
+      }
+      .footer-col a:hover {
+        text-decoration: underline;
+      }
+      .footer-bottom {
+        background: #e8e8e8;
+        padding: 16px 40px;
+        border-top: 1px solid #ccc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .footer-bottom p {
+        font-size: 12px;
+        color: #888;
+      }
+
+      /* ─── RESPONSIVE ─── */
+      @media (max-width: 960px) {
+        nav {
+          padding: 14px 20px;
+        }
+        .nav-links {
+          display: none;
+        }
+        .hero {
+          grid-template-columns: 1fr;
+          padding: 100px 20px 60px;
+        }
+        .hero-right {
+          padding-left: 0;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+        .hero-card {
+          flex: 1 1 140px;
+        }
+        section {
+          padding: 48px 20px;
+        }
+        .services-grid {
+          grid-template-columns: 1fr;
+          background: none;
+          gap: 1px;
+        }
+        .services-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .ann-layout {
+          grid-template-columns: 1fr;
+        }
+        .officials-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .contact-layout {
+          grid-template-columns: 1fr;
+        }
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+        footer {
+          grid-template-columns: 1fr;
+          gap: 32px;
+          padding: 32px 20px;
+        }
+        .footer-bottom {
+          padding: 14px 20px;
+          flex-direction: column;
+          gap: 6px;
+          text-align: center;
+        }
+        .stats {
+          padding: 48px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- AUTH GATE MODAL -->
+    <div class="modal-overlay" id="authModal">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-icon">🔐</div>
+        <div class="modal-title">Login Required</div>
+        <div class="modal-body">
+          You need an account to access this service.
+        </div>
+        <div class="modal-service-name" id="modalServiceName">
+          Barangay Clearance
+        </div>
+        <div class="modal-actions">
+          <a href="login.php" class="modal-btn-primary"
+            >Login to My Account →</a
+          >
+          <div class="modal-divider">or</div>
+          <a href="register.php" class="modal-btn-secondary"
+            >Create a New Account</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav>
+      <a href="index.html" class="nav-logo">
+        <div class="nav-seal">🏛</div>
+        <div class="nav-text">
+          <span class="brgy">Barangay</span>
+          <span class="name">Masagana</span>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#announcements">News</a></li>
+        <li><a href="#officials">Officials</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="login.php" class="nav-login">Login</a>
+        <a href="register.php" class="nav-cta">Register</a>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-tag">Serving our community since 1952</div>
+        <h1>Your Barangay, Your Home.</h1>
+        <p class="hero-sub">
+          Barangay Masagana is committed to transparent governance, efficient
+          service delivery, and the collective well-being of every resident in
+          our community.
+        </p>
+        <div class="hero-actions">
+          <a href="login.php" class="btn-primary">Access Services →</a>
+          <a href="#announcements" class="btn-secondary">View Announcements</a>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hero-card-label">Population</div>
+          <div class="hero-card-value">12,480</div>
+          <div class="hero-card-sub">Registered residents</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-label">Households</div>
+          <div class="hero-card-value">3,204</div>
+          <div class="hero-card-sub">Across 8 puroks</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-label">Services Available</div>
+          <div class="hero-card-value">24</div>
+          <div class="hero-card-sub">Documents & clearances</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TICKER -->
+    <div class="ticker">
+      <div class="ticker-inner">
+        <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
+        <span>Free Medical Mission — March 15, 2026</span>
+        <span>Pulong-Pulong on Peace & Order — March 20</span>
+        <span>AICS Applications now open at the Hall</span>
+        <span>Road Clearing Operations every Friday</span>
+        <span>Senior Citizens ID renewal underway</span>
+        <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
+        <span>Free Medical Mission — March 15, 2026</span>
+        <span>Pulong-Pulong on Peace & Order — March 20</span>
+        <span>AICS Applications now open at the Hall</span>
+        <span>Road Clearing Operations every Friday</span>
+        <span>Senior Citizens ID renewal underway</span>
+      </div>
+    </div>
+
+    <!-- SERVICES -->
+    <section class="services" id="services">
+      <div class="services-header">
+        <div>
+          <div class="section-tag">What we offer</div>
+          <h2 class="section-title">Barangay Services</h2>
+        </div>
+        <p class="services-desc">
+          All government services you need, accessible right here in your
+          barangay. Fast, efficient, and transparent.
+        </p>
+      </div>
+      <div class="services-auth-notice">
+        <span class="notice-icon">🔒</span>
+        <span
+          >Accessing any service requires a resident account. Already have one?
+          <a href="login.php">Login here</a> — or
+          <a href="register.php">create a free account</a> to get started.</span
+        >
+      </div>
+      <div class="services-grid">
+        <div class="service-card" onclick="requireLogin('Barangay Clearance')">
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">📄</div>
+          <div class="service-title">Barangay Clearance</div>
+          <div class="service-desc">
+            Obtain your barangay clearance for employment, business permits, and
+            other legal purposes. Processing takes 1–2 working days.
+          </div>
+          <span class="service-link">Request now →</span>
+        </div>
+        <div
+          class="service-card"
+          onclick="requireLogin('Residency Certificate')"
+        >
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">🆔</div>
+          <div class="service-title">Residency Certificate</div>
+          <div class="service-desc">
+            Official proof of residency issued by the barangay. Required for
+            school enrollment, utility applications, and government
+            transactions.
+          </div>
+          <span class="service-link">Request now →</span>
+        </div>
+        <div
+          class="service-card"
+          onclick="requireLogin('Business Permit Clearance')"
+        >
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">🏢</div>
+          <div class="service-title">Business Permit</div>
+          <div class="service-desc">
+            Barangay business clearance required for all business establishments
+            operating within the barangay jurisdiction.
+          </div>
+          <span class="service-link">Request now →</span>
+        </div>
+        <div class="service-card" onclick="requireLogin('Lupon Tagapamayapa')">
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">⚖️</div>
+          <div class="service-title">Lupon Tagapamayapa</div>
+          <div class="service-desc">
+            Barangay justice system for settling disputes and conflicts
+            amicably. Mediation and conciliation services available.
+          </div>
+          <span class="service-link">Learn more →</span>
+        </div>
+        <div class="service-card" onclick="requireLogin('Health Services')">
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">🩺</div>
+          <div class="service-title">Health Services</div>
+          <div class="service-desc">
+            Free health consultations, vaccinations, and medicines through the
+            Barangay Health Center. Open weekdays 8AM–4PM.
+          </div>
+          <span class="service-link">Learn more →</span>
+        </div>
+        <div
+          class="service-card"
+          onclick="requireLogin('Senior Citizens Program')"
+        >
+          <div class="service-lock">🔒 Login required</div>
+          <div class="service-icon">👴</div>
+          <div class="service-title">Senior Citizens</div>
+          <div class="service-desc">
+            Programs and benefits for senior citizens including ID registration,
+            monthly stipends, and free medicines under AICS.
+          </div>
+          <span class="service-link">Learn more →</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS -->
+    <section class="announcements" id="announcements">
+      <div class="section-tag">Stay informed</div>
+      <h2 class="section-title">Latest News & Announcements</h2>
+      <div class="ann-layout">
+        <div class="ann-featured">
+          <div class="ann-feat-tag">📌 Featured Announcement</div>
+          <div class="ann-feat-title">
+            Free Medical Mission & Health Fair — March 15, 2026
+          </div>
+          <div class="ann-feat-body">
+            In partnership with the City Health Office and local medical
+            volunteers, Barangay Masagana will hold a free medical mission
+            offering consultations, blood pressure monitoring, blood sugar
+            testing, dental services, and free medicines to all qualified
+            residents. Bring your barangay ID.
+          </div>
+          <div class="ann-feat-date">
+            Posted: February 18, 2026 · Venue: Barangay Basketball Court
+          </div>
+        </div>
+        <div class="ann-list">
+          <div class="ann-item">
+            <div class="ann-date-box">
+              <div class="ann-month">Mar</div>
+              <div class="ann-day">20</div>
+            </div>
+            <div class="ann-content">
+              <div class="ann-category">Peace & Order</div>
+              <div class="ann-title">
+                Pulong-Pulong: Community Peace & Order Assembly
+              </div>
+              <div class="ann-preview">
+                All purok leaders and residents are invited to join the
+                quarterly peace and order dialogue.
+              </div>
+            </div>
+          </div>
+          <div class="ann-item">
+            <div class="ann-date-box">
+              <div class="ann-month">Mar</div>
+              <div class="ann-day">10</div>
+            </div>
+            <div class="ann-content">
+              <div class="ann-category">Livelihood</div>
+              <div class="ann-title">
+                DOLE Livelihood Skills Training — Registration Open
+              </div>
+              <div class="ann-preview">
+                Free skills training on food processing and handicraft making.
+                Limited slots available.
+              </div>
+            </div>
+          </div>
+          <div class="ann-item">
+            <div class="ann-date-box">
+              <div class="ann-month">Feb</div>
+              <div class="ann-day">28</div>
+            </div>
+            <div class="ann-content">
+              <div class="ann-category">Infrastructure</div>
+              <div class="ann-title">
+                Road Rehabilitation along Masagana Street Begins
+              </div>
+              <div class="ann-preview">
+                Expect road closures along Masagana St. during the
+                rehabilitation period. Alternative routes posted.
+              </div>
+            </div>
+          </div>
+          <div class="ann-item">
+            <div class="ann-date-box">
+              <div class="ann-month">Feb</div>
+              <div class="ann-day">14</div>
+            </div>
+            <div class="ann-content">
+              <div class="ann-category">AICS</div>
+              <div class="ann-title">Ayuda & AICS Applications Now Open</div>
+              <div class="ann-preview">
+                Qualified residents may now file for AICS assistance at the
+                Barangay Hall. Bring required documents.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num">98%</div>
+          <div class="stat-label">Document Processing Rate</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">₱4.2M</div>
+          <div class="stat-label">Annual Barangay Budget</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">8</div>
+          <div class="stat-label">Sitios & Puroks</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">24+</div>
+          <div class="stat-label">Programs & Services</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFICIALS -->
+    <section class="officials" id="officials">
+      <div class="section-tag">Your leaders</div>
+      <h2 class="section-title">Barangay Officials</h2>
+      <div class="officials-grid">
+        <div class="official-card">
+          <div class="official-avatar">PG</div>
+          <div class="official-name">Hon. Pedro G. Reyes</div>
+          <div class="official-role">Punong Barangay</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">ML</div>
+          <div class="official-name">Hon. Maria L. Santos</div>
+          <div class="official-role">Kagawad — Health</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">JD</div>
+          <div class="official-name">Hon. Jose D. Cruz</div>
+          <div class="official-role">Kagawad — Peace & Order</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">RC</div>
+          <div class="official-name">Hon. Rosa C. Lim</div>
+          <div class="official-role">Kagawad — Infrastructure</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">AB</div>
+          <div class="official-name">Hon. Andres B. Torres</div>
+          <div class="official-role">Kagawad — Livelihood</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">EV</div>
+          <div class="official-name">Hon. Elena V. Flores</div>
+          <div class="official-role">Kagawad — Education</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">CM</div>
+          <div class="official-name">Crisanto M. Bautista</div>
+          <div class="official-role">Barangay Secretary</div>
+        </div>
+        <div class="official-card">
+          <div class="official-avatar">LG</div>
+          <div class="official-name">Lucia G. Navarro</div>
+          <div class="official-role">Barangay Treasurer</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact">
+      <div class="section-tag">Get in touch</div>
+      <h2 class="section-title">Visit or Contact Us</h2>
+      <div class="contact-layout">
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-icon">📍</div>
+            <div>
+              <div class="contact-item-title">Address</div>
+              <div class="contact-item-val">
+                123 Masagana Street, Brgy. Masagana<br />Quezon City, Metro
+                Manila 1100
+              </div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">📞</div>
+            <div>
+              <div class="contact-item-title">Phone</div>
+              <div class="contact-item-val">
+                (02) 8123-4567<br />0917-123-4567 (Globe)
+              </div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">📧</div>
+            <div>
+              <div class="contact-item-title">Email</div>
+              <div class="contact-item-val">masagana@qc.gov.ph</div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">🕐</div>
+            <div>
+              <div class="contact-item-title">Office Hours</div>
+              <div class="contact-item-val">
+                Monday – Friday<br />8:00 AM – 5:00 PM
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="contact-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">First Name</label
+              ><input type="text" id="fname" placeholder="Juan" />
+            </div>
+            <div class="form-group">
+              <label for="lname">Last Name</label
+              ><input type="text" id="lname" placeholder="dela Cruz" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label
+            ><input type="email" id="email" placeholder="juan@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="svc">Type of Request</label>
+            <select id="svc">
+              <option value="">Select a service...</option>
+              <option>Barangay Clearance</option>
+              <option>Certificate of Residency</option>
+              <option>Business Clearance</option>
+              <option>Indigency Certificate</option>
+              <option>Lupon / Dispute Resolution</option>
+              <option>General Inquiry</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message or Details</label
+            ><textarea
+              id="message"
+              placeholder="Please describe your request or inquiry..."
+            ></textarea>
+          </div>
+          <button
+            class="form-submit"
+            onclick="
+              alert(
+                'Your inquiry has been submitted. We will contact you within 1–2 business days.',
+              )
+            "
+          >
+            Submit Inquiry →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-brand">
+        <div class="nav-seal">🏛</div>
+        <div class="brand-name">Barangay Masagana</div>
+        <p>
+          Serving the residents of Barangay Masagana with integrity,
+          transparency, and dedication to public service since 1952.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="login.php">Barangay Clearance</a></li>
+          <li><a href="login.php">Certificate of Residency</a></li>
+          <li><a href="login.php">Business Clearance</a></li>
+          <li><a href="login.php">Indigency Certificate</a></li>
+          <li><a href="login.php">Health Services</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#announcements">Announcements</a></li>
+          <li><a href="#officials">Officials</a></li>
+          <li><a href="#">Transparency Seal</a></li>
+          <li><a href="#">FOI Requests</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+        </ul>
+      </div>
+    </footer>
+    <div class="footer-bottom">
+      <p>© 2026 Barangay Masagana, Quezon City. All rights reserved.</p>
+      <p>Powered by the Local Government of Quezon City</p>
+    </div>
+
+    <script>
+      function requireLogin(serviceName) {
+        document.getElementById("modalServiceName").textContent = serviceName;
+        document.getElementById("authModal").classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+      function closeModal() {
+        document.getElementById("authModal").classList.remove("active");
+        document.body.style.overflow = "";
+      }
+      document
+        .getElementById("authModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeModal();
+        });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+      document.querySelectorAll('a[href^="#"]').forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const target = document.querySelector(a.getAttribute("href"));
+          if (target)
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    </script>
+  </body>
 </html>
