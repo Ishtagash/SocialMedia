@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar-ring">
+            <img src="corbin.jpg" alt="Staff Photo" />
+          </div>
+          <h3>Aaron Valencia</h3>
+          <p>Barangay Captain, Alapan 1-A</p>
+          <span class="portal-badge staff">STAFF PORTAL</span>
+        </div>
+
+        <nav class="menu">
+          <a href="#" class="active">Dashboard</a>
+          <a href="#">Manage Requests</a>
+          <a href="#">Concerns & Reports</a>
+          <a href="#">Announcements</a>
+          <a href="#">Residents List</a>
+          <a href="#">Household Records</a>
+          <a href="#">System Settings</a>
+        </nav>
+
+        <a href="#" class="logout">Logout</a>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="content">
+        <!-- TOP BAR -->
+        <div class="topbar">
+          <div class="greeting-block">
+            <h1>Welcome back, <span class="accent-name">Corbin</span></h1>
+            <p class="subtitle">
+              Here are the latest barangay updates and tasks.
+            </p>
+          </div>
+
+          <div class="topbar-right">
+            <!-- Date / Time -->
+            <div class="datetime-block">
+              <p id="liveDate"></p>
+              <p id="liveTime"></p>
+            </div>
+
+            <!-- Seal -->
+            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
+          </div>
+        </div>
+
+        <!-- TOP METRIC CARDS -->
+        <div class="card-grid">
+          <div class="card card--yellow">
+            <p class="card-label">Pending Approvals</p>
+            <p class="number">12</p>
+          </div>
+
+          <div class="card card--blue">
+            <p class="card-label">New Document Requests</p>
+            <p class="number">8</p>
+          </div>
+
+          <div class="card card--red">
+            <p class="card-label">Unresolved Concerns</p>
+            <p class="number">3</p>
+          </div>
+
+          <div class="card card--green">
+            <p class="card-label">Total Residents</p>
+            <p class="number">5421</p>
+          </div>
+        </div>
+
+        <!-- STAFF QUICK ACTIONS -->
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="quick-actions">
+          <button class="btn btn--primary">Process Requests</button>
+          <button class="btn btn--outline">Manage Announcements</button>
+          <button class="btn btn--outline">View All Concerns</button>
+          <button class="btn btn--outline">Update Resident Info</button>
+        </div>
+
+        <!-- PANELS -->
+        <div class="main-panels">
+          <!-- RECENT TASKS -->
+          <div class="panel announcements">
+            <div class="panel-header">
+              <h2>Recent Staff Tasks</h2>
+              <span class="badge">5 pending</span>
+            </div>
+            <ul>
+              <li>
+                <div class="announcement-dot dot--yellow"></div>
+                <div>
+                  <strong>Document Request</strong>
+                  <p>3 residents waiting for approval.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--red"></div>
+                <div>
+                  <strong>Concern Follow-up</strong>
+                  <p>1 urgent case requires attention.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--blue"></div>
+                <div>
+                  <strong>New Announcement Draft</strong>
+                  <p>Review before posting.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- STAFF CONTACT PANEL -->
+          <div class="panel contacts">
+            <div class="panel-header">
+              <h2>Quick Access Contacts</h2>
+            </div>
+
+            <ul>
+              <li>
+                <span class="contact-label">Barangay Captain</span>
+                <strong>0912-111-2233</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Secretary</span>
+                <strong>0917-334-9988</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Treasurer</span>
+                <strong>0998-445-1221</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Tanod Hotline</span>
+                <strong>0912-345-6789</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- LIVE CLOCK -->
+    <script>
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById("liveDate").innerText = now.toLocaleDateString(
+          "en-PH",
+          { weekday: "long", year: "numeric", month: "long", day: "numeric" },
+        );
+        document.getElementById("liveTime").innerText = now.toLocaleTimeString(
+          "en-PH",
+          { hour: "2-digit", minute: "2-digit", second: "2-digit" },
+        );
+      }
+      setInterval(updateDateTime, 1000);
+      updateDateTime();
+    </script>
+  </body>
+</html>
