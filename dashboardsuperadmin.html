@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Super Admin Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar-ring">
+            <img src="superadmin.jpg" alt="Super Admin Photo" />
+          </div>
+          <h3>System Administrator</h3>
+          <p>Tech Department</p>
+          <span class="portal-badge admin">ADMIN PORTAL</span>
+        </div>
+
+        <nav class="menu">
+          <a href="#" class="active">Dashboard Overview</a>
+          <a href="#">Staff Management</a>
+          <a href="#">Barangay Profile</a>
+          <a href="#">Database & Backups</a>
+          <a href="#">System Configuration</a>
+          <a href="#">Master Data</a>
+          <a href="#">Security Controls</a>
+          <a href="#">Reports & Audit Logs</a>
+        </nav>
+
+        <a href="#" class="logout">Logout</a>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="content">
+        <!-- TOPBAR -->
+        <div class="topbar">
+          <div class="greeting-block">
+            <h1>Welcome, <span class="accent-name">Super Admin</span></h1>
+            <p class="subtitle">
+              Full control over all barangay system modules.
+            </p>
+          </div>
+
+          <div class="topbar-right">
+            <div class="datetime-block">
+              <p id="liveDate"></p>
+              <p id="liveTime"></p>
+            </div>
+
+            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
+          </div>
+        </div>
+
+        <!-- ANALYTICS CARDS -->
+        <div class="card-grid">
+          <div class="card card--yellow">
+            <p class="card-label">Total Staff Accounts</p>
+            <p class="number">34</p>
+          </div>
+
+          <div class="card card--blue">
+            <p class="card-label">Pending System Approvals</p>
+            <p class="number">7</p>
+          </div>
+
+          <div class="card card--red">
+            <p class="card-label">Security Alerts</p>
+            <p class="number">2</p>
+          </div>
+
+          <div class="card card--green">
+            <p class="card-label">Total Residents Registered</p>
+            <p class="number">5421</p>
+          </div>
+        </div>
+
+        <!-- QUICK TOOLS -->
+        <h2 class="section-title">Administrative Tools</h2>
+        <div class="quick-actions">
+          <button class="btn btn--primary">Create Staff Account</button>
+          <button class="btn btn--outline">Backup Database</button>
+          <button class="btn btn--outline">Manage Barangay Profile</button>
+          <button class="btn btn--outline">View Audit Logs</button>
+        </div>
+
+        <!-- MAIN PANELS -->
+        <div class="main-panels">
+          <!-- LEFT PANEL -->
+          <div class="panel announcements">
+            <div class="panel-header">
+              <h2>System Overview</h2>
+            </div>
+
+            <ul>
+              <li>
+                <div class="announcement-dot dot--yellow"></div>
+                <div>
+                  <strong>Staff Accounts</strong>
+                  <p>Create, disable, promote, and assign roles.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--blue"></div>
+                <div>
+                  <strong>Barangay Profile</strong>
+                  <p>Update logos, name, address, signatures, templates.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--green"></div>
+                <div>
+                  <strong>System Configuration</strong>
+                  <p>Enable features, modify fees, maintenance mode.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--red"></div>
+                <div>
+                  <strong>Data & Security</strong>
+                  <p>Backups, restores, password rules, suspicious accounts.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- RIGHT PANEL -->
+          <div class="panel contacts">
+            <div class="panel-header">
+              <h2>Critical Admin Functions</h2>
+            </div>
+
+            <ul>
+              <li>
+                <span class="contact-label">Force Password Reset</span>
+                <strong>Enabled</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Login Attempt Limit</span>
+                <strong>5 attempts</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Backup Status</span>
+                <strong>Last: Feb 28</strong>
+              </li>
+
+              <li>
+                <span class="contact-label">Suspicious Accounts</span>
+                <strong>2 flagged</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- CLOCK SCRIPT -->
+    <script>
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById("liveDate").innerText = now.toLocaleDateString(
+          "en-PH",
+          { weekday: "long", year: "numeric", month: "long", day: "numeric" },
+        );
+        document.getElementById("liveTime").innerText = now.toLocaleTimeString(
+          "en-PH",
+          { hour: "2-digit", minute: "2-digit", second: "2-digit" },
+        );
+      }
+      setInterval(updateDateTime, 1000);
+      updateDateTime();
+    </script>
+  </body>
+</html>

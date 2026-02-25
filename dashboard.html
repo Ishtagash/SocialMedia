@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resident Dashboard</title>
+
+    <!-- GOOGLE FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS FILE -->
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar-ring">
+            <img src="corbin.jpg" alt="Resident Photo" />
+          </div>
+          <h3>Corbin Gutierrez</h3>
+          <p>City of Imus, Alapan 1-A</p>
+          <span class="portal-badge">RESIDENT PORTAL</span>
+        </div>
+
+        <nav class="menu">
+          <a href="#" class="active">Dashboard</a>
+          <a href="#">Request Documents</a>
+          <a href="#">Report a Concern</a>
+          <a href="#">Announcements</a>
+          <a href="#">My Household</a>
+          <a href="#">My Requests</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <a href="#" class="logout">Logout</a>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="content">
+        <!-- TOP BAR WITH DATE + TIME + BARANGAY SEAL -->
+        <div class="topbar">
+          <div class="greeting-block">
+            <h1>Welcome back, <span class="accent-name">Corbin</span></h1>
+            <p class="subtitle">
+              Here are your latest updates and quick actions.
+            </p>
+          </div>
+
+          <!-- DATE & TIME -->
+
+          <div class="topbar-right">
+            <div class="datetime-block">
+              <p id="liveDate"></p>
+              <p id="liveTime"></p>
+            </div>
+            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
+          </div>
+        </div>
+
+        <!-- TOP CARDS -->
+        <div class="card-grid">
+          <div class="card card--yellow">
+            <p class="card-label">Pending Requests</p>
+            <p class="number">2</p>
+          </div>
+
+          <div class="card card--blue">
+            <p class="card-label">New Announcements</p>
+            <p class="number">4</p>
+          </div>
+
+          <div class="card card--red">
+            <p class="card-label">Open Concerns</p>
+            <p class="number">1</p>
+          </div>
+
+          <div class="card card--green">
+            <p class="card-label">Household Members</p>
+            <p class="number">5</p>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="quick-actions">
+          <button class="btn btn--primary">Request Document</button>
+          <button class="btn btn--outline">Report a Concern</button>
+          <button class="btn btn--outline">View My Requests</button>
+          <button class="btn btn--outline">Update Profile</button>
+        </div>
+
+        <!-- MAIN PANELS -->
+        <div class="main-panels">
+          <!-- ANNOUNCEMENTS -->
+          <div class="panel announcements">
+            <div class="panel-header">
+              <h2>Latest Announcements</h2>
+              <span class="badge">3 NEW</span>
+            </div>
+
+            <ul>
+              <li>
+                <div class="announcement-dot dot--yellow"></div>
+                <div>
+                  <strong>Water Advisory</strong>
+                  <p>Scheduled testing on Feb 28.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--blue"></div>
+                <div>
+                  <strong>Clean-up Drive</strong>
+                  <p>Volunteers needed at Zone 3.</p>
+                </div>
+              </li>
+
+              <li>
+                <div class="announcement-dot dot--green"></div>
+                <div>
+                  <strong>Barangay Assembly</strong>
+                  <p>March 10, 2 PM.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- EMERGENCY CONTACTS -->
+          <div class="panel contacts">
+            <div class="panel-header">
+              <h2>Emergency Contacts</h2>
+            </div>
+
+            <ul>
+              <li>
+                <span class="contact-label">Barangay Hall</span>
+                <strong>123-4567</strong>
+              </li>
+              <li>
+                <span class="contact-label">Tanod Hotline</span>
+                <strong>0912-345-6789</strong>
+              </li>
+              <li>
+                <span class="contact-label">Medical Response</span>
+                <strong>555-1122</strong>
+              </li>
+              <li>
+                <span class="contact-label">Fire Station (BFP)</span>
+                <strong>160</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- LIVE DATE & TIME SCRIPT -->
+    <script>
+      function updateDateTime() {
+        const now = new Date();
+
+        document.getElementById("liveDate").innerText = now.toLocaleDateString(
+          "en-PH",
+          { weekday: "long", year: "numeric", month: "long", day: "numeric" },
+        );
+
+        document.getElementById("liveTime").innerText = now.toLocaleTimeString(
+          "en-PH",
+          { hour: "2-digit", minute: "2-digit", second: "2-digit" },
+        );
+      }
+
+      setInterval(updateDateTime, 1000);
+      updateDateTime();
+    </script>
+  </body>
+</html>
