@@ -4,48 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Barangay Alapan I-A — Official Website</title>
-
-<!-- Bootstrap 5.3 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   :root {
     --dark:        #051650;
     --dark-hover:  #0a2470;
     --lime:        #ccff00;
     --lime-dim:    rgba(204,255,0,0.12);
-    --lime-border: rgba(204,255,0,0.3);
+    --lime-border: rgba(204,255,0,0.30);
     --white:       #ffffff;
     --overlay:     rgba(5,22,80,0.65);
   }
 
-  /* ─── RESET ─── */
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { font-family: Arial, sans-serif; background: var(--white); color: var(--dark); overflow-x: hidden; }
 
-  /* ─── NAV ─── */
+  /* ── NAV ── */
   .site-nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 1030;
     background: var(--dark);
     border-bottom: 3px solid var(--lime);
     padding: 10px 0;
   }
-  .nav-seal {
-    width: 50px; height: 50px;
-    border-radius: 50%; overflow: hidden;
-    flex-shrink: 0;
-  }
-  .nav-seal img {
-    width: 50px; height: 50px;
-    object-fit: contain; border-radius: 50%;
-  }
-  .nav-brgy  { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); display: block; line-height: 1.2; }
+  .nav-seal { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .nav-seal img { width: 100%; height: 100%; object-fit: cover; }
+  .nav-brgy { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); display: block; line-height: 1.2; }
   .nav-name  { font-size: 17px; font-weight: 700; color: var(--white); line-height: 1.2; }
-  .site-nav .nav-link { color: rgba(255,255,255,0.7); font-size: 14px; padding: 6px 14px; }
+  .site-nav .nav-link { color: rgba(255,255,255,0.70); font-size: 14px; padding: 6px 14px; transition: color .2s; }
   .site-nav .nav-link:hover { color: var(--lime); }
   .btn-nav-login {
-    border: 1px solid rgba(255,255,255,0.4); color: var(--white);
+    border: 1px solid rgba(255,255,255,0.40); color: var(--white);
     padding: 7px 18px; border-radius: 4px; font-size: 14px; text-decoration: none;
     transition: border-color .2s, color .2s;
   }
@@ -57,26 +47,33 @@
   }
   .btn-nav-cta:hover { background: #bbee00; color: var(--dark); }
 
-  /* ─── AUTH GATE MODAL ─── */
-  .modal-backdrop-custom {
+  /* ── AUTH GATE MODAL ── */
+  .modal-gate {
     position: fixed; inset: 0; z-index: 1055;
     background: var(--overlay);
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity .2s;
   }
-  .modal-backdrop-custom.active { opacity: 1; pointer-events: all; }
-  .modal-box {
+  .modal-gate.active { opacity: 1; pointer-events: all; }
+  .modal-gate-box {
     background: var(--white); border: 2px solid var(--lime);
     border-radius: 10px; padding: 40px 36px; max-width: 420px; width: 90%;
     position: relative; text-align: center;
     transform: translateY(16px); transition: transform .2s;
   }
-  .modal-backdrop-custom.active .modal-box { transform: translateY(0); }
-  .modal-close-btn {
+  .modal-gate.active .modal-gate-box { transform: translateY(0); }
+  .modal-gate-close {
     position: absolute; top: 12px; right: 14px;
-    background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; line-height: 1;
+    background: none; border: none; cursor: pointer; color: #bbb; font-size: 18px; line-height: 1;
+    transition: color .2s;
   }
-  .modal-close-btn:hover { color: var(--dark); }
+  .modal-gate-close:hover { color: var(--dark); }
+  .modal-gate-icon {
+    width: 62px; height: 62px; border-radius: 50%;
+    background: var(--lime); color: var(--dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 18px;
+  }
   .modal-service-badge {
     display: inline-block; background: var(--lime); color: var(--dark);
     font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 4px; margin-bottom: 24px;
@@ -93,26 +90,41 @@
     transition: background .2s;
   }
   .btn-modal-secondary:hover { background: rgba(5,22,80,0.06); }
-  .modal-or { color: #bbb; font-size: 13px; }
 
-  /* ─── HERO ─── */
+  /* ── HERO ── */
   .hero-section {
     min-height: 100vh;
-    background: var(--dark);
+    position: relative;
     border-bottom: 3px solid var(--lime);
-    padding-top: 80px; /* nav offset */
+    padding-top: 80px;
     display: flex; align-items: center;
+    background: var(--dark);
   }
+  .hero-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+    /* no controls, no UI — plays silently like a GIF */
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: rgba(5,22,80,0.72);
+    z-index: 1;
+  }
+  .hero-section .container-xl { position: relative; z-index: 2; }
   .hero-tag {
-    display: inline-block;
+    display: inline-flex; align-items: center; gap: 8px;
     background: var(--lime-dim); border: 1px solid var(--lime);
     padding: 5px 16px; border-radius: 20px;
     font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime);
   }
-  .hero-section h1 { font-size: clamp(38px, 6vw, 56px); font-weight: 900; line-height: 1.05; color: var(--white); }
+  .hero-section h1 { font-size: clamp(36px, 6vw, 56px); font-weight: 900; line-height: 1.05; color: var(--white); }
   .hero-section h1 span { color: var(--lime); }
   .hero-sub { font-size: 16px; line-height: 1.75; color: rgba(255,255,255,0.65); max-width: 460px; }
   .btn-hero {
+    display: inline-flex; align-items: center; gap: 9px;
     background: var(--lime); color: var(--dark);
     padding: 14px 34px; border-radius: 6px; font-size: 15px; font-weight: 700;
     text-decoration: none; transition: background .2s;
@@ -122,36 +134,48 @@
     background: rgba(255,255,255,0.06);
     border: 1px solid var(--lime-border);
     border-radius: 8px; padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px;
   }
-  .hero-stat-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 4px; }
-  .hero-stat-value { font-size: 26px; font-weight: 700; color: var(--white); line-height: 1.1; }
-  .hero-stat-sub   { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .hero-stat-icon {
+    width: 44px; height: 44px; border-radius: 8px;
+    background: var(--lime-dim); border: 1px solid var(--lime-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lime); font-size: 18px; flex-shrink: 0;
+  }
+  .hero-stat-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 4px; }
+  .hero-stat-value { font-size: 32px; font-weight: 700; color: var(--white); line-height: 1.1; }
+  .hero-stat-sub   { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 2px; }
 
-  /* ─── TICKER ─── */
+  /* ── TICKER ── */
   .ticker-bar {
     background: var(--lime); color: var(--dark);
     overflow: hidden; white-space: nowrap; padding: 9px 0;
   }
   .ticker-inner { display: inline-flex; animation: tickerScroll 32s linear infinite; }
-  .ticker-inner span { padding: 0 40px; font-size: 13px; font-weight: 600; }
-  .ticker-inner span::before { content: '◆  '; opacity: .45; }
+  .ticker-inner span {
+    padding: 0 36px; font-size: 13px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .ticker-inner span i { font-size: 10px; opacity: .5; }
   @keyframes tickerScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-  /* ─── SECTION COMMON ─── */
+  /* ── SECTION COMMON ── */
   .section-label {
-    display: inline-block;
+    display: inline-flex; align-items: center; gap: 7px;
     background: var(--dark); color: var(--lime);
     font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    padding: 3px 10px; border-radius: 3px; margin-bottom: 10px;
+    padding: 4px 12px; border-radius: 3px; margin-bottom: 12px;
   }
   .section-title { font-size: clamp(28px, 4vw, 40px); font-weight: 900; line-height: 1.1; color: var(--dark); }
 
-  /* ─── SERVICES ─── */
-  .services-section { background: var(--white); border-top: 1px solid rgba(5,22,80,0.1); border-bottom: 1px solid rgba(5,22,80,0.1); }
+  /* ── SERVICES ── */
+  .services-section { background: var(--white); border-top: 1px solid rgba(5,22,80,0.10); border-bottom: 1px solid rgba(5,22,80,0.10); }
   .login-notice {
-    background: rgba(204,255,0,0.1); border: 1px solid var(--lime); border-radius: 6px;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--lime-dim); border: 1px solid var(--lime); border-radius: 6px;
     padding: 12px 16px; font-size: 14px; color: var(--dark);
   }
+  .login-notice i { margin-top: 2px; flex-shrink: 0; }
   .login-notice a { color: var(--dark); font-weight: 700; }
   .services-grid-wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(5,22,80,0.12); }
   .service-card {
@@ -161,15 +185,24 @@
   .service-card:hover { background: rgba(204,255,0,0.06); }
   .service-lock {
     position: absolute; top: 14px; right: 14px;
+    display: inline-flex; align-items: center; gap: 5px;
     background: var(--lime); color: var(--dark);
     font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 4px;
   }
-  .service-icon { font-size: 26px; margin-bottom: 12px; }
-  .service-title { font-size: 17px; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
-  .service-desc  { font-size: 14px; line-height: 1.6; color: #555; }
-  .service-arrow { display: inline-block; margin-top: 16px; font-size: 13px; font-weight: 700; color: var(--dark); }
+  .service-icon-wrap {
+    width: 52px; height: 52px; border-radius: 10px;
+    background: var(--dark); color: var(--lime);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  .service-title  { font-size: 17px; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
+  .service-desc   { font-size: 14px; line-height: 1.6; color: #555; }
+  .service-arrow  {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 16px; font-size: 13px; font-weight: 700; color: var(--dark);
+  }
 
-  /* ─── OFFICIALS ─── */
+  /* ── OFFICIALS ── */
   .officials-section { background: var(--dark); }
   .officials-section .section-label { background: var(--lime); color: var(--dark); }
   .officials-section .section-title  { color: var(--white); }
@@ -179,13 +212,11 @@
     border-radius: 8px; padding: 24px 16px; text-align: center;
     height: 100%;
   }
-  .official-card.is-captain {
-    background: rgba(204,255,0,0.1); border-color: var(--lime);
-  }
+  .official-card.is-captain { background: rgba(204,255,0,0.10); border-color: var(--lime); }
   .official-avatar {
     width: 68px; height: 68px; border-radius: 50%;
     margin: 0 auto 14px;
-    background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.10); border: 2px solid rgba(255,255,255,0.20);
     display: flex; align-items: center; justify-content: center;
     font-size: 20px; font-weight: 700; color: var(--white);
   }
@@ -195,20 +226,24 @@
   .official-role { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
   .is-captain .official-role { color: rgba(204,255,0,0.65); }
 
-  /* ─── FOOTER ─── */
-  .site-footer { background: #030e38; border-top: 3px solid var(--lime); padding: 48px 0 0; }
+  /* ── FOOTER ── */
+  .site-footer { background: #030e38; border-top: 3px solid var(--lime); padding: 56px 0 0; }
   .footer-brand-name { font-size: 19px; font-weight: 700; color: var(--white); margin: 10px 0 10px; }
-  .footer-brand-desc { font-size: 13px; color: rgba(255,255,255,0.4); line-height: 1.7; }
-  .footer-col-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 14px; font-weight: 700; }
-  .footer-col-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-  .footer-col-list a { font-size: 14px; color: rgba(255,255,255,0.5); text-decoration: none; }
+  .footer-brand-desc { font-size: 13px; color: rgba(255,255,255,0.40); line-height: 1.7; }
+  .footer-col-title  { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); margin-bottom: 14px; font-weight: 700; }
+  .footer-col-list   { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col-list a {
+    font-size: 14px; color: rgba(255,255,255,0.50); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px; transition: color .2s;
+  }
   .footer-col-list a:hover { color: var(--lime); }
-  .footer-bottom { background: #020b2e; padding: 14px 0; margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.07); }
+  .footer-col-list a i { font-size: 12px; width: 14px; }
+  .footer-bottom { background: #020b2e; padding: 14px 0; margin-top: 48px; border-top: 1px solid rgba(255,255,255,0.07); }
   .footer-bottom p { font-size: 12px; color: rgba(255,255,255,0.28); margin: 0; }
 
-  /* ─── RESPONSIVE ─── */
+  /* ── RESPONSIVE ── */
   @media (max-width: 768px) {
-    .services-grid-wrap { grid-template-columns: 1fr; gap: 1px; }
+    .services-grid-wrap { grid-template-columns: 1fr; }
     .hero-section { padding-top: 90px; }
   }
   @media (max-width: 576px) {
@@ -218,23 +253,31 @@
 </head>
 <body>
 
-<!-- ═══════════════ AUTH GATE MODAL ═══════════════ -->
-<div class="modal-backdrop-custom" id="authModal">
-  <div class="modal-box">
-    <button class="modal-close-btn" onclick="closeModal()" aria-label="Close">✕</button>
-    <div class="fs-1 mb-3">🔐</div>
+<!-- ════════ AUTH GATE MODAL ════════ -->
+<div class="modal-gate" id="authModal">
+  <div class="modal-gate-box">
+    <button class="modal-gate-close" onclick="closeModal()" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="modal-gate-icon">
+      <i class="fa-solid fa-lock"></i>
+    </div>
     <h5 class="fw-bold mb-2" style="color:var(--dark)">Login Required</h5>
-    <p class="text-muted" style="font-size:14px">You need a resident account to access this service.</p>
+    <p class="text-muted mb-2" style="font-size:14px">You need a resident account to access this service.</p>
     <div class="modal-service-badge" id="modalServiceName">Barangay Clearance</div>
     <div class="d-flex flex-column gap-2">
-      <a href="login.php" class="btn-modal-primary">Login to My Account →</a>
-      <div class="modal-or my-1">or</div>
-      <a href="register.php" class="btn-modal-secondary">Create a New Account</a>
+      <a href="login.php" class="btn-modal-primary">
+        <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Login to My Account
+      </a>
+      <div class="text-muted my-1" style="font-size:13px">or</div>
+      <a href="register.php" class="btn-modal-secondary">
+        <i class="fa-solid fa-user-plus me-2"></i>Create a New Account
+      </a>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ NAV ═══════════════ -->
+<!-- ════════ NAV ════════ -->
 <nav class="site-nav">
   <div class="container-xl">
     <div class="d-flex align-items-center justify-content-between">
@@ -250,47 +293,66 @@
       </a>
 
       <ul class="nav d-none d-md-flex mb-0">
-        <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-        <li class="nav-item"><a class="nav-link" href="#officials">Officials</a></li>
+        <li class="nav-item"><a class="nav-link" href="#services"><i class="fa-solid fa-grip me-1"></i>Services</a></li>
+        <li class="nav-item"><a class="nav-link" href="#officials"><i class="fa-solid fa-users me-1"></i>Officials</a></li>
       </ul>
 
       <div class="d-flex align-items-center gap-2">
-        <a href="login.php" class="btn-nav-login">Login</a>
-        <a href="register.php" class="btn-nav-cta">Register</a>
+        <a href="login.php" class="btn-nav-login"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Login</a>
+        <a href="register.php" class="btn-nav-cta"><i class="fa-solid fa-user-plus me-1"></i>Register</a>
       </div>
 
     </div>
   </div>
 </nav>
 
-<!-- ═══════════════ HERO ═══════════════ -->
+<!-- ════════ HERO ════════ -->
 <section class="hero-section">
+  <video class="hero-video" autoplay loop muted playsinline>
+    <source src="herobg.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
   <div class="container-xl w-100">
     <div class="row align-items-center gy-5 py-5">
 
       <div class="col-lg-6">
-        <div class="hero-tag mb-3">🏳️ Birthplace of the Philippine Flag · Imus, Cavite</div>
+        <div class="hero-tag mb-3">
+          <i class="fa-solid fa-flag"></i>
+          Birthplace of the Philippine Flag &middot; Imus, Cavite
+        </div>
         <h1 class="mb-4">Barangay<br><span>Alapan I-A</span></h1>
         <p class="hero-sub mb-4">Serving the residents of Alapan I-A with integrity and dedication. Part of Imus City — the Flag Capital of the Philippines, where the Philippine flag was first unfurled in the Battle of Alapan on May 28, 1898.</p>
-        <a href="login.php" class="btn-hero">Access Services →</a>
+        <a href="login.php" class="btn-hero">
+          <i class="fa-solid fa-layer-group"></i>
+          Access Services
+        </a>
       </div>
 
       <div class="col-lg-6">
         <div class="d-flex flex-column gap-3">
           <div class="hero-stat-card">
-            <div class="hero-stat-label">Population (2020 Census)</div>
-            <div class="hero-stat-value">14,097</div>
-            <div class="hero-stat-sub">Registered residents</div>
+            <div class="hero-stat-icon"><i class="fa-solid fa-people-group"></i></div>
+            <div>
+              <div class="hero-stat-label">Population (2020 Census)</div>
+              <div class="hero-stat-value">14,097</div>
+              <div class="hero-stat-sub">Registered residents</div>
+            </div>
           </div>
           <div class="hero-stat-card">
-            <div class="hero-stat-label">Households (2015 Census)</div>
-            <div class="hero-stat-value">3,245</div>
-            <div class="hero-stat-sub">Avg. 4.20 members per household</div>
+            <div class="hero-stat-icon"><i class="fa-solid fa-house"></i></div>
+            <div>
+              <div class="hero-stat-label">Households (2015 Census)</div>
+              <div class="hero-stat-value">3,245</div>
+              <div class="hero-stat-sub">Avg. 4.20 members per household</div>
+            </div>
           </div>
           <div class="hero-stat-card">
-            <div class="hero-stat-label">Location</div>
-            <div class="hero-stat-value" style="font-size:20px;">Imus, Cavite</div>
-            <div class="hero-stat-sub">CALABARZON (Region IV-A) · ZIP 4103</div>
+            <div class="hero-stat-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <div>
+              <div class="hero-stat-label">Location</div>
+              <div class="hero-stat-value" style="font-size:20px">Imus, Cavite</div>
+              <div class="hero-stat-sub">CALABARZON (Region IV-A) &middot; ZIP 4103</div>
+            </div>
           </div>
         </div>
       </div>
@@ -299,165 +361,196 @@
   </div>
 </section>
 
-<!-- ═══════════════ TICKER ═══════════════ -->
+<!-- ════════ TICKER ════════ -->
 <div class="ticker-bar">
   <div class="ticker-inner">
-    <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
-    <span>Imus City — Flag Capital of the Philippines</span>
-    <span>Battle of Alapan — May 28, 1898</span>
-    <span>AICS Applications now open at the Hall</span>
-    <span>Road Clearing Operations every Friday</span>
-    <span>Senior Citizens ID renewal underway</span>
-    <span>Barangay Hall open Mon–Fri, 8AM–5PM</span>
-    <span>Imus City — Flag Capital of the Philippines</span>
-    <span>Battle of Alapan — May 28, 1898</span>
-    <span>AICS Applications now open at the Hall</span>
-    <span>Road Clearing Operations every Friday</span>
-    <span>Senior Citizens ID renewal underway</span>
+    <span><i class="fa-solid fa-circle-info"></i>Barangay Hall open Mon–Fri, 8AM–5PM</span>
+    <span><i class="fa-solid fa-flag"></i>Imus City — Flag Capital of the Philippines</span>
+    <span><i class="fa-solid fa-star"></i>Battle of Alapan — May 28, 1898</span>
+    <span><i class="fa-solid fa-hand-holding-heart"></i>AICS Applications now open at the Hall</span>
+    <span><i class="fa-solid fa-road"></i>Road Clearing Operations every Friday</span>
+    <span><i class="fa-solid fa-id-card"></i>Senior Citizens ID renewal underway</span>
+    <span><i class="fa-solid fa-circle-info"></i>Barangay Hall open Mon–Fri, 8AM–5PM</span>
+    <span><i class="fa-solid fa-flag"></i>Imus City — Flag Capital of the Philippines</span>
+    <span><i class="fa-solid fa-star"></i>Battle of Alapan — May 28, 1898</span>
+    <span><i class="fa-solid fa-hand-holding-heart"></i>AICS Applications now open at the Hall</span>
+    <span><i class="fa-solid fa-road"></i>Road Clearing Operations every Friday</span>
+    <span><i class="fa-solid fa-id-card"></i>Senior Citizens ID renewal underway</span>
   </div>
 </div>
 
-<!-- ═══════════════ SERVICES ═══════════════ -->
+<!-- ════════ SERVICES ════════ -->
 <section class="services-section py-5" id="services">
   <div class="container-xl">
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
       <div>
-        <div class="section-label">What we offer</div>
+        <div class="section-label"><i class="fa-solid fa-grid-2"></i>What we offer</div>
         <h2 class="section-title">Barangay Services</h2>
       </div>
-      <p class="text-muted mb-0" style="max-width:340px;font-size:15px;">All government services you need, accessible right here in your barangay.</p>
+      <p class="text-muted mb-0" style="max-width:340px;font-size:15px">All government services you need, accessible right here in your barangay.</p>
     </div>
 
     <div class="login-notice mb-4">
-      🔒 Accessing any service requires a resident account.
-      <a href="login.php">Login here</a> — or <a href="register.php">create a free account</a> to get started.
+      <i class="fa-solid fa-lock"></i>
+      <span>Accessing any service requires a resident account.
+        <a href="login.php">Login here</a> — or <a href="register.php">create a free account</a> to get started.</span>
     </div>
 
     <div class="services-grid-wrap">
       <div class="service-card" onclick="requireLogin('Barangay Clearance')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">📄</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-file-lines"></i></div>
         <div class="service-title">Barangay Clearance</div>
         <div class="service-desc">For employment, business permits, and other legal purposes. Processing takes 1–2 working days.</div>
-        <span class="service-arrow">Request now →</span>
+        <span class="service-arrow">Request now <i class="fa-solid fa-arrow-right"></i></span>
       </div>
       <div class="service-card" onclick="requireLogin('Residency Certificate')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">🆔</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-address-card"></i></div>
         <div class="service-title">Residency Certificate</div>
         <div class="service-desc">Required for school enrollment, utility applications, and government transactions.</div>
-        <span class="service-arrow">Request now →</span>
+        <span class="service-arrow">Request now <i class="fa-solid fa-arrow-right"></i></span>
       </div>
       <div class="service-card" onclick="requireLogin('Business Permit Clearance')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">🏢</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-building"></i></div>
         <div class="service-title">Business Permit</div>
         <div class="service-desc">Barangay clearance for all business establishments operating within the barangay jurisdiction.</div>
-        <span class="service-arrow">Request now →</span>
+        <span class="service-arrow">Request now <i class="fa-solid fa-arrow-right"></i></span>
       </div>
       <div class="service-card" onclick="requireLogin('Lupon Tagapamayapa')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">⚖️</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-scale-balanced"></i></div>
         <div class="service-title">Lupon Tagapamayapa</div>
         <div class="service-desc">Barangay justice system for settling disputes amicably. Mediation and conciliation services available.</div>
-        <span class="service-arrow">Learn more →</span>
+        <span class="service-arrow">Learn more <i class="fa-solid fa-arrow-right"></i></span>
       </div>
       <div class="service-card" onclick="requireLogin('Health Services')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">🩺</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-heart-pulse"></i></div>
         <div class="service-title">Health Services</div>
         <div class="service-desc">Free consultations, vaccinations, and medicines through the Barangay Health Center. Open weekdays 8AM–4PM.</div>
-        <span class="service-arrow">Learn more →</span>
+        <span class="service-arrow">Learn more <i class="fa-solid fa-arrow-right"></i></span>
       </div>
       <div class="service-card" onclick="requireLogin('Senior Citizens Program')">
-        <div class="service-lock">🔒 Login required</div>
-        <div class="service-icon">👴</div>
+        <div class="service-lock"><i class="fa-solid fa-lock"></i> Login required</div>
+        <div class="service-icon-wrap"><i class="fa-solid fa-person-cane"></i></div>
         <div class="service-title">Senior Citizens</div>
         <div class="service-desc">ID registration, monthly stipends, and free medicines under AICS for senior citizens.</div>
-        <span class="service-arrow">Learn more →</span>
+        <span class="service-arrow">Learn more <i class="fa-solid fa-arrow-right"></i></span>
       </div>
     </div>
 
   </div>
 </section>
 
-<!-- ═══════════════ OFFICIALS ═══════════════ -->
+<!-- ════════ OFFICIALS ════════ -->
 <section class="officials-section py-5" id="officials">
   <div class="container-xl">
 
-    <div class="section-label">Your leaders</div>
+    <div class="section-label"><i class="fa-solid fa-star"></i>Your leaders</div>
     <h2 class="section-title mb-5">Barangay Officials</h2>
 
     <div class="row g-3">
+
+      <!-- Punong Barangay -->
       <div class="col-6 col-md-3">
         <div class="official-card is-captain">
-          <div class="official-avatar">JP</div>
+          <div class="official-avatar">JA</div>
           <div class="official-name">Hon. Jeffrey Primero Aman</div>
-          <div class="official-role">Punong Barangay</div>
+          <div class="official-role"><i class="fa-solid fa-star me-1"></i>Punong Barangay</div>
+        </div>
+      </div>
+
+      <!-- Kagawads -->
+      <div class="col-6 col-md-3">
+        <div class="official-card">
+          <div class="official-avatar">BG</div>
+          <div class="official-name">Hon. Billy Joel Gonzales Aman</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Kagawad</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">EG</div>
+          <div class="official-name">Hon. Edward Garcia Germino</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Kagawad</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">EA</div>
+          <div class="official-name">Hon. Edilberto Cervantes Aranzaso</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Kagawad</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">RB</div>
+          <div class="official-name">Hon. Romel Buclatin Asiman</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Kagawad</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">CP</div>
+          <div class="official-name">Hon. Christian Paul Oliva Camalig</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Kagawad</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">RS</div>
+          <div class="official-name">Hon. Rolando Singua Montuerto</div>
+          <div class="official-role">Kagawad</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Barangay Secretary</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar">RC</div>
+          <div class="official-name">Hon. Ronald Culambo Bautista</div>
+          <div class="official-role">Kagawad</div>
+        </div>
+      </div>
+
+      <!-- Secretary & Treasurer -->
+      <div class="col-6 col-md-3">
+        <div class="official-card">
+          <div class="official-avatar"><i class="fa-solid fa-user-tie"></i></div>
+          <div class="official-name">Arlene Avila Villedo</div>
+          <div class="official-role">Barangay Secretary</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="official-card">
-          <div class="official-avatar">—</div>
-          <div class="official-name">Barangay Treasurer</div>
-          <div class="official-role">To be updated</div>
+          <div class="official-avatar"><i class="fa-solid fa-user-tie"></i></div>
+          <div class="official-name">Raymond Ordo&ntilde;ez Aquino</div>
+          <div class="official-role">Barangay Treasurer</div>
         </div>
       </div>
+
+      <!-- SK -->
+      <div class="col-6 col-md-3">
+        <div class="official-card">
+          <div class="official-avatar">FM</div>
+          <div class="official-name">Francheska Gayle Marciano Orellano</div>
+          <div class="official-role">SK Chairwoman</div>
+        </div>
+      </div>
+
     </div>
 
   </div>
 </section>
 
-<!-- ═══════════════ FOOTER ═══════════════ -->
+<!-- ════════ FOOTER ════════ -->
 <footer class="site-footer">
   <div class="container-xl">
     <div class="row g-4">
 
       <div class="col-12 col-md-5">
-        <div class="nav-seal d-inline-flex mb-2">
+        <div class="nav-seal mb-3">
           <img src="alapan.png" alt="Barangay Alapan I-A Logo">
         </div>
         <div class="footer-brand-name">Barangay Alapan I-A</div>
@@ -467,21 +560,21 @@
       <div class="col-6 col-md-3 offset-md-1">
         <div class="footer-col-title">Services</div>
         <ul class="footer-col-list">
-          <li><a href="login.php">Barangay Clearance</a></li>
-          <li><a href="login.php">Certificate of Residency</a></li>
-          <li><a href="login.php">Business Clearance</a></li>
-          <li><a href="login.php">Indigency Certificate</a></li>
-          <li><a href="login.php">Health Services</a></li>
+          <li><a href="login.php"><i class="fa-solid fa-file-lines"></i>Barangay Clearance</a></li>
+          <li><a href="login.php"><i class="fa-solid fa-address-card"></i>Certificate of Residency</a></li>
+          <li><a href="login.php"><i class="fa-solid fa-building"></i>Business Clearance</a></li>
+          <li><a href="login.php"><i class="fa-solid fa-hand-holding-heart"></i>Indigency Certificate</a></li>
+          <li><a href="login.php"><i class="fa-solid fa-heart-pulse"></i>Health Services</a></li>
         </ul>
       </div>
 
       <div class="col-6 col-md-3">
         <div class="footer-col-title">Quick Links</div>
         <ul class="footer-col-list">
-          <li><a href="#officials">Officials</a></li>
-          <li><a href="#">Transparency Seal</a></li>
-          <li><a href="#">FOI Requests</a></li>
-          <li><a href="https://imus.gov.ph" target="_blank">City of Imus Official Site</a></li>
+          <li><a href="#officials"><i class="fa-solid fa-users"></i>Officials</a></li>
+          <li><a href="#"><i class="fa-solid fa-shield-halved"></i>Transparency Seal</a></li>
+          <li><a href="#"><i class="fa-solid fa-folder-open"></i>FOI Requests</a></li>
+          <li><a href="https://imus.gov.ph" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i>City of Imus Official Site</a></li>
         </ul>
       </div>
 
@@ -490,13 +583,12 @@
 
   <div class="footer-bottom mt-5">
     <div class="container-xl d-flex flex-column flex-md-row justify-content-between gap-1">
-      <p>© 2026 Barangay Alapan I-A, Imus City, Cavite. All rights reserved.</p>
+      <p><i class="fa-regular fa-copyright me-1"></i>2026 Barangay Alapan I-A, Imus City, Cavite. All rights reserved.</p>
       <p>Part of the City of Imus — ZIP Code 4103</p>
     </div>
   </div>
 </footer>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   function requireLogin(serviceName) {
