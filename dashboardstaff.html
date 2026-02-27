@@ -46,13 +46,6 @@
           </div>
 
           <div class="topbar-right">
-            <!-- Date / Time -->
-            <div class="datetime-block">
-              <p id="liveDate"></p>
-              <p id="liveTime"></p>
-            </div>
-
-            <!-- Seal -->
             <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
           </div>
         </div>
@@ -155,22 +148,5 @@
         </div>
       </main>
     </div>
-
-    <!-- LIVE CLOCK -->
-    <script>
-      function updateDateTime() {
-        const now = new Date();
-        document.getElementById("liveDate").innerText = now.toLocaleDateString(
-          "en-PH",
-          { weekday: "long", year: "numeric", month: "long", day: "numeric" },
-        );
-        document.getElementById("liveTime").innerText = now.toLocaleTimeString(
-          "en-PH",
-          { hour: "2-digit", minute: "2-digit", second: "2-digit" },
-        );
-      }
-      setInterval(updateDateTime, 1000);
-      updateDateTime();
-    </script>
   </body>
 </html>

@@ -86,13 +86,6 @@ body {
   );
   padding: 3px;
   margin-bottom: 14px;
-  animation: spin 12s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .avatar-ring img {
@@ -102,13 +95,6 @@ body {
   background: white;
   object-fit: contain;
   padding: 6px;
-  animation: spin-reverse 12s linear infinite;
-}
-
-@keyframes spin-reverse {
-  to {
-    transform: rotate(-360deg);
-  }
 }
 
 .profile h3 {
@@ -236,11 +222,6 @@ body {
   color: var(--text);
   margin-bottom: 5px;
   line-height: 1.2;
-}
-
-.accent-name {
-  color: var(--navy);
-  position: relative;
 }
 
 .accent-name::after {
