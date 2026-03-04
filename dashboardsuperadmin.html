@@ -7,154 +7,125 @@
     <link rel="stylesheet" href="dashboard.css" />
   </head>
 
-  <body>
-    <div class="container">
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <div class="profile">
-          <div class="avatar-ring">
-            <img src="superadmin.jpg" alt="Super Admin Photo" />
-          </div>
-          <h3>System Administrator</h3>
-          <p>Tech Department</p>
-          <span class="portal-badge admin">ADMIN PORTAL</span>
-        </div>
+  <body class="admin-body">
+    <!-- TOP NAVIGATION -->
+    <header class="admin-header">
+      <div class="admin-logo">Barangay System Admin</div>
 
-        <nav class="menu">
-          <a href="#" class="active">Dashboard Overview</a>
-          <a href="#">Staff Management</a>
-          <a href="#">Barangay Profile</a>
-          <a href="#">Database & Backups</a>
-          <a href="#">System Configuration</a>
-          <a href="#">Master Data</a>
-          <a href="#">Security Controls</a>
-          <a href="#">Reports & Audit Logs</a>
-        </nav>
+      <nav class="admin-nav">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Staff</a>
+        <a href="#">Barangay</a>
+        <a href="#">Database</a>
+        <a href="#">Security</a>
+        <a href="#">Audit Logs</a>
+      </nav>
 
-        <a href="#" class="logout">Logout</a>
-      </aside>
+      <div class="admin-profile">Super Admin</div>
+    </header>
 
-      <!-- MAIN CONTENT -->
-      <main class="content">
-        <!-- TOPBAR -->
-        <div class="topbar">
-          <div class="greeting-block">
-            <h1>Welcome, <span class="accent-name">Super Admin</span></h1>
-            <p class="subtitle">
-              Full control over all barangay system modules.
-            </p>
+    <!-- MAIN ADMIN CONTENT -->
+    <main class="admin-content">
+      <!-- SYSTEM OVERVIEW -->
+      <section class="admin-section">
+        <h2>System Overview</h2>
+
+        <div class="admin-stats">
+          <div class="stat-box">
+            <span>Total Staff</span>
+            <strong>34</strong>
           </div>
 
-          <div class="topbar-right">
-            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
-          </div>
-        </div>
-
-        <!-- ANALYTICS CARDS -->
-        <div class="card-grid">
-          <div class="card card--yellow">
-            <p class="card-label">Total Staff Accounts</p>
-            <p class="number">34</p>
+          <div class="stat-box">
+            <span>Total Residents</span>
+            <strong>5421</strong>
           </div>
 
-          <div class="card card--blue">
-            <p class="card-label">Pending System Approvals</p>
-            <p class="number">7</p>
+          <div class="stat-box">
+            <span>Pending Approvals</span>
+            <strong>7</strong>
           </div>
 
-          <div class="card card--red">
-            <p class="card-label">Security Alerts</p>
-            <p class="number">2</p>
-          </div>
-
-          <div class="card card--green">
-            <p class="card-label">Total Residents Registered</p>
-            <p class="number">5421</p>
+          <div class="stat-box">
+            <span>Security Alerts</span>
+            <strong>2</strong>
           </div>
         </div>
+      </section>
 
-        <!-- QUICK TOOLS -->
-        <h2 class="section-title">Administrative Tools</h2>
-        <div class="quick-actions">
-          <button class="btn btn--primary">Create Staff Account</button>
-          <button class="btn btn--outline">Backup Database</button>
-          <button class="btn btn--outline">Manage Barangay Profile</button>
-          <button class="btn btn--outline">View Audit Logs</button>
-        </div>
+      <!-- ADMIN CONTROL PANELS -->
+      <section class="admin-section">
+        <h2>System Controls</h2>
 
-        <!-- MAIN PANELS -->
-        <div class="main-panels">
-          <!-- LEFT PANEL -->
-          <div class="panel announcements">
-            <div class="panel-header">
-              <h2>System Overview</h2>
-            </div>
-
-            <ul>
-              <li>
-                <div class="announcement-dot dot--yellow"></div>
-                <div>
-                  <strong>Staff Accounts</strong>
-                  <p>Create, disable, promote, and assign roles.</p>
-                </div>
-              </li>
-
-              <li>
-                <div class="announcement-dot dot--blue"></div>
-                <div>
-                  <strong>Barangay Profile</strong>
-                  <p>Update logos, name, address, signatures, templates.</p>
-                </div>
-              </li>
-
-              <li>
-                <div class="announcement-dot dot--green"></div>
-                <div>
-                  <strong>System Configuration</strong>
-                  <p>Enable features, modify fees, maintenance mode.</p>
-                </div>
-              </li>
-
-              <li>
-                <div class="announcement-dot dot--red"></div>
-                <div>
-                  <strong>Data & Security</strong>
-                  <p>Backups, restores, password rules, suspicious accounts.</p>
-                </div>
-              </li>
-            </ul>
+        <div class="admin-grid">
+          <div class="admin-panel">
+            <h3>Staff Management</h3>
+            <button>Create Staff Account</button>
+            <button>Assign Roles</button>
+            <button>Disable Account</button>
           </div>
 
-          <!-- RIGHT PANEL -->
-          <div class="panel contacts">
-            <div class="panel-header">
-              <h2>Critical Admin Functions</h2>
-            </div>
+          <div class="admin-panel">
+            <h3>Barangay Profile</h3>
+            <button>Edit Barangay Info</button>
+            <button>Update Logo</button>
+            <button>Edit Templates</button>
+          </div>
 
-            <ul>
-              <li>
-                <span class="contact-label">Force Password Reset</span>
-                <strong>Enabled</strong>
-              </li>
+          <div class="admin-panel">
+            <h3>Database Control</h3>
+            <button>Backup Database</button>
+            <button>Restore Database</button>
+            <button>Database Logs</button>
+          </div>
 
-              <li>
-                <span class="contact-label">Login Attempt Limit</span>
-                <strong>5 attempts</strong>
-              </li>
-
-              <li>
-                <span class="contact-label">Backup Status</span>
-                <strong>Last: Feb 28</strong>
-              </li>
-
-              <li>
-                <span class="contact-label">Suspicious Accounts</span>
-                <strong>2 flagged</strong>
-              </li>
-            </ul>
+          <div class="admin-panel">
+            <h3>Security Controls</h3>
+            <button>Force Password Reset</button>
+            <button>Lock Accounts</button>
+            <button>Login Attempt Limits</button>
           </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <!-- SYSTEM LOGS -->
+      <section class="admin-section">
+        <h2>Audit Logs</h2>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Action</th>
+              <th>Module</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>Secretary</td>
+              <td>Approved Clearance</td>
+              <td>Documents</td>
+              <td>Feb 28</td>
+            </tr>
+
+            <tr>
+              <td>Treasurer</td>
+              <td>Verified Payment</td>
+              <td>Finance</td>
+              <td>Feb 28</td>
+            </tr>
+
+            <tr>
+              <td>Captain</td>
+              <td>Posted Announcement</td>
+              <td>Announcements</td>
+              <td>Feb 27</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
   </body>
 </html>
