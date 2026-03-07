@@ -1,3 +1,50 @@
+<?php
+session_start();
+
+$serverName = "LAPTOP-8KOIBQER\SQLEXPRESS";
+$connectionOptions = [
+    "Database" => "SocialMedia",
+    "Uid"      => "",
+    "PWD"      => ""
+];
+
+$conn = sqlsrv_connect($serverName, $connectionOptions);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $user = $_POST['username'];
+    $pass = $_POST['password'];
+
+    $sql    = "SELECT * FROM USERS WHERE (USERNAME = ? OR EMAIL = ?) AND STATUS = 'ACTIVE'";
+    $params = [$user, $user];
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+    $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+
+    if ($row && $pass === $row['PASSWORD']) {
+        $_SESSION['user_id']  = $row['USER_ID'];
+        $_SESSION['username'] = $row['USERNAME'];
+        $_SESSION['role']     = strtolower(trim($row['ROLE']));
+
+        if ($_SESSION['role'] === 'superadmin') {
+            header("Location: dashboardsuperadmin.html");
+        } elseif ($_SESSION['role'] === 'staff') {
+            header("Location: dashboardstaff.html");
+        } else {
+            header("Location: dashboard.html");
+        }
+        exit();
+    } else {
+        header("Location: login.php?error=1");
+        exit();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +67,7 @@
   /* ── NAV ── */
   .site-nav { background: var(--dark); border-bottom: 3px solid var(--lime); padding: 10px 0; }
   .nav-seal { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
-  .nav-seal img { width: 50px; height: 50px; object-fit: contain; border-radius: 50%; }
+  .nav-seal img { width: 100%; height: 100%; object-fit: cover; }
   .nav-brgy { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); display: block; line-height: 1.2; }
   .nav-name  { font-size: 17px; font-weight: 700; color: var(--white); line-height: 1.2; }
   .nav-back  { font-size: 13px; color: rgba(255,255,255,0.60); text-decoration: none; transition: color .2s; }
@@ -46,11 +93,11 @@
 
   /* ── ALERT ── */
   .alert-err {
-    display: none; align-items: flex-start; gap: 10px;
+    display: flex; align-items: flex-start; gap: 10px;
     background: #fff0f0; border: 1px solid #f5c0c0; border-left: 4px solid var(--red);
     border-radius: 6px; padding: 11px 14px; font-size: 14px; color: var(--red);
+    margin-bottom: 18px;
   }
-  .alert-err.show { display: flex; }
 
   /* ── FORM ── */
   .field-label {
@@ -64,9 +111,6 @@
     outline: none; transition: border-color .2s, box-shadow .2s;
   }
   .field-input:focus { border-color: var(--dark); box-shadow: 0 0 0 3px rgba(5,22,80,.10); }
-  .field-input.is-err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(224,48,48,.10); }
-  .field-error { font-size: 12px; color: var(--red); display: none; margin-top: 4px; align-items: center; gap: 5px; }
-  .field-error.show { display: flex; }
 
   .pw-wrap { position: relative; }
   .pw-toggle {
@@ -88,7 +132,6 @@
     display: flex; align-items: center; justify-content: center; gap: 9px;
   }
   .btn-login:hover { background: var(--dark-hover); }
-  .btn-login:disabled { opacity: .6; pointer-events: none; }
 
   .divider-line { display: flex; align-items: center; gap: 12px; color: #ccc; font-size: 12px; }
   .divider-line::before, .divider-line::after { content: ''; flex: 1; height: 1px; background: #e5e5e5; }
@@ -99,9 +142,7 @@
 
   .auth-note { font-size: 12px; color: #bbb; text-align: center; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
-  @media (max-width: 480px) {
-    .auth-card { padding: 28px 20px; }
-  }
+  @media (max-width: 480px) { .auth-card { padding: 28px 20px; } }
 </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -137,22 +178,22 @@
       <h1 class="auth-title">Welcome back.</h1>
       <p class="auth-sub mb-4">Login with your username or email to access barangay services and submit requests online.</p>
 
-      <div class="alert-err mb-3" id="alertBox">
+      <?php if (isset($_GET['error'])): ?>
+      <div class="alert-err">
         <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
-        <span id="alertMsg">Invalid credentials. Please try again.</span>
+        <span>Invalid username/email or password. Please try again.</span>
       </div>
+      <?php endif; ?>
 
-      <form id="loginForm" novalidate>
+      <form method="POST" action="login.php">
 
         <div class="mb-3">
-          <label class="field-label" for="identifier">
+          <label class="field-label" for="username">
             <i class="fa-solid fa-user"></i>Username or Email Address
           </label>
-          <input type="text" class="field-input" id="identifier"
-            placeholder="e.g. juandelacruz or juan@email.com" autocomplete="username">
-          <div class="field-error" id="identifierErr">
-            <i class="fa-solid fa-circle-exclamation"></i>Please enter your username or email address.
-          </div>
+          <input type="text" class="field-input" id="username" name="username"
+            placeholder="e.g. juandelacruz or juan@email.com"
+            autocomplete="username" required>
         </div>
 
         <div class="mb-3">
@@ -160,20 +201,17 @@
             <i class="fa-solid fa-lock"></i>Password
           </label>
           <div class="pw-wrap">
-            <input type="password" class="field-input" id="password"
-              placeholder="Enter your password" autocomplete="current-password">
-            <button type="button" class="pw-toggle" onclick="togglePw('password')" title="Show/hide">
+            <input type="password" class="field-input" id="password" name="password"
+              placeholder="Enter your password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide">
               <i class="fa-solid fa-eye" id="pwEyeIcon"></i>
             </button>
-          </div>
-          <div class="field-error" id="pwErr">
-            <i class="fa-solid fa-circle-exclamation"></i>Password is required.
           </div>
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-4">
           <label class="check-label">
-            <input type="checkbox" id="remember">
+            <input type="checkbox" name="stayin" id="stayin">
             <i class="fa-solid fa-rotate-right" style="color:var(--dark);font-size:12px"></i>
             Keep me logged in
           </label>
@@ -182,7 +220,7 @@
           </a>
         </div>
 
-        <button type="submit" class="btn-login" id="submitBtn">
+        <button type="submit" class="btn-login">
           <i class="fa-solid fa-arrow-right-to-bracket"></i>
           Login to My Account
         </button>
@@ -204,8 +242,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  function togglePw(id) {
-    const el   = document.getElementById(id);
+  function togglePw() {
+    const el   = document.getElementById('password');
     const icon = document.getElementById('pwEyeIcon');
     if (el.type === 'password') {
       el.type = 'text';
@@ -214,41 +252,7 @@
       el.type = 'password';
       icon.className = 'fa-solid fa-eye';
     }
-  }
-
-  document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const identifier    = document.getElementById('identifier');
-    const password      = document.getElementById('password');
-    const identifierErr = document.getElementById('identifierErr');
-    const pwErr         = document.getElementById('pwErr');
-    const alertBox      = document.getElementById('alertBox');
-    let valid = true;
-
-    identifier.classList.remove('is-err'); identifierErr.classList.remove('show');
-    password.classList.remove('is-err');   pwErr.classList.remove('show');
-    alertBox.classList.remove('show');
-
-    if (!identifier.value.trim()) {
-      identifier.classList.add('is-err'); identifierErr.classList.add('show'); valid = false;
     }
-    if (!password.value) {
-      password.classList.add('is-err'); pwErr.classList.add('show'); valid = false;
-    }
-    if (!valid) return;
-
-    const btn = document.getElementById('submitBtn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in&hellip;';
-    btn.disabled = true;
-
-    setTimeout(() => {
-      btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login to My Account';
-      btn.disabled = false;
-      alertBox.classList.add('show');
-      document.getElementById('alertMsg').textContent =
-        'Invalid username/email or password. Please check your credentials or register if you don\'t have an account yet.';
-    }, 1400);
-  });
 </script>
 </body>
 </html>
