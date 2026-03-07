@@ -8,185 +8,146 @@
   </head>
 
   <body>
-    <div class="container">
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <div class="profile">
-          <div class="avatar-ring">
-            <img src="corbin.jpg" />
-          </div>
+    <!-- TOP HEADER -->
+    <header class="staff-header">
+      <div class="header-left">
+        <h2>Barangay Staff Workspace</h2>
+        <p>Manage residents, requests, and community concerns</p>
+      </div>
 
-          <h3>Aaron Valencia</h3>
-          <p>Barangay Captain</p>
-          <span class="portal-badge staff">STAFF PORTAL</span>
+      <div class="header-right">
+        <div class="datetime">
+          <p id="liveDate"></p>
+          <p id="liveTime"></p>
         </div>
 
-        <nav class="menu">
-          <a href="#" class="active">Dashboard</a>
-          <a href="#">Manage Requests</a>
-          <a href="#">Concerns</a>
-          <a href="#">Residents</a>
-          <a href="#">Households</a>
-          <a href="#">Announcements</a>
-          <a href="#">Reports</a>
-          <a href="#">Settings</a>
-        </nav>
+        <img src="alapan.png" class="seal-logo" />
 
-        <a href="#" class="logout">Logout</a>
+        <button class="logout-btn">Logout</button>
+      </div>
+    </header>
+
+    <div class="staff-container">
+      <!-- LEFT TOOL PANEL -->
+      <aside class="staff-tools">
+        <h3>Staff Tools</h3>
+
+        <button>Manage Requests</button>
+        <button>Resident Records</button>
+        <button>Households</button>
+        <button>Concerns</button>
+        <button>Announcements</button>
+        <button>Reports</button>
       </aside>
 
-      <!-- MAIN CONTENT -->
-      <main class="content">
-        <!-- TOPBAR -->
-        <div class="topbar">
-          <div class="greeting-block">
-            <h1>Staff Workspace</h1>
-            <p class="subtitle">
-              Manage requests, residents, and barangay concerns.
-            </p>
+      <!-- MAIN WORKSPACE -->
+      <main class="staff-workspace">
+        <!-- SUMMARY -->
+        <div class="workspace-summary">
+          <div class="summary-card">
+            <p>Pending Requests</p>
+            <h3>12</h3>
           </div>
 
-          <div class="topbar-right">
-            <div class="datetime-block">
-              <p id="liveDate"></p>
-              <p id="liveTime"></p>
-            </div>
-
-            <img src="alapan.png" class="seal-logo" />
-          </div>
-        </div>
-
-        <!-- SUMMARY BAR -->
-        <div class="staff-summary">
-          <div class="summary-item">
-            <span>Pending Requests</span>
-            <strong>12</strong>
+          <div class="summary-card">
+            <p>Open Concerns</p>
+            <h3>3</h3>
           </div>
 
-          <div class="summary-item">
-            <span>Open Concerns</span>
-            <strong>3</strong>
+          <div class="summary-card">
+            <p>Documents Released</p>
+            <h3>8</h3>
           </div>
 
-          <div class="summary-item">
-            <span>Documents Released Today</span>
-            <strong>8</strong>
-          </div>
-
-          <div class="summary-item">
-            <span>Total Residents</span>
-            <strong>5421</strong>
+          <div class="summary-card">
+            <p>Total Residents</p>
+            <h3>5421</h3>
           </div>
         </div>
 
-        <!-- SEARCH -->
-        <div class="search-bar">
-          <input
-            type="text"
-            placeholder="Search resident name, ID, or household"
-          />
-          <button>Search</button>
-        </div>
+        <!-- REQUEST TABLE -->
 
-        <!-- STAFF GRID -->
-        <div class="staff-layout">
-          <!-- LEFT WORKSPACE -->
-          <div class="staff-main">
-            <section class="panel">
-              <h2>Request Queue</h2>
+        <section class="panel">
+          <h2>Request Queue</h2>
 
-              <table class="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Resident</th>
-                    <th>Document</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Resident</th>
+                <th>Document</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-                <tbody>
-                  <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>Barangay Clearance</td>
-                    <td>Feb 25</td>
-                    <td>Pending</td>
-                    <td><button class="btn-small">Process</button></td>
-                  </tr>
+            <tbody>
+              <tr>
+                <td>Juan Dela Cruz</td>
+                <td>Barangay Clearance</td>
+                <td>Feb 25</td>
+                <td>Pending</td>
+                <td><button class="btn-small">Process</button></td>
+              </tr>
 
-                  <tr>
-                    <td>Maria Santos</td>
-                    <td>Certificate of Residency</td>
-                    <td>Feb 24</td>
-                    <td>Pending</td>
-                    <td><button class="btn-small">Process</button></td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
+              <tr>
+                <td>Maria Santos</td>
+                <td>Certificate of Residency</td>
+                <td>Feb 24</td>
+                <td>Pending</td>
+                <td><button class="btn-small">Process</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-            <section class="panel">
-              <h2>Concern Reports</h2>
+        <section class="panel">
+          <h2>Concern Reports</h2>
 
-              <table class="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Resident</th>
-                    <th>Concern</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Resident</th>
+                <th>Concern</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-                <tbody>
-                  <tr>
-                    <td>Pedro Ramos</td>
-                    <td>Street Light Issue</td>
-                    <td>Purok 3</td>
-                    <td>Open</td>
-                    <td><button class="btn-small">View</button></td>
-                  </tr>
+            <tbody>
+              <tr>
+                <td>Pedro Ramos</td>
+                <td>Street Light Issue</td>
+                <td>Purok 3</td>
+                <td>Open</td>
+                <td><button class="btn-small">View</button></td>
+              </tr>
 
-                  <tr>
-                    <td>Ana Lopez</td>
-                    <td>Garbage Complaint</td>
-                    <td>Purok 5</td>
-                    <td>Investigating</td>
-                    <td><button class="btn-small">View</button></td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-          </div>
-
-          <!-- RIGHT SIDE -->
-          <aside class="staff-sidebar">
-            <section class="panel">
-              <h3>Staff Tools</h3>
-
-              <div class="tool-buttons">
-                <button>Create Announcement</button>
-                <button>Register Resident</button>
-                <button>Generate Report</button>
-                <button>View Logs</button>
-              </div>
-            </section>
-
-            <section class="panel">
-              <h3>Recent Staff Activity</h3>
-
-              <ul class="activity-feed">
-                <li>Maria Santos request approved</li>
-                <li>Concern assigned to Tanod Team</li>
-                <li>New announcement published</li>
-                <li>Resident profile updated</li>
-              </ul>
-            </section>
-          </aside>
-        </div>
+              <tr>
+                <td>Ana Lopez</td>
+                <td>Garbage Complaint</td>
+                <td>Purok 5</td>
+                <td>Investigating</td>
+                <td><button class="btn-small">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       </main>
+
+      <!-- RIGHT ACTIVITY PANEL -->
+
+      <aside class="staff-activity">
+        <h3>Recent Activity</h3>
+
+        <ul>
+          <li>Maria Santos request approved</li>
+          <li>Concern assigned to Tanod Team</li>
+          <li>New announcement published</li>
+          <li>Resident profile updated</li>
+        </ul>
+      </aside>
     </div>
   </body>
 </html>
