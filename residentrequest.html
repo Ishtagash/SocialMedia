@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Requests</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="resident.css" />
+    <link rel="stylesheet" href="base.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar-ring">
+            <img src="corbin.jpg" alt="Resident Photo" />
+          </div>
+          <h3>Corbin Gutierrez</h3>
+          <p>City of Imus, Alapan 1-A</p>
+          <span class="portal-badge">RESIDENT PORTAL</span>
+        </div>
+
+        <nav class="menu">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="residentrequestdocument.html">Request Documents</a>
+          <a href="residentconcern.html">Concerns</a>
+          <a href="#">Announcements</a>
+          <a href="#">Community</a>
+          <a href="residentrequest.html" class="active">My Requests</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <a href="home.html" class="logout">Logout</a>
+      </aside>
+
+      <main class="content">
+        <div class="topbar">
+          <div class="greeting-block">
+            <h1>My <span class="accent-name">Requests</span></h1>
+            <p class="subtitle">
+              Track your submitted document requests and their current status.
+            </p>
+          </div>
+
+          <div class="topbar-right">
+            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
+          </div>
+        </div>
+
+        <div class="requests-summary">
+          <div class="request-stat">
+            <p class="request-stat-label">Total Requests</p>
+            <h3>6</h3>
+          </div>
+          <div class="request-stat">
+            <p class="request-stat-label">Pending</p>
+            <h3>2</h3>
+          </div>
+          <div class="request-stat">
+            <p class="request-stat-label">Approved</p>
+            <h3>3</h3>
+          </div>
+          <div class="request-stat">
+            <p class="request-stat-label">Rejected</p>
+            <h3>1</h3>
+          </div>
+        </div>
+
+        <div class="request-toolbar">
+          <input type="text" placeholder="Search request type..." />
+          <select>
+            <option>All Status</option>
+            <option>Pending</option>
+            <option>Approved</option>
+            <option>Rejected</option>
+            <option>Released</option>
+          </select>
+        </div>
+
+        <div class="panel request-table-panel">
+          <div class="panel-header">
+            <h2>Request History</h2>
+            <span class="badge">Updated Today</span>
+          </div>
+
+          <table class="request-table">
+            <thead>
+              <tr>
+                <th>Reference No.</th>
+                <th>Request Type</th>
+                <th>Date Submitted</th>
+                <th>Status</th>
+                <th>Pickup / Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>REQ-2026-001</td>
+                <td>Barangay Clearance</td>
+                <td>Feb 24, 2026</td>
+                <td><span class="status-badge pending">Pending</span></td>
+                <td>Waiting for verification</td>
+              </tr>
+              <tr>
+                <td>REQ-2026-002</td>
+                <td>Certificate of Residency</td>
+                <td>Feb 20, 2026</td>
+                <td><span class="status-badge approved">Approved</span></td>
+                <td>Ready for pickup</td>
+              </tr>
+              <tr>
+                <td>REQ-2026-003</td>
+                <td>Certificate of Indigency</td>
+                <td>Feb 18, 2026</td>
+                <td><span class="status-badge released">Released</span></td>
+                <td>Claimed by resident</td>
+              </tr>
+              <tr>
+                <td>REQ-2026-004</td>
+                <td>Business Clearance</td>
+                <td>Feb 15, 2026</td>
+                <td><span class="status-badge rejected">Rejected</span></td>
+                <td>Incomplete requirements</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="main-panels request-panels">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Latest Request Update</h2>
+            </div>
+            <ul class="request-updates">
+              <li>
+                <strong>Barangay Clearance</strong>
+                <p>Your request is now under review.</p>
+              </li>
+              <li>
+                <strong>Certificate of Residency</strong>
+                <p>Your document is ready for pickup at the barangay hall.</p>
+              </li>
+              <li>
+                <strong>Business Clearance</strong>
+                <p>Please resubmit with complete requirements.</p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Request Guide</h2>
+            </div>
+            <ul class="request-guide">
+              <li>
+                <span class="contact-label">Pending</span
+                ><strong>Under review</strong>
+              </li>
+              <li>
+                <span class="contact-label">Approved</span
+                ><strong>Accepted by staff</strong>
+              </li>
+              <li>
+                <span class="contact-label">Released</span
+                ><strong>Already claimed</strong>
+              </li>
+              <li>
+                <span class="contact-label">Rejected</span
+                ><strong>Needs correction</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

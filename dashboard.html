@@ -4,22 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resident Dashboard</title>
-
-    <!-- GOOGLE FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- CSS FILE -->
-    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="resident.css" />
   </head>
 
   <body>
     <div class="container">
-      <!-- SIDEBAR -->
       <aside class="sidebar">
         <div class="profile">
           <div class="avatar-ring">
@@ -32,20 +28,18 @@
 
         <nav class="menu">
           <a href="#" class="active">Dashboard</a>
-          <a href="#">Request Documents</a>
-          <a href="#">Report a Concern</a>
+          <a href="residentrequestdocument.html">Request Documents</a>
+          <a href="residentconcern.html">Concerns</a>
           <a href="#">Announcements</a>
-          <a href="#">Community Feed</a>
-          <a href="#">My Requests</a>
+          <a href="#">Community</a>
+          <a href="residentrequest.html">My Requests</a>
           <a href="#">Settings</a>
         </nav>
 
-        <a href="#" class="logout">Logout</a>
+        <a href="home.html" class="logout">Logout</a>
       </aside>
 
-      <!-- MAIN CONTENT -->
       <main class="content">
-        <!-- TOP BAR WITH DATE + TIME + BARANGAY SEAL -->
         <div class="topbar">
           <div class="greeting-block">
             <h1>Welcome back, <span class="accent-name">Corbin</span></h1>
@@ -59,7 +53,6 @@
           </div>
         </div>
 
-        <!-- TOP CARDS -->
         <div class="card-grid">
           <div class="card card--yellow">
             <p class="card-label">Pending Requests</p>
@@ -82,7 +75,6 @@
           </div>
         </div>
 
-        <!-- QUICK ACTIONS -->
         <h2 class="section-title">Quick Actions</h2>
         <div class="quick-actions">
           <button class="btn btn--primary">Request Document</button>
@@ -91,9 +83,7 @@
           <button class="btn btn--outline">Update Profile</button>
         </div>
 
-        <!-- MAIN PANELS -->
         <div class="main-panels">
-          <!-- ANNOUNCEMENTS -->
           <div class="panel announcements">
             <div class="panel-header">
               <h2>Latest Announcements</h2>
@@ -127,7 +117,6 @@
             </ul>
           </div>
 
-          <!-- EMERGENCY CONTACTS -->
           <div class="panel contacts">
             <div class="panel-header">
               <h2>Emergency Contacts</h2>

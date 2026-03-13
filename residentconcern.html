@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Report a Concern</title>
+
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="resident.css" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- SIDEBAR -->
+
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar-ring">
+            <img src="corbin.jpg" />
+          </div>
+
+          <h3>Corbin Gutierrez</h3>
+          <p>City of Imus, Alapan 1-A</p>
+
+          <span class="portal-badge">RESIDENT PORTAL</span>
+        </div>
+
+        <nav class="menu">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="residentrequestdocument.html">Request Documents</a>
+          <a href="residentconcern.html" class="active">Concerns</a>
+          <a href="#">Announcements</a>
+          <a href="#">Community</a>
+          <a href="residentrequest.html">My Requests</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <a href="#" class="logout">Logout</a>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+
+      <main class="content">
+        <div class="topbar">
+          <div class="greeting-block">
+            <h1>Report a <span class="accent-name">Concern</span></h1>
+            <p class="subtitle">Submit barangay-related issues for review.</p>
+          </div>
+
+          <div class="topbar-right">
+            <img src="alapan.png" class="seal-logo" />
+          </div>
+        </div>
+
+        <!-- REPORT LAYOUT -->
+
+        <div class="concern-layout">
+          <!-- REPORT FORM -->
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Concern Report</h2>
+              <span class="badge">New</span>
+            </div>
+
+            <form class="concern-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Concern Category</label>
+
+                  <select>
+                    <option>Select category</option>
+                    <option>Street Light Issue</option>
+                    <option>Garbage / Sanitation</option>
+                    <option>Noise Complaint</option>
+                    <option>Road Damage</option>
+                    <option>Flooding / Drainage</option>
+                    <option>Peace and Order</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Location</label>
+                  <input type="text" placeholder="Purok / Sitio / Landmark" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Describe the Concern</label>
+
+                <textarea
+                  rows="6"
+                  placeholder="Provide details about the issue..."
+                ></textarea>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Date Observed</label>
+                  <input type="date" />
+                </div>
+
+                <div class="form-group">
+                  <label>Upload Evidence</label>
+                  <input type="file" />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn--primary">
+                  Submit Report
+                </button>
+
+                <button type="reset" class="btn btn--outline">Clear</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- GUIDELINES PANEL -->
+
+          <div class="panel concern-info">
+            <div class="panel-header">
+              <h2>Reporting Guidelines</h2>
+            </div>
+
+            <ul class="concern-guide">
+              <li>
+                <strong>Be Specific</strong>
+                <p>Include the exact location and details of the issue.</p>
+              </li>
+
+              <li>
+                <strong>Attach Evidence</strong>
+                <p>
+                  Photos or documents help barangay staff verify concerns
+                  faster.
+                </p>
+              </li>
+
+              <li>
+                <strong>Follow Up</strong>
+                <p>You can check updates in the My Requests page.</p>
+              </li>
+
+              <li>
+                <strong>Emergency</strong>
+                <p>If urgent, contact the barangay hotline directly.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
