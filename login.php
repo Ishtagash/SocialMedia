@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $_POST['username'];
     $pass = $_POST['password'];
 
-    $sql    = "SELECT * FROM USERS WHERE (USERNAME = ? OR EMAIL = ?) AND STATUS = 'ACTIVE'";
+    $sql    = "SELECT * FROM USERS WHERE (USERNAME = ? OR EMAIL = ?)";
     $params = [$user, $user];
 
     $stmt = sqlsrv_query($conn, $sql, $params);
@@ -26,10 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
 
+    if ($row && rtrim($row['STATUS']) === 'PENDING') {
+        header("Location: login.php?error=pending");
+        exit();
+    }
+
     if ($row && $pass === $row['PASSWORD']) {
         $_SESSION['user_id']  = $row['USER_ID'];
         $_SESSION['username'] = $row['USERNAME'];
-        $_SESSION['role']     = strtolower(trim($row['ROLE']));
+        $_SESSION['role']     = strtolower(rtrim($row['ROLE']));
 
         if ($_SESSION['role'] === 'superadmin') {
             header("Location: dashboardsuperadmin.html");
@@ -178,7 +183,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <h1 class="auth-title">Welcome back.</h1>
       <p class="auth-sub mb-4">Login with your username or email to access barangay services and submit requests online.</p>
 
-      <?php if (isset($_GET['error'])): ?>
+      <?php if (isset($_GET['error']) && $_GET['error'] === 'pending'): ?>
+      <div class="alert-err">
+        <i class="fa-solid fa-clock mt-1 flex-shrink-0"></i>
+        <span>Your account is still pending review. Please wait for a staff member to approve your registration.</span>
+      </div>
+      <?php elseif (isset($_GET['error'])): ?>
       <div class="alert-err">
         <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
         <span>Invalid username/email or password. Please try again.</span>
@@ -252,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       el.type = 'password';
       icon.className = 'fa-solid fa-eye';
     }
-    }
+  }
 </script>
 </body>
 </html>
