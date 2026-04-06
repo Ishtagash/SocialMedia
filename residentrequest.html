@@ -8,6 +8,10 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="resident.css" />
     <link rel="stylesheet" href="base.css" />
   </head>
@@ -28,8 +32,7 @@
           <a href="dashboard.html">Dashboard</a>
           <a href="residentrequestdocument.html">Request Documents</a>
           <a href="residentconcern.html">Concerns</a>
-          <a href="#">Announcements</a>
-          <a href="#">Community</a>
+          <a href="residentcommunity.html">Community</a>
           <a href="residentrequest.html" class="active">My Requests</a>
           <a href="#">Settings</a>
         </nav>
@@ -47,7 +50,25 @@
           </div>
 
           <div class="topbar-right">
-            <img src="alapan.png" class="seal-logo" alt="Barangay Seal" />
+            <div class="user-chip">
+              <div class="user-chip-avatar-wrap">
+                <img
+                  src="corbin.jpg"
+                  alt="Resident Photo"
+                  class="user-chip-img"
+                />
+              </div>
+
+              <div class="user-chip-info">
+                <span class="user-chip-name">Corbin Gutierrez</span>
+                <span class="user-chip-role">Resident</span>
+              </div>
+
+              <a href="notifications.html" class="user-chip-bell-wrap">
+                <i class="fa-solid fa-bell user-chip-bell"></i>
+                <span class="user-chip-notif">2</span>
+              </a>
+            </div>
           </div>
         </div>
 
