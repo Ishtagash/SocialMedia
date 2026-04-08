@@ -12,12 +12,14 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
   </head>
 
   <body>
     <div class="container">
-      <!-- SIDEBAR -->
-
       <aside class="sidebar">
         <div class="profile">
           <div class="avatar-ring">
@@ -34,16 +36,13 @@
           <a href="dashboard.html">Dashboard</a>
           <a href="request.php">Request Documents</a>
           <a href="residentconcern.html" class="active">Concerns</a>
-          <a href="#">Announcements</a>
-          <a href="#">Community</a>
+          <a href="residentcommunity.html">Community</a>
           <a href="residentrequest.html">My Requests</a>
           <a href="#">Settings</a>
         </nav>
 
         <a href="#" class="logout">Logout</a>
       </aside>
-
-      <!-- MAIN CONTENT -->
 
       <main class="content">
         <div class="topbar">
@@ -53,15 +52,28 @@
           </div>
 
           <div class="topbar-right">
-            <img src="alapan.png" class="seal-logo" />
+            <div class="user-chip">
+              <div class="user-chip-avatar-wrap">
+                <img
+                  src="corbin.jpg"
+                  alt="Resident Photo"
+                  class="user-chip-img"
+                />
+              </div>
+
+              <div class="user-chip-info">
+                <span class="user-chip-name">Corbin Gutierrez</span>
+                <span class="user-chip-role">Resident</span>
+              </div>
+
+              <a href="notifications.html" class="user-chip-bell-wrap">
+                <i class="fa-solid fa-bell user-chip-bell"></i>
+                <span class="user-chip-notif">2</span>
+              </a>
+            </div>
           </div>
         </div>
-
-        <!-- REPORT LAYOUT -->
-
         <div class="concern-layout">
-          <!-- REPORT FORM -->
-
           <div class="panel">
             <div class="panel-header">
               <h2>Concern Report</h2>
