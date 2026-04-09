@@ -6,7 +6,7 @@
     <title>Community Feed</title>
 
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -19,118 +19,154 @@
 
   <body>
     <div class="container">
-      <aside class="sidebar">
-        <div class="profile">
+      <aside class="sidebar resident-community-sidebar">
+        <div class="sidebar-brand">
+          <h2>BarangayKonek</h2>
+          <span>Resident</span>
+        </div>
+
+        <div class="profile profile--compact">
           <div class="avatar-ring">
             <img src="corbin.jpg" alt="Resident Photo" />
           </div>
-          <h3>Corbin Gutierrez</h3>
-          <p>City of Imus, Alapan 1-A</p>
-          <span class="portal-badge">RESIDENT PORTAL</span>
+          <div class="profile-meta">
+            <h3>Corbin Gutierrez</h3>
+            <p>City of Imus, Alapan 1-A</p>
+            <span class="portal-badge">Resident Portal</span>
+          </div>
         </div>
 
-        <nav class="menu">
-          <a href="dashboard.html">Dashboard</a>
-          <a href="residentrequestdocument.html">Request Documents</a>
-          <a href="residentconcern.html">Concerns</a>
-          <a href="residentcommunity.html" class="active">Community</a>
-          <a href="residentrequest.html">My Requests</a>
-          <a href="#">Settings</a>
+        <nav class="menu menu--community">
+          <a href="dashboard.html">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="request.php">
+            <i class="fa-solid fa-file-lines nav-icon"></i>
+            <span>Request Documents</span>
+          </a>
+          <a href="residentconcern.html">
+            <i class="fa-solid fa-circle-exclamation nav-icon"></i>
+            <span>Concerns</span>
+          </a>
+          <a href="residentcommunity.html" class="active">
+            <i class="fa-solid fa-users nav-icon"></i>
+            <span>Community</span>
+          </a>
+          <a href="residentrequest.html">
+            <i class="fa-solid fa-clipboard-list nav-icon"></i>
+            <span>My Requests</span>
+          </a>
         </nav>
 
-        <a href="home.html" class="logout">Logout</a>
+        <div class="community-sidebar-section">
+          <h4>Quick Access</h4>
+        </div>
+
+        <a href="home.html" class="logout">
+          <i class="fa-solid fa-right-from-bracket nav-icon"></i>
+          <span>Logout</span>
+        </a>
       </aside>
 
-      <main class="content">
-        <div class="content-inner">
-          <div class="topbar">
-            <div class="topbar-right">
-              <div class="community-top-filters panel">
-                <a href="#" class="community-top-filter active">All Posts</a>
-                <a href="#" class="community-top-filter"
-                  >Official Announcements</a
-                >
-                <a href="#" class="community-top-filter">Events</a>
-                <a href="#" class="community-top-filter">Emergency Alerts</a>
-                <a href="#" class="community-top-filter">Public Notices</a>
-                <a href="#" class="community-top-filter">Resident Posts</a>
-              </div>
-              <div class="user-chip">
-                <div class="user-chip-avatar-wrap">
-                  <img
-                    src="corbin.jpg"
-                    alt="Resident Photo"
-                    class="user-chip-img"
-                  />
-                </div>
+      <main class="content community-page-content">
+        <div class="content-inner community-page-shell">
+          <header class="community-main-header">
+            <div class="community-main-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search announcements, events, notices, or resident posts"
+              />
+            </div>
 
-                <div class="user-chip-info">
-                  <span class="user-chip-name">Corbin Gutierrez</span>
-                  <span class="user-chip-role">Resident</span>
-                </div>
+            <div class="community-main-actions">
+              <a href="notifications.html" class="community-header-icon">
+                <i class="fa-regular fa-comment-dots"></i>
+              </a>
 
-                <a href="notifications.html" class="user-chip-bell-wrap">
-                  <i class="fa-solid fa-bell user-chip-bell"></i>
-                  <span class="user-chip-notif">2</span>
-                </a>
+              <a
+                href="notifications.html"
+                class="community-header-icon community-bell-link"
+              >
+                <i class="fa-regular fa-bell community-bell-icon"></i>
+                <span class="community-bell-count">3</span>
+              </a>
+
+              <div class="community-header-user">
+                <span class="community-header-user-name">Corbin Gutierrez</span>
+                <div class="community-header-user-avatar">
+                  <img src="corbin.jpg" alt="Resident Photo" />
+                </div>
               </div>
             </div>
-          </div>
+          </header>
 
-          <div class="community-layout">
-            <div class="community-feed">
-              <div class="panel community-compose">
-                <div class="panel-header">
-                  <h2>Share an Update</h2>
-                  <span class="badge">Community</span>
-                </div>
-
-                <div class="community-compose-box">
+          <div class="community-board-layout">
+            <section class="community-feed-column">
+              <div class="community-composer-card panel">
+                <div class="community-composer-top">
                   <img
                     src="corbin.jpg"
                     alt="Resident Photo"
-                    class="community-compose-avatar"
+                    class="community-composer-avatar"
                   />
+
                   <input
                     type="text"
-                    placeholder="Share something with your barangay community..."
+                    placeholder="Share an update with your barangay..."
                   />
                 </div>
 
-                <div class="community-compose-actions">
-                  <button class="btn btn--outline" type="button">
-                    <i class="fa-regular fa-image"></i>
-                    Add Photo
-                  </button>
+                <div class="community-composer-bottom">
+                  <div class="community-composer-tools">
+                    <button type="button" class="composer-tool-btn">
+                      <i class="fa-regular fa-image"></i>
+                    </button>
+                    <button type="button" class="composer-tool-btn">
+                      <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <button type="button" class="composer-tool-btn">
+                      <i class="fa-solid fa-location-dot"></i>
+                    </button>
+                    <button type="button" class="composer-tool-btn">
+                      <i class="fa-regular fa-face-smile"></i>
+                    </button>
+                  </div>
 
-                  <button class="btn btn--primary" type="button">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Post Update
-                  </button>
+                  <div class="community-composer-right">
+                    <button class="btn btn--primary" type="button">Post</button>
+                  </div>
                 </div>
               </div>
 
-              <div class="panel community-post official-post">
-                <div class="community-post-header">
-                  <div class="community-post-user">
-                    <div class="community-post-avatar official">
+              <article class="community-stream-card panel">
+                <div class="community-stream-head">
+                  <div class="community-stream-user">
+                    <div class="community-stream-avatar official">
                       <img src="alapan.png" alt="Barangay Seal" />
                     </div>
-                    <div>
+
+                    <div class="community-stream-meta">
                       <h3>Barangay Alapan 1-A Office</h3>
-                      <p>Official Announcement • March 12, 2026 • 8:00 AM</p>
+                      <p>Official Announcement • 20 min ago</p>
                     </div>
                   </div>
 
+                  <button class="community-stream-more" type="button">
+                    <i class="fa-solid fa-ellipsis"></i>
+                  </button>
+                </div>
+
+                <div class="community-stream-tagline">
                   <span class="community-post-tag official">Official</span>
+                  <span class="community-stream-topic">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    Water Advisory
+                  </span>
                 </div>
 
-                <div class="community-post-category">
-                  <i class="fa-solid fa-bullhorn"></i>
-                  <span>Water Advisory</span>
-                </div>
-
-                <div class="community-post-body">
+                <div class="community-stream-body">
                   <h4>Scheduled Water Service Interruption</h4>
                   <p>
                     Residents are advised that water service in selected areas
@@ -140,32 +176,73 @@
                   </p>
                 </div>
 
-                <div class="community-post-footer">
-                  <a href="#" class="community-post-link">Read Full Post</a>
+                <div
+                  class="community-stream-media community-stream-media--double"
+                >
+                  <div class="community-media-box">
+                    <img src="alapan.png" alt="Barangay Notice" />
+                  </div>
+                  <div class="community-media-box community-media-box--text">
+                    <strong>Maintenance Schedule</strong>
+                    <span
+                      >Areas affected: Purok 1, Purok 2, and nearby
+                      streets</span
+                    >
+                  </div>
                 </div>
-              </div>
 
-              <div class="panel community-post resident-post">
-                <div class="community-post-header">
-                  <div class="community-post-user">
-                    <div class="community-post-avatar resident">
+                <div class="community-stream-stats">
+                  <span>
+                    <i class="fa-regular fa-thumbs-up"></i>
+                    126 Reacted
+                  </span>
+                  <span>18 Comments</span>
+                  <span>9 Shares</span>
+                </div>
+
+                <div class="community-stream-actions">
+                  <a href="#" class="community-action">
+                    <i class="fa-regular fa-thumbs-up"></i>
+                    React
+                  </a>
+                  <a href="#" class="community-action">
+                    <i class="fa-regular fa-comment"></i>
+                    Comment
+                  </a>
+                  <a href="#" class="community-action">
+                    <i class="fa-solid fa-share"></i>
+                    Share
+                  </a>
+                </div>
+              </article>
+
+              <article class="community-stream-card panel">
+                <div class="community-stream-head">
+                  <div class="community-stream-user">
+                    <div class="community-stream-avatar resident">
                       <img src="corbin.jpg" alt="Resident Photo" />
                     </div>
-                    <div>
+
+                    <div class="community-stream-meta">
                       <h3>Corbin Gutierrez</h3>
                       <p>Resident Post • March 11, 2026 • 5:30 PM</p>
                     </div>
                   </div>
 
+                  <button class="community-stream-more" type="button">
+                    <i class="fa-solid fa-ellipsis"></i>
+                  </button>
+                </div>
+
+                <div class="community-stream-tagline">
                   <span class="community-post-tag resident">Resident</span>
+                  <span class="community-stream-topic">
+                    <i class="fa-solid fa-users"></i>
+                    Local Activities
+                  </span>
                 </div>
 
-                <div class="community-post-category">
-                  <i class="fa-solid fa-users"></i>
-                  <span>Local Activities</span>
-                </div>
-
-                <div class="community-post-body">
+                <div class="community-stream-body">
                   <h4>Volunteers for Clean-up Drive</h4>
                   <p>
                     Looking for volunteers this Saturday for the clean-up drive
@@ -174,7 +251,25 @@
                   </p>
                 </div>
 
-                <div class="community-post-actions">
+                <div
+                  class="community-stream-media community-stream-media--gallery"
+                >
+                  <div class="community-media-box"></div>
+                  <div class="community-media-box"></div>
+                  <div class="community-media-box"></div>
+                  <div class="community-media-box"></div>
+                </div>
+
+                <div class="community-stream-stats">
+                  <span>
+                    <i class="fa-regular fa-thumbs-up"></i>
+                    58 Reacted
+                  </span>
+                  <span>12 Comments</span>
+                  <span>4 Shares</span>
+                </div>
+
+                <div class="community-stream-actions">
                   <a href="#" class="community-action">
                     <i class="fa-regular fa-thumbs-up"></i>
                     React
@@ -188,29 +283,35 @@
                     Share
                   </a>
                 </div>
-              </div>
+              </article>
 
-              <div class="panel community-post official-post">
-                <div class="community-post-header">
-                  <div class="community-post-user">
-                    <div class="community-post-avatar official">
+              <article class="community-stream-card panel">
+                <div class="community-stream-head">
+                  <div class="community-stream-user">
+                    <div class="community-stream-avatar official">
                       <img src="alapan.png" alt="Barangay Seal" />
                     </div>
-                    <div>
+
+                    <div class="community-stream-meta">
                       <h3>Barangay Health Office</h3>
-                      <p>Official Announcement • March 10, 2026 • 10:15 AM</p>
+                      <p>Event Update • March 10, 2026 • 10:15 AM</p>
                     </div>
                   </div>
 
+                  <button class="community-stream-more" type="button">
+                    <i class="fa-solid fa-ellipsis"></i>
+                  </button>
+                </div>
+
+                <div class="community-stream-tagline">
                   <span class="community-post-tag event">Event</span>
+                  <span class="community-stream-topic">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    Health Program
+                  </span>
                 </div>
 
-                <div class="community-post-category">
-                  <i class="fa-solid fa-calendar-days"></i>
-                  <span>Health Program</span>
-                </div>
-
-                <div class="community-post-body">
+                <div class="community-stream-body">
                   <h4>Free Vaccination Program</h4>
                   <p>
                     The barangay health center will conduct a free vaccination
@@ -219,41 +320,16 @@
                   </p>
                 </div>
 
-                <div class="community-post-footer">
-                  <a href="#" class="community-post-link">Read Full Post</a>
-                </div>
-              </div>
-
-              <div class="panel community-post resident-post">
-                <div class="community-post-header">
-                  <div class="community-post-user">
-                    <div class="community-post-avatar resident">
-                      <img src="corbin.jpg" alt="Resident Photo" />
-                    </div>
-                    <div>
-                      <h3>Maria Santos</h3>
-                      <p>Resident Post • March 09, 2026 • 7:10 PM</p>
-                    </div>
-                  </div>
-
-                  <span class="community-post-tag resident">Resident</span>
+                <div class="community-stream-stats">
+                  <span>
+                    <i class="fa-regular fa-thumbs-up"></i>
+                    74 Reacted
+                  </span>
+                  <span>21 Comments</span>
+                  <span>11 Shares</span>
                 </div>
 
-                <div class="community-post-category">
-                  <i class="fa-solid fa-circle-exclamation"></i>
-                  <span>Lost &amp; Found</span>
-                </div>
-
-                <div class="community-post-body">
-                  <h4>Lost Wallet Near Barangay Hall</h4>
-                  <p>
-                    A brown wallet was reportedly found near the barangay hall
-                    gate this afternoon. Please contact the barangay office if
-                    you think it belongs to you.
-                  </p>
-                </div>
-
-                <div class="community-post-actions">
+                <div class="community-stream-actions">
                   <a href="#" class="community-action">
                     <i class="fa-regular fa-thumbs-up"></i>
                     React
@@ -267,47 +343,126 @@
                     Share
                   </a>
                 </div>
-              </div>
-            </div>
+              </article>
+            </section>
 
-            <div class="panel community-side-panel">
-              <div class="panel-header">
-                <h2>Pinned Updates</h2>
-                <span class="badge">Important</span>
-              </div>
-
-              <div class="community-pinned-list">
-                <div class="community-pinned-item">
-                  <span class="community-pinned-type official">Official</span>
-                  <h4>Barangay Assembly on March 15</h4>
-                  <p>
-                    All residents are encouraged to attend the upcoming assembly
-                    at the covered court.
-                  </p>
-                  <a href="#" class="community-post-link">View Post</a>
+            <aside class="community-widgets-column">
+              <div class="panel community-widget-card">
+                <div class="community-widget-head">
+                  <h3>Your upcoming events</h3>
                 </div>
 
-                <div class="community-pinned-item">
-                  <span class="community-pinned-type emergency">Alert</span>
-                  <h4>Heavy Rainfall Advisory</h4>
-                  <p>
-                    Residents in low-lying areas are advised to monitor weather
-                    updates and prepare emergency kits.
-                  </p>
-                  <a href="#" class="community-post-link">View Post</a>
-                </div>
+                <div class="community-widget-list">
+                  <div class="community-widget-item">
+                    <div class="community-widget-icon">
+                      <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div>
+                      <strong>Barangay Assembly</strong>
+                      <p>Sat 16 June, Covered Court</p>
+                    </div>
+                  </div>
 
-                <div class="community-pinned-item">
-                  <span class="community-pinned-type event">Event</span>
-                  <h4>Clean-up Drive This Saturday</h4>
-                  <p>
-                    Volunteers may register through the youth desk or barangay
-                    office before Friday.
-                  </p>
-                  <a href="#" class="community-post-link">View Post</a>
+                  <div class="community-widget-item">
+                    <div class="community-widget-icon">
+                      <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                    <div>
+                      <strong>Vaccination Program</strong>
+                      <p>Mon 18 June, Health Center</p>
+                    </div>
+                  </div>
+
+                  <div class="community-widget-item">
+                    <div class="community-widget-icon">
+                      <i class="fa-solid fa-broom"></i>
+                    </div>
+                    <div>
+                      <strong>Clean-up Drive</strong>
+                      <p>Sat 23 June, Riverside Area</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <div class="panel community-widget-card">
+                <div class="community-widget-head">
+                  <h3>Pinned Updates</h3>
+                </div>
+
+                <div
+                  class="community-widget-list community-widget-list--stacked"
+                >
+                  <div class="community-mini-post">
+                    <span class="community-pinned-type official">Official</span>
+                    <h4>Barangay Assembly on March 15</h4>
+                    <p>
+                      All residents are encouraged to attend the upcoming
+                      assembly at the covered court.
+                    </p>
+                  </div>
+
+                  <div class="community-mini-post">
+                    <span class="community-pinned-type emergency">Alert</span>
+                    <h4>Heavy Rainfall Advisory</h4>
+                    <p>
+                      Residents in low-lying areas are advised to monitor
+                      weather updates and prepare emergency kits.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel community-widget-card">
+                <div class="community-widget-head">
+                  <h3>Barangay Channels</h3>
+                </div>
+
+                <div class="community-channel-list">
+                  <a href="#" class="community-channel-item">
+                    <span class="community-channel-avatar official">OF</span>
+                    <span>Official Announcements</span>
+                  </a>
+                  <a href="#" class="community-channel-item">
+                    <span class="community-channel-avatar event">EV</span>
+                    <span>Community Events</span>
+                  </a>
+                  <a href="#" class="community-channel-item">
+                    <span class="community-channel-avatar alert">AL</span>
+                    <span>Emergency Updates</span>
+                  </a>
+                  <a href="#" class="community-channel-item">
+                    <span class="community-channel-avatar resident">RP</span>
+                    <span>Resident Discussions</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="panel community-widget-card">
+                <div class="community-widget-head">
+                  <h3>Online Barangay Contacts</h3>
+                </div>
+
+                <div class="community-contact-list">
+                  <div class="community-contact-item">
+                    <span class="community-contact-status"></span>
+                    <span>Barangay Secretary</span>
+                  </div>
+                  <div class="community-contact-item">
+                    <span class="community-contact-status"></span>
+                    <span>Health Desk</span>
+                  </div>
+                  <div class="community-contact-item">
+                    <span class="community-contact-status"></span>
+                    <span>Youth Desk</span>
+                  </div>
+                  <div class="community-contact-item">
+                    <span class="community-contact-status"></span>
+                    <span>Incident Hotline</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </main>

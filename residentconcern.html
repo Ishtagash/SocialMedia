@@ -20,28 +20,54 @@
 
   <body>
     <div class="container">
-      <aside class="sidebar">
-        <div class="profile">
-          <div class="avatar-ring">
-            <img src="corbin.jpg" />
-          </div>
-
-          <h3>Corbin Gutierrez</h3>
-          <p>City of Imus, Alapan 1-A</p>
-
-          <span class="portal-badge">RESIDENT PORTAL</span>
+      <aside class="sidebar resident-community-sidebar">
+        <div class="sidebar-brand">
+          <h2>BarangayKonek</h2>
+          <span>Resident</span>
         </div>
 
-        <nav class="menu">
-          <a href="dashboard.html">Dashboard</a>
-          <a href="request.php">Request Documents</a>
-          <a href="residentconcern.html" class="active">Concerns</a>
-          <a href="residentcommunity.html">Community</a>
-          <a href="residentrequest.html">My Requests</a>
-          <a href="#">Settings</a>
+        <div class="profile profile--compact">
+          <div class="avatar-ring">
+            <img src="corbin.jpg" alt="Resident Photo" />
+          </div>
+          <div class="profile-meta">
+            <h3>Corbin Gutierrez</h3>
+            <p>City of Imus, Alapan 1-A</p>
+            <span class="portal-badge">Resident Portal</span>
+          </div>
+        </div>
+
+        <nav class="menu menu--community">
+          <a href="dashboard.html">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="request.php">
+            <i class="fa-solid fa-file-lines nav-icon"></i>
+            <span>Request Documents</span>
+          </a>
+          <a href="residentconcern.html" class="active">
+            <i class="fa-solid fa-circle-exclamation nav-icon"></i>
+            <span>Concerns</span>
+          </a>
+          <a href="residentcommunity.html">
+            <i class="fa-solid fa-users nav-icon"></i>
+            <span>Community</span>
+          </a>
+          <a href="residentrequest.html">
+            <i class="fa-solid fa-clipboard-list nav-icon"></i>
+            <span>My Requests</span>
+          </a>
         </nav>
 
-        <a href="#" class="logout">Logout</a>
+        <div class="community-sidebar-section">
+          <h4>Quick Access</h4>
+        </div>
+
+        <a href="home.html" class="logout">
+          <i class="fa-solid fa-right-from-bracket nav-icon"></i>
+          <span>Logout</span>
+        </a>
       </aside>
 
       <main class="content">

@@ -4,124 +4,270 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Super Admin Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css" />
-    <link rel="stylesheet" href="dashboard.css" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="superadmin.css" />
   </head>
 
-  <body class="admin-body">
-    <header class="admin-header">
-      <div class="admin-logo">Barangay System Admin</div>
-
-      <nav class="admin-nav">
-        <a href="#" class="active">Dashboard</a>
-        <a href="#">Staff</a>
-        <a href="#">Barangay</a>
-        <a href="#">Database</a>
-        <a href="#">Security</a>
-        <a href="#">Audit Logs</a>
-      </nav>
-
-      <div class="admin-profile">Super Admin</div>
-    </header>
-
-    <main class="admin-content">
-      <section class="admin-section">
-        <h2>System Overview</h2>
-
-        <div class="admin-stats">
-          <div class="stat-box">
-            <span>Total Staff</span>
-            <strong>34</strong>
-          </div>
-
-          <div class="stat-box">
-            <span>Total Residents</span>
-            <strong>123</strong>
-          </div>
-
-          <div class="stat-box">
-            <span>Pending Approvals</span>
-            <strong>7</strong>
-          </div>
-
-          <div class="stat-box">
-            <span>Security Alerts</span>
-            <strong>2</strong>
-          </div>
+  <body class="superadmin-body">
+    <div class="superadmin-page">
+      <header class="superadmin-header">
+        <div class="superadmin-brand">
+          <h1>Barangay Alapan 1-A</h1>
+          <p>Super Admin Dashboard</p>
         </div>
-      </section>
 
-      <section class="admin-section">
-        <h2>System Controls</h2>
+        <nav class="superadmin-nav">
+          <a href="dashboardsuperadmin.html" class="active">Dashboard</a>
+          <a href="superadminstaffaccount.html">Staff Accounts</a>
+          <a href="#">Residents</a>
+          <a href="#">Barangay Profile</a>
+          <a href="#">Announcements</a>
+          <a href="#">Reports</a>
+          <a href="#">Audit Logs</a>
+          <a href="#">Settings</a>
+        </nav>
 
-        <div class="admin-grid">
-          <div class="admin-panel">
-            <h3>Staff Management</h3>
-            <button>Staff Account Registration</button>
-            <button>Assign Roles</button>
-            <button>Disable Account</button>
+        <div class="superadmin-header-right">
+          <a href="notifications.html" class="superadmin-icon-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span class="superadmin-bell-count">2</span>
+          </a>
+
+          <div class="superadmin-user">
+            <div class="superadmin-user-info">
+              <span class="superadmin-user-name">Super Admin</span>
+            </div>
           </div>
 
-          <div class="admin-panel">
-            <h3>Barangay Profile</h3>
-            <button>Edit Barangay Info</button>
-            <button>Update Logo</button>
-            <button>Edit Templates</button>
-          </div>
-
-          <div class="admin-panel">
-            <h3>Database Control</h3>
-            <button>Backup Database</button>
-            <button>Restore Database</button>
-            <button>Database Logs</button>
-          </div>
-
-          <div class="admin-panel">
-            <h3>Security Controls</h3>
-            <button>Force Password Reset</button>
-            <button>Lock Accounts</button>
-            <button>Login Attempt Limits</button>
-          </div>
+          <a href="home.html" class="superadmin-logout">Logout</a>
         </div>
-      </section>
+      </header>
 
-      <section class="admin-section">
-        <h2>Audit Logs</h2>
+      <main class="superadmin-content">
+        <section class="superadmin-top"></section>
 
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Action</th>
-              <th>Module</th>
-              <th>Date</th>
-            </tr>
-          </thead>
+        <section class="superadmin-stats">
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Total Residents</span>
+            <strong class="superadmin-card-number">123</strong>
+            <p class="superadmin-card-note">Registered resident accounts</p>
+          </div>
 
-          <tbody>
-            <tr>
-              <td>Secretary</td>
-              <td>Approved Clearance</td>
-              <td>Documents</td>
-              <td>Feb 28</td>
-            </tr>
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Active Staff</span>
+            <strong class="superadmin-card-number">34</strong>
+            <p class="superadmin-card-note">Staff with active access</p>
+          </div>
 
-            <tr>
-              <td>Treasurer</td>
-              <td>Verified Payment</td>
-              <td>Finance</td>
-              <td>Feb 28</td>
-            </tr>
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Pending Registrations</span>
+            <strong class="superadmin-card-number">7</strong>
+            <p class="superadmin-card-note">Waiting for verification</p>
+          </div>
 
-            <tr>
-              <td>Captain</td>
-              <td>Posted Announcement</td>
-              <td>Announcements</td>
-              <td>Feb 27</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </main>
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Open Concerns</span>
+            <strong class="superadmin-card-number">12</strong>
+            <p class="superadmin-card-note">Needs staff attention</p>
+          </div>
+
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Announcements Posted</span>
+            <strong class="superadmin-card-number">18</strong>
+            <p class="superadmin-card-note">Published this month</p>
+          </div>
+
+          <div class="superadmin-card">
+            <span class="superadmin-card-label">Security Alerts</span>
+            <strong class="superadmin-card-number">2</strong>
+            <p class="superadmin-card-note">Requires review</p>
+          </div>
+        </section>
+
+        <section class="superadmin-section">
+          <div class="superadmin-section-title">
+            <h3>Quick Actions</h3>
+          </div>
+
+          <div class="superadmin-action-grid">
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Staff Accounts</h4>
+              </div>
+              <div class="superadmin-panel-actions">
+                <button>Add Staff Account</button>
+                <button>Assign Roles</button>
+                <button>Disable Account</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Resident Management</h4>
+              </div>
+              <div class="superadmin-panel-actions">
+                <button>View Residents</button>
+                <button>Verify Accounts</button>
+                <button>Manage Households</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Announcements</h4>
+              </div>
+              <div class="superadmin-panel-actions">
+                <button>Create Announcement</button>
+                <button>Manage Categories</button>
+                <button>Archive Posts</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Reports</h4>
+              </div>
+              <div class="superadmin-panel-actions">
+                <button>Generate Reports</button>
+                <button>View Analytics</button>
+                <button>Export Data</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="superadmin-main">
+          <div class="superadmin-left">
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header superadmin-panel-row">
+                <h4>Staff Account Overview</h4>
+                <a href="#">Manage All</a>
+              </div>
+
+              <table class="superadmin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Maria Santos</td>
+                    <td>Secretary</td>
+                    <td>Active</td>
+                    <td>Today, 8:15 AM</td>
+                    <td><button class="table-button">Manage</button></td>
+                  </tr>
+                  <tr>
+                    <td>Juan Dela Cruz</td>
+                    <td>Treasurer</td>
+                    <td>Active</td>
+                    <td>Today, 9:02 AM</td>
+                    <td><button class="table-button">Manage</button></td>
+                  </tr>
+                  <tr>
+                    <td>Pedro Reyes</td>
+                    <td>Kagawad</td>
+                    <td>Inactive</td>
+                    <td>Yesterday</td>
+                    <td><button class="table-button">Manage</button></td>
+                  </tr>
+                  <tr>
+                    <td>Liza Gomez</td>
+                    <td>SK Chairwoman</td>
+                    <td>Active</td>
+                    <td>Today, 10:31 AM</td>
+                    <td><button class="table-button">Manage</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header superadmin-panel-row">
+                <h4>Recent Audit Logs</h4>
+                <a href="#">View Logs</a>
+              </div>
+
+              <table class="superadmin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Secretary</td>
+                    <td>Approved Barangay Clearance</td>
+                    <td>Requests</td>
+                    <td>Mar 12, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Treasurer</td>
+                    <td>Verified Payment Record</td>
+                    <td>Payment</td>
+                    <td>Mar 12, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Super Admin</td>
+                    <td>Created Staff Account</td>
+                    <td>Staff Accounts</td>
+                    <td>Mar 11, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Captain</td>
+                    <td>Posted Official Announcement</td>
+                    <td>Announcements</td>
+                    <td>Mar 11, 2026</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="superadmin-right">
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Security Controls</h4>
+              </div>
+
+              <div class="superadmin-panel-actions">
+                <button>Force Password Reset</button>
+                <button>Lock Suspicious Account</button>
+                <button>Review Login Attempts</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Barangay Profile</h4>
+              </div>
+
+              <div class="superadmin-panel-actions">
+                <button>Edit Barangay Information</button>
+                <button>Update Logo</button>
+                <button>Edit Document Templates</button>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
   </body>
 </html>

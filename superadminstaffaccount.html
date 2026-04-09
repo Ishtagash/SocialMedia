@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Accounts</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="superadmin.css" />
+  </head>
+
+  <body class="superadmin-body">
+    <div class="superadmin-page">
+      <header class="superadmin-header">
+        <div class="superadmin-brand">
+          <h1>Barangay Alapan 1-A</h1>
+          <p>Super Admin Dashboard</p>
+        </div>
+
+        <nav class="superadmin-nav">
+          <a href="dashboardsuperadmin.html">Dashboard</a>
+          <a href="staffaccounts.html" class="active">Staff Accounts</a>
+          <a href="#">Residents</a>
+          <a href="#">Barangay Profile</a>
+          <a href="#">Announcements</a>
+          <a href="#">Reports</a>
+          <a href="#">Audit Logs</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <div class="superadmin-header-right">
+          <a href="notifications.html" class="superadmin-icon-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span class="superadmin-bell-count">2</span>
+          </a>
+
+          <div class="superadmin-user">
+            <div class="superadmin-user-info">
+              <span class="superadmin-user-name">Super Admin</span>
+            </div>
+          </div>
+
+          <a href="home.html" class="superadmin-logout">Logout</a>
+        </div>
+      </header>
+
+      <main class="superadmin-content">
+        <section class="superadmin-page-head">
+          <div class="staff-page-actions">
+            <button class="superadmin-primary-btn">
+              <i class="fa-solid fa-user-plus"></i>
+              Add Staff Account
+            </button>
+
+            <button class="superadmin-outline-btn">
+              <i class="fa-solid fa-file-export"></i>
+              Export List
+            </button>
+          </div>
+        </section>
+
+        <section class="superadmin-stats short-stats">
+          <div class="superadmin-stat-card stat-lime">
+            <span class="superadmin-stat-label">Total Staff</span>
+            <strong class="superadmin-stat-number">34</strong>
+            <p class="superadmin-stat-note">All registered staff accounts</p>
+          </div>
+
+          <div class="superadmin-stat-card stat-green">
+            <span class="superadmin-stat-label">Active Accounts</span>
+            <strong class="superadmin-stat-number">29</strong>
+            <p class="superadmin-stat-note">Currently enabled accounts</p>
+          </div>
+
+          <div class="superadmin-stat-card stat-red">
+            <span class="superadmin-stat-label">Disabled Accounts</span>
+            <strong class="superadmin-stat-number">5</strong>
+            <p class="superadmin-stat-note">Temporarily restricted accounts</p>
+          </div>
+        </section>
+
+        <section class="superadmin-panel staff-toolbar-panel">
+          <div class="staff-toolbar">
+            <div class="staff-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" placeholder="Search name or role..." />
+            </div>
+
+            <select class="staff-filter">
+              <option>All Roles</option>
+              <option>Secretary</option>
+              <option>Treasurer</option>
+              <option>Kagawad</option>
+              <option>SK Chairwoman</option>
+              <option>Captain</option>
+            </select>
+
+            <select class="staff-filter">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Disabled</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="superadmin-panel staff-table-panel">
+          <div class="superadmin-panel-header superadmin-panel-row">
+            <h4>Staff Account List</h4>
+            <a href="#" class="superadmin-link">View Audit</a>
+          </div>
+
+          <table class="superadmin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Last Active</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Maria Santos</td>
+                <td>Secretary</td>
+                <td>maria@barangay.com</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Today, 8:15 AM</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Edit</button>
+                  <button class="table-btn table-btn-light">Disable</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Juan Dela Cruz</td>
+                <td>Treasurer</td>
+                <td>juan@barangay.com</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Today, 9:02 AM</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Edit</button>
+                  <button class="table-btn table-btn-light">Disable</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Pedro Reyes</td>
+                <td>Kagawad</td>
+                <td>pedro@barangay.com</td>
+                <td><span class="table-status inactive">Disabled</span></td>
+                <td>Yesterday</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Edit</button>
+                  <button class="table-btn table-btn-light">Enable</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Liza Gomez</td>
+                <td>SK Chairwoman</td>
+                <td>liza@barangay.com</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Today, 10:31 AM</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Edit</button>
+                  <button class="table-btn table-btn-light">Disable</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Ramon Cruz</td>
+                <td>Captain</td>
+                <td>ramon@barangay.com</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Today, 7:45 AM</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Edit</button>
+                  <button class="table-btn table-btn-light">Disable</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
