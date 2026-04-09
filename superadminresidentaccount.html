@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resident Management</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="superadmin.css" />
+  </head>
+
+  <body class="superadmin-body">
+    <div class="superadmin-page">
+      <header class="superadmin-header">
+        <div class="superadmin-brand">
+          <h1>Barangay Alapan 1-A</h1>
+          <p>Super Admin Dashboard</p>
+        </div>
+
+        <nav class="superadmin-nav">
+          <a href="superadmindashboard.html">Dashboard</a>
+          <a href="superadminstaffaccount.html">Staff Accounts</a>
+          <a href="superadminresidentaccount.html" class="active">Residents</a>
+          <a href="#">Barangay Profile</a>
+          <a href="#">Announcements</a>
+          <a href="#">Reports</a>
+          <a href="#">Audit Logs</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <div class="superadmin-header-right">
+          <a href="notifications.html" class="superadmin-icon-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span class="superadmin-bell-count">3</span>
+          </a>
+
+          <div class="superadmin-user">
+            <div class="superadmin-user-info">
+              <span class="superadmin-user-name">Super Admin</span>
+            </div>
+          </div>
+
+          <a href="home.html" class="superadmin-logout">Logout</a>
+        </div>
+      </header>
+
+      <main class="superadmin-content">
+        <section class="superadmin-page-head">
+          <div class="staff-page-actions">
+            <button class="superadmin-primary-btn">
+              <i class="fa-solid fa-user-plus"></i>
+              Add Resident
+            </button>
+
+            <button class="superadmin-outline-btn">
+              <i class="fa-solid fa-user-check"></i>
+              Verify Pending
+            </button>
+
+            <button class="superadmin-outline-btn">
+              <i class="fa-solid fa-file-export"></i>
+              Export List
+            </button>
+          </div>
+        </section>
+
+        <section class="superadmin-stats short-stats">
+          <div class="superadmin-stat-card stat-lime">
+            <span class="superadmin-stat-label">Total Residents</span>
+            <strong class="superadmin-stat-number">123</strong>
+            <p class="superadmin-stat-note">All registered resident accounts</p>
+          </div>
+
+          <div class="superadmin-stat-card stat-green">
+            <span class="superadmin-stat-label">Verified Accounts</span>
+            <strong class="superadmin-stat-number">108</strong>
+            <p class="superadmin-stat-note">Approved and active residents</p>
+          </div>
+
+          <div class="superadmin-stat-card stat-red">
+            <span class="superadmin-stat-label">Pending Verification</span>
+            <strong class="superadmin-stat-number">7</strong>
+            <p class="superadmin-stat-note">Waiting for approval review</p>
+          </div>
+        </section>
+
+        <section class="superadmin-panel staff-toolbar-panel">
+          <div class="staff-toolbar">
+            <div class="staff-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search resident name or household..."
+              />
+            </div>
+
+            <select class="staff-filter">
+              <option>All Purok</option>
+              <option>Purok 1</option>
+              <option>Purok 2</option>
+              <option>Purok 3</option>
+              <option>Purok 4</option>
+            </select>
+
+            <select class="staff-filter">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Disabled</option>
+            </select>
+
+            <select class="staff-filter">
+              <option>All Verification</option>
+              <option>Verified</option>
+              <option>Pending</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="superadmin-panel staff-table-panel">
+          <div class="superadmin-panel-header superadmin-panel-row">
+            <h4>Resident Account List</h4>
+            <a href="#" class="superadmin-link">View Household Records</a>
+          </div>
+
+          <table class="superadmin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Household</th>
+                <th>Purok</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Verification</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Maria Santos</td>
+                <td>Santos Household</td>
+                <td>Purok 1</td>
+                <td>0917-234-5678</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Verified</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">View</button>
+                  <button class="table-btn table-btn-light">Edit</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Joshua Cruz</td>
+                <td>Cruz Household</td>
+                <td>Purok 3</td>
+                <td>0998-765-4321</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Verified</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">View</button>
+                  <button class="table-btn table-btn-light">Edit</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Ana Lopez</td>
+                <td>Lopez Household</td>
+                <td>Purok 2</td>
+                <td>0935-552-1188</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Pending</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">Verify</button>
+                  <button class="table-btn table-btn-light">Reject</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Daniel Reyes</td>
+                <td>Reyes Household</td>
+                <td>Purok 4</td>
+                <td>0916-601-4488</td>
+                <td><span class="table-status inactive">Disabled</span></td>
+                <td>Verified</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">View</button>
+                  <button class="table-btn table-btn-light">Enable</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>Angela Dela Cruz</td>
+                <td>Dela Cruz Household</td>
+                <td>Purok 1</td>
+                <td>0927-118-4410</td>
+                <td><span class="table-status active">Active</span></td>
+                <td>Verified</td>
+                <td class="staff-action-cell">
+                  <button class="table-btn">View</button>
+                  <button class="table-btn table-btn-light">Edit</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="superadmin-main">
+          <div class="superadmin-left">
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header superadmin-panel-row">
+                <h4>Pending Resident Verification</h4>
+                <a href="#" class="superadmin-link">Review All</a>
+              </div>
+
+              <table class="superadmin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Submitted</th>
+                    <th>Household</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Ana Lopez</td>
+                    <td>Mar 12, 2026</td>
+                    <td>Lopez Household</td>
+                    <td><button class="table-btn">Review</button></td>
+                  </tr>
+                  <tr>
+                    <td>Ryan Gomez</td>
+                    <td>Mar 12, 2026</td>
+                    <td>Gomez Household</td>
+                    <td><button class="table-btn">Review</button></td>
+                  </tr>
+                  <tr>
+                    <td>Kristine Mendoza</td>
+                    <td>Mar 11, 2026</td>
+                    <td>Mendoza Household</td>
+                    <td><button class="table-btn">Review</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header superadmin-panel-row">
+                <h4>Recent Resident Activity</h4>
+                <a href="#" class="superadmin-link">View Logs</a>
+              </div>
+
+              <table class="superadmin-table">
+                <thead>
+                  <tr>
+                    <th>Resident</th>
+                    <th>Activity</th>
+                    <th>Module</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Maria Santos</td>
+                    <td>Submitted Barangay Clearance request</td>
+                    <td>Requests</td>
+                    <td>Mar 12, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Joshua Cruz</td>
+                    <td>Updated household profile</td>
+                    <td>Resident Profile</td>
+                    <td>Mar 12, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Angela Dela Cruz</td>
+                    <td>Reported community concern</td>
+                    <td>Concerns</td>
+                    <td>Mar 11, 2026</td>
+                  </tr>
+                  <tr>
+                    <td>Ana Lopez</td>
+                    <td>Created resident account</td>
+                    <td>Registration</td>
+                    <td>Mar 11, 2026</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="superadmin-right">
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Resident Controls</h4>
+              </div>
+
+              <div class="superadmin-panel-actions">
+                <button>Approve Registrations</button>
+                <button>Disable Resident Account</button>
+                <button>Reset Resident Password</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Household Management</h4>
+              </div>
+
+              <div class="superadmin-panel-actions">
+                <button>View Households</button>
+                <button>Assign Household Head</button>
+                <button>Merge Duplicate Records</button>
+              </div>
+            </div>
+
+            <div class="superadmin-panel">
+              <div class="superadmin-panel-header">
+                <h4>Resident Summary</h4>
+              </div>
+
+              <div class="superadmin-panel-actions">
+                <button>Total Male Residents</button>
+                <button>Total Female Residents</button>
+                <button>Senior Citizen Records</button>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
