@@ -1,847 +1,1089 @@
-<?php
-session_start();
-
-$serverName = "LAPTOP-8KOIBQER\SQLEXPRESS";
-$connectionOptions = ["Database" => "SocialMedia", "Uid" => "", "PWD" => ""];
-$conn = sqlsrv_connect($serverName, $connectionOptions);
-
-$profile = null;
-if (isset($_SESSION['user_id'])) {
-    $pRow = sqlsrv_fetch_array(
-        sqlsrv_query($conn,
-            "SELECT r.FIRST_NAME, r.MIDDLE_NAME, r.LAST_NAME, r.SUFFIX, r.BIRTHDATE, r.GENDER, r.MOBILE_NUMBER, u.EMAIL
-             FROM REGISTRATION r JOIN USERS u ON u.USER_ID = r.USER_ID
-             WHERE r.USER_ID = ?", [$_SESSION['user_id']]),
-        SQLSRV_FETCH_ASSOC
-    );
-    if ($pRow) $profile = $pRow;
-}
-
-$fullName = $profile
-    ? trim($profile['FIRST_NAME'].' '.($profile['MIDDLE_NAME'] ? $profile['MIDDLE_NAME'].' ' : '').$profile['LAST_NAME'].($profile['SUFFIX'] ? ' '.$profile['SUFFIX'] : ''))
-    : ($_SESSION['username'] ?? 'Unknown');
-
-$error = ""; $success = false;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userId      = $_SESSION['user_id'];
-    $serviceType = trim($_POST['service_type']);
-    $purpose     = trim($_POST['purpose']);
-    $delivery    = trim($_POST['delivery']);
-    $address     = trim($_POST['delivery_address'] ?? '');
-    $payment     = trim($_POST['payment_method']);
-    $notes       = trim($_POST['notes'] ?? '');
-
-    $extra = [];
-    $extra['delivery']         = $delivery;
-    $extra['delivery_address'] = $delivery === 'Delivery' ? $address : 'Pickup at Barangay Hall';
-    $extra['payment_method']   = $payment;
-
-    $uploadDir = 'uploads/requests/';
-    $uploadedFiles = [];
-    if (!empty($_FILES)) {
-        foreach ($_FILES as $key => $file) {
-            if ($file['error'] === UPLOAD_ERR_OK) {
-                $ext  = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $dest = $uploadDir . uniqid($key.'_').'.'.$ext;
-                if (move_uploaded_file($file['tmp_name'], $dest)) $uploadedFiles[$key] = $dest;
-            }
-        }
-    }
-    $extra['uploads'] = $uploadedFiles;
-
-    // Service-specific fields
-    $fields = ['cedula_number','years_residing','full_address','monthly_income','family_members',
-               'id_color','blood_type','emergency_contact','emergency_contact_num',
-               'business_name','business_type','business_address',
-               'respondent','incident_date','incident_place','incident_desc',
-               'solo_parent_id','pwd_type','sc_osca_id','assistance_type','assistance_reason',
-               'endorsement_purpose','endorsement_recipient'];
-    foreach ($fields as $f) { if (isset($_POST[$f])) $extra[$f] = trim($_POST[$f]); }
-
-    $extraJson = json_encode($extra);
-    $sql  = "INSERT INTO REQUESTS (USER_ID, SERVICE_TYPE, PURPOSE, EXTRA_DATA, NOTES, STATUS, CREATED_AT) VALUES (?, ?, ?, ?, ?, 'PENDING', GETDATE())";
-    $stmt = sqlsrv_query($conn, $sql, [$userId, $serviceType, $purpose, $extraJson, $notes]);
-    if ($stmt === false) { $error = "Submission failed: ".print_r(sqlsrv_errors(), true); }
-    else { $success = true; }
-}
-?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Request a Document — Barangay Alapan I-A</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-  :root {
-    --dark:#051650; --dark-hover:#0a2470; --lime:#ccff00;
-    --white:#ffffff; --red:#e03030; --orange:#e07800;
-    --green:#2e7d32; --bg:#eef0f8; --border:rgba(5,22,80,0.14);
-  }
-  body { font-family:Arial,sans-serif; background:var(--bg); color:var(--dark); min-height:100vh; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Request Documents – BarangayKonek</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
 
-  /* NAV */
-  .site-nav { background:var(--dark); border-bottom:3px solid var(--lime); padding:10px 0; }
-  .nav-seal { width:50px; height:50px; border-radius:50%; overflow:hidden; flex-shrink:0; }
-  .nav-seal img { width:100%; height:100%; object-fit:cover; }
-  .nav-brgy { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--lime); display:block; line-height:1.2; }
-  .nav-name  { font-size:17px; font-weight:700; color:var(--white); line-height:1.2; }
-  .nav-link-light { font-size:13px; color:rgba(255,255,255,0.60); text-decoration:none; transition:color .2s; }
-  .nav-link-light:hover { color:var(--lime); }
+    <style>
+      /* ── RESET & BASE ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'DM Sans', sans-serif;
+        background: #f0f2f5;
+        color: #1a2236;
+        min-height: 100vh;
+      }
 
-  /* PAGE HEADER */
-  .page-header { background:var(--dark); color:var(--white); padding:36px 0 32px; border-bottom:3px solid var(--lime); }
-  .page-header .badge-label { display:inline-flex; align-items:center; gap:7px; background:var(--lime); color:var(--dark); font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:4px; margin-bottom:12px; }
-  .page-header h1 { font-size:28px; font-weight:900; margin-bottom:4px; }
-  .page-header p  { font-size:14px; color:rgba(255,255,255,0.65); margin:0; }
+      /* ── LAYOUT ── */
+      .container { display: flex; min-height: 100vh; }
 
-  /* LAYOUT */
-  .request-layout { display:grid; grid-template-columns:220px 1fr; gap:24px; align-items:start; }
-  @media(max-width:768px) { .request-layout { grid-template-columns:1fr; } }
+      /* ── SIDEBAR ── */
+      .sidebar {
+        width: 240px;
+        min-height: 100vh;
+        background: #0f1b35;
+        display: flex;
+        flex-direction: column;
+        padding: 0 0 24px;
+        position: sticky;
+        top: 0;
+        flex-shrink: 0;
+      }
+      .sidebar-brand {
+        padding: 28px 24px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        margin-bottom: 8px;
+      }
+      .sidebar-brand h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+      }
+      .sidebar-brand span {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #b4ff39;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+      }
 
-  /* CATEGORY SIDEBAR */
-  .cat-sidebar { background:var(--white); border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:0 4px 16px rgba(5,22,80,.08); position:sticky; top:20px; }
-  .cat-sidebar-title { background:var(--dark); color:var(--lime); font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:12px 16px; }
-  .cat-btn { display:flex; align-items:center; gap:10px; width:100%; padding:11px 16px; border:none; background:transparent; text-align:left; font-family:Arial,sans-serif; font-size:13px; font-weight:600; color:#666; cursor:pointer; transition:background .15s,color .15s; border-left:3px solid transparent; }
-  .cat-btn:hover { background:rgba(5,22,80,.04); color:var(--dark); }
-  .cat-btn.active { background:rgba(204,255,0,.15); color:var(--dark); border-left-color:var(--lime); font-weight:700; }
-  .cat-btn i { width:16px; text-align:center; font-size:13px; color:var(--dark); opacity:.6; }
-  .cat-btn.active i { opacity:1; }
-  .cat-count { margin-left:auto; background:rgba(5,22,80,.1); color:var(--dark); font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
-  .cat-btn.active .cat-count { background:var(--dark); color:var(--lime); }
+      /* Profile compact */
+      .profile--compact {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+        margin: 4px 12px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+      }
+      .avatar-ring {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        border: 2px solid #b4ff39;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #1e3060;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .avatar-ring img { width: 100%; height: 100%; object-fit: cover; }
+      .avatar-placeholder { color: #b4ff39; font-size: 1.1rem; }
+      .profile-meta h3 { font-size: 0.82rem; font-weight: 600; color: #fff; }
+      .profile-meta p { font-size: 0.7rem; color: #8899bb; margin-top: 1px; }
+      .portal-badge {
+        display: inline-block;
+        margin-top: 4px;
+        background: #b4ff39;
+        color: #0f1b35;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        padding: 2px 7px;
+        border-radius: 20px;
+      }
 
-  /* SERVICE GRID */
-  .service-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
-  .service-card { background:var(--white); border:2px solid var(--border); border-radius:10px; padding:18px 16px; cursor:pointer; transition:border-color .2s,box-shadow .2s,transform .15s; position:relative; overflow:hidden; }
-  .service-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--border); transition:background .2s; }
-  .service-card:hover { border-color:var(--dark); box-shadow:0 4px 20px rgba(5,22,80,.12); transform:translateY(-2px); }
-  .service-card:hover::before, .service-card.selected::before { background:var(--lime); }
-  .service-card.selected { border-color:var(--dark); box-shadow:0 4px 20px rgba(5,22,80,.15); }
-  .service-card.hidden { display:none; }
+      /* Nav */
+      .menu { display: flex; flex-direction: column; gap: 2px; padding: 12px 12px 0; flex: 1; }
+      .menu a {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        color: #8899bb;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background 0.18s, color 0.18s;
+      }
+      .menu a:hover { background: rgba(255,255,255,0.07); color: #fff; }
+      .menu a.active { background: #b4ff39; color: #0f1b35; font-weight: 700; }
+      .menu a.active .nav-icon { color: #0f1b35; }
+      .nav-icon { font-size: 0.95rem; width: 18px; text-align: center; color: #8899bb; }
+      .menu a.active .nav-icon, .menu a:hover .nav-icon { color: inherit; }
 
-  .svc-icon { width:40px; height:40px; border-radius:7px; background:var(--dark); color:var(--lime); display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px; }
-  .svc-name { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:4px; line-height:1.3; }
-  .svc-desc { font-size:11px; color:#999; line-height:1.4; }
-  .svc-tags { margin-top:8px; display:flex; gap:4px; flex-wrap:wrap; }
-  .stag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
-  .stag-fee  { background:rgba(5,22,80,.07); color:var(--dark); }
-  .stag-days { background:rgba(204,255,0,.3); color:var(--dark); }
-  .stag-free { background:rgba(46,125,50,.12); color:var(--green); }
-  .check-badge { position:absolute; top:10px; right:10px; width:20px; height:20px; border-radius:50%; background:var(--lime); color:var(--dark); display:none; align-items:center; justify-content:center; font-size:10px; font-weight:900; }
-  .service-card.selected .check-badge { display:flex; }
+      .community-sidebar-section {
+        padding: 20px 24px 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #4a5a7a;
+      }
 
-  /* NO RESULTS */
-  .no-results { text-align:center; padding:40px 20px; color:#aaa; font-size:14px; display:none; }
-  .no-results i { font-size:32px; display:block; margin-bottom:10px; }
+      .logout {
+        display: flex; align-items: center; gap: 10px;
+        margin: 8px 12px 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        color: #ff6b6b;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: rgba(255,107,107,0.08);
+        transition: background 0.18s;
+      }
+      .logout:hover { background: rgba(255,107,107,0.18); }
 
-  /* FORM PANEL */
-  .form-panel { display:none; background:var(--white); border:1px solid var(--border); border-top:4px solid var(--dark); border-radius:10px; padding:36px 40px; box-shadow:0 6px 30px rgba(5,22,80,.09); margin-top:24px; }
-  .form-panel.show { display:block; }
+      /* ── MAIN CONTENT ── */
+      .content { flex: 1; display: flex; flex-direction: column; }
+      .content-inner { padding: 32px 36px; flex: 1; }
 
-  .form-section-title { display:flex; align-items:center; gap:10px; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--white); background:var(--dark); padding:8px 14px; border-radius:5px; margin-bottom:20px; }
-  .form-section-title i { color:var(--lime); }
+      /* Topbar */
+      .topbar {
+        display: flex; align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+      .greeting-block h1 { font-size: 1.75rem; font-weight: 700; color: #1a2236; }
+      .accent-name { color: #2563eb; }
+      .subtitle { color: #667085; font-size: 0.9rem; margin-top: 4px; }
 
-  .field-label { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#555; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
-  .field-label i { color:var(--dark); width:14px; }
-  .field-input { width:100%; background:var(--white); border:1px solid #ccc; border-radius:6px; padding:11px 14px; color:var(--dark); font-family:Arial,sans-serif; font-size:14px; outline:none; transition:border-color .2s,box-shadow .2s; }
-  .field-input:focus { border-color:var(--dark); box-shadow:0 0 0 3px rgba(5,22,80,.10); }
-  .field-input[readonly] { background:#f4f4f4; color:#999; cursor:not-allowed; }
+      /* User chip */
+      .user-chip {
+        display: flex; align-items: center; gap: 10px;
+        background: #0f1b35;
+        border-radius: 14px;
+        padding: 10px 16px 10px 10px;
+      }
+      .user-chip-avatar-wrap {
+        width: 38px; height: 38px; border-radius: 50%;
+        overflow: hidden; border: 2px solid #b4ff39;
+        background: #1e3060;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .user-chip-img { width: 100%; height: 100%; object-fit: cover; }
+      .user-chip-info { display: flex; flex-direction: column; }
+      .user-chip-name { font-size: 0.85rem; font-weight: 600; color: #fff; }
+      .user-chip-role { font-size: 0.72rem; color: #8899bb; }
+      .user-chip-bell-wrap {
+        position: relative; margin-left: 6px;
+        color: #b4ff39; font-size: 1rem; text-decoration: none;
+      }
+      .user-chip-notif {
+        position: absolute; top: -6px; right: -7px;
+        background: #ef4444; color: #fff;
+        font-size: 0.58rem; font-weight: 700;
+        width: 15px; height: 15px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        border: 1.5px solid #0f1b35;
+      }
 
-  /* PROFILE SUMMARY */
-  .profile-summary { background:rgba(5,22,80,.04); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:20px; display:flex; align-items:center; gap:14px; }
-  .profile-avatar { width:44px; height:44px; border-radius:50%; background:var(--dark); color:var(--lime); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
-  .profile-info-name { font-size:15px; font-weight:700; color:var(--dark); }
-  .profile-info-sub  { font-size:12px; color:#888; }
+      /* ── SEARCH ── */
+      .search-section { margin-bottom: 24px; }
+      .search-label { font-size: 0.8rem; font-weight: 600; color: #667085; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+      .search-bar {
+        display: flex; align-items: center; gap: 0;
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        transition: border-color 0.18s, box-shadow 0.18s;
+      }
+      .search-bar:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+      .search-bar i { padding: 0 14px; color: #94a3b8; font-size: 0.95rem; }
+      .search-bar input {
+        flex: 1; border: none; outline: none;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem; color: #1a2236;
+        padding: 14px 0;
+        background: transparent;
+      }
+      .search-bar input::placeholder { color: #94a3b8; }
 
-  /* OWNERSHIP WARNING */
-  .ownership-warn { display:flex; align-items:flex-start; gap:12px; background:#fffbea; border:1px solid #f5e06f; border-left:4px solid var(--orange); border-radius:6px; padding:14px 16px; margin-bottom:22px; font-size:13px; color:#7a5800; line-height:1.6; }
-  .ownership-warn i { flex-shrink:0; margin-top:2px; color:var(--orange); }
-  .own-check { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:700; cursor:pointer; }
-  .own-check input { accent-color:var(--dark); width:16px; height:16px; }
+      /* Filter pills */
+      .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+      .pill {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1.5px solid #e2e8f0;
+        background: #fff;
+        color: #667085;
+        cursor: pointer;
+        transition: all 0.15s;
+        user-select: none;
+      }
+      .pill:hover { border-color: #2563eb; color: #2563eb; }
+      .pill.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-  /* UPLOAD */
-  .upload-zone { border:2px dashed #ccc; border-radius:6px; padding:16px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; position:relative; }
-  .upload-zone:hover { border-color:var(--dark); background:#f5f7ff; }
-  .upload-zone.has-file { border-color:var(--green); background:#f4fff4; }
-  .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-  .upload-zone-text { font-size:11px; color:#888; }
-  .upload-zone-text strong { color:var(--dark); }
-  .upload-filename { font-size:11px; color:var(--green); font-weight:700; display:none; margin-top:4px; }
+      /* ── DOCUMENT GRID ── */
+      .doc-section-title {
+        font-size: 1rem; font-weight: 700; color: #1a2236;
+        margin-bottom: 14px; margin-top: 4px;
+      }
+      .doc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .doc-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1.5px solid #e2e8f0;
+        padding: 20px 18px 16px;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        position: relative;
+        overflow: hidden;
+      }
+      .doc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(37,99,235,0.1);
+        border-color: #2563eb;
+      }
+      .doc-card-icon {
+        width: 44px; height: 44px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.15rem;
+        margin-bottom: 12px;
+      }
+      .icon--blue { background: #eff6ff; color: #2563eb; }
+      .icon--green { background: #f0fdf4; color: #16a34a; }
+      .icon--yellow { background: #fefce8; color: #ca8a04; }
+      .icon--red { background: #fff1f2; color: #dc2626; }
+      .icon--purple { background: #faf5ff; color: #7c3aed; }
+      .icon--teal { background: #f0fdfa; color: #0d9488; }
 
-  /* DELIVERY */
-  .delivery-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-  .deliv-btn { padding:12px; border:2px solid var(--border); border-radius:8px; cursor:pointer; text-align:center; font-family:Arial,sans-serif; font-size:13px; font-weight:700; background:var(--white); color:#999; transition:all .2s; }
-  .deliv-btn:hover { border-color:var(--dark); color:var(--dark); }
-  .deliv-btn.active { border-color:var(--dark); background:var(--dark); color:var(--lime); }
-  .deliv-btn i { display:block; font-size:18px; margin-bottom:4px; }
+      .doc-card-name { font-size: 0.88rem; font-weight: 700; color: #1a2236; margin-bottom: 4px; }
+      .doc-card-desc { font-size: 0.76rem; color: #667085; line-height: 1.4; }
+      .doc-card-fee {
+        margin-top: 12px;
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.75rem; font-weight: 700;
+        padding: 3px 10px; border-radius: 20px;
+      }
+      .fee--free { background: #f0fdf4; color: #16a34a; }
+      .fee--paid { background: #eff6ff; color: #2563eb; }
 
-  /* PAYMENT */
-  .payment-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-bottom:6px; }
-  .pay-card { border:2px solid var(--border); border-radius:8px; padding:12px 8px; cursor:pointer; text-align:center; font-size:12px; font-weight:700; color:#999; background:var(--white); transition:all .2s; }
-  .pay-card:hover { border-color:var(--dark); color:var(--dark); }
-  .pay-card.active { border-color:var(--dark); background:var(--dark); color:var(--lime); }
-  .pay-card i { display:block; font-size:18px; margin-bottom:5px; }
+      .doc-card-badge {
+        position: absolute; top: 12px; right: 12px;
+        font-size: 0.62rem; font-weight: 700;
+        background: #f1f5f9; color: #64748b;
+        padding: 2px 7px; border-radius: 20px;
+        text-transform: uppercase; letter-spacing: 0.5px;
+      }
+      .badge--popular { background: #fef9c3; color: #92400e; }
 
-  /* REQ BOX */
-  .req-box { background:rgba(5,22,80,.04); border:1px solid var(--border); border-left:4px solid var(--lime); border-radius:6px; padding:14px 16px; margin-bottom:20px; }
-  .req-box-title { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--dark); margin-bottom:8px; }
-  .req-item { font-size:13px; color:#444; display:flex; align-items:center; gap:8px; margin-bottom:5px; }
-  .req-item i { color:var(--dark); font-size:10px; flex-shrink:0; }
+      /* ── MODAL OVERLAY ── */
+      .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(15,27,53,0.55);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.22s;
+      }
+      .modal-overlay.open { opacity: 1; pointer-events: all; }
 
-  /* SELECTED SUMMARY */
-  .selected-summary { display:flex; align-items:center; gap:14px; background:var(--dark); color:var(--white); border-radius:8px; padding:14px 18px; margin-bottom:24px; }
-  .ss-icon { width:38px; height:38px; border-radius:6px; background:var(--lime); color:var(--dark); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-  .ss-name { font-size:15px; font-weight:700; }
-  .ss-sub  { font-size:12px; color:rgba(255,255,255,.6); }
+      .modal {
+        background: #fff;
+        border-radius: 20px;
+        width: 100%; max-width: 540px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 64px rgba(15,27,53,0.22);
+        transform: translateY(16px) scale(0.98);
+        transition: transform 0.22s;
+      }
+      .modal-overlay.open .modal { transform: translateY(0) scale(1); }
 
-  /* SEARCH */
-  .search-wrap { position:relative; margin-bottom:16px; }
-  .search-wrap input { width:100%; padding:10px 14px 10px 38px; border:1px solid #ccc; border-radius:7px; font-family:Arial,sans-serif; font-size:13px; outline:none; transition:border-color .2s; }
-  .search-wrap input:focus { border-color:var(--dark); }
-  .search-wrap i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#aaa; font-size:13px; }
+      .modal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 22px 24px 0;
+        position: sticky; top: 0; background: #fff; z-index: 2;
+        border-radius: 20px 20px 0 0;
+      }
+      .modal-header-left { display: flex; align-items: center; gap: 12px; }
+      .modal-doc-icon {
+        width: 44px; height: 44px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+      }
+      .modal-title { font-size: 1.05rem; font-weight: 700; color: #1a2236; }
+      .modal-subtitle { font-size: 0.78rem; color: #667085; margin-top: 2px; }
+      .modal-close {
+        width: 34px; height: 34px; border-radius: 50%;
+        border: none; background: #f1f5f9; color: #64748b;
+        font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s;
+      }
+      .modal-close:hover { background: #e2e8f0; color: #1a2236; }
 
-  .btn-submit { width:100%; background:var(--dark); color:var(--white); border:none; padding:15px; border-radius:6px; font-size:15px; font-weight:700; cursor:pointer; font-family:Arial,sans-serif; transition:background .2s; display:flex; align-items:center; justify-content:center; gap:9px; }
-  .btn-submit:hover { background:var(--dark-hover); }
-  .btn-submit:disabled { opacity:.5; pointer-events:none; }
+      /* Steps */
+      .modal-steps {
+        display: flex; align-items: center; gap: 0;
+        padding: 18px 24px 0;
+      }
+      .step-dot {
+        width: 28px; height: 28px; border-radius: 50%;
+        border: 2px solid #e2e8f0; background: #fff;
+        color: #94a3b8; font-size: 0.75rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; transition: all 0.2s;
+      }
+      .step-dot.active { border-color: #2563eb; background: #2563eb; color: #fff; }
+      .step-dot.done { border-color: #16a34a; background: #16a34a; color: #fff; }
+      .step-line { flex: 1; height: 2px; background: #e2e8f0; transition: background 0.2s; }
+      .step-line.done { background: #16a34a; }
 
-  .alert-err { display:flex; align-items:flex-start; gap:10px; background:#fff0f0; border:1px solid #f5c0c0; border-left:4px solid var(--red); border-radius:6px; padding:11px 14px; font-size:13px; color:var(--red); margin-bottom:20px; }
+      .modal-body { padding: 20px 24px 0; }
 
-  .success-overlay { display:none; position:fixed; inset:0; z-index:1060; background:rgba(5,22,80,.72); align-items:center; justify-content:center; }
-  .success-overlay.show { display:flex; }
-  .success-box { background:var(--white); border-radius:12px; padding:48px 40px; max-width:420px; width:90%; text-align:center; border-top:5px solid var(--lime); box-shadow:0 24px 64px rgba(5,22,80,.32); }
-  .success-icon-wrap { width:72px; height:72px; border-radius:50%; background:var(--lime); color:var(--dark); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 18px; }
-  .success-title { font-size:24px; font-weight:700; color:var(--dark); margin-bottom:8px; }
-  .success-body  { font-size:14px; color:#555; line-height:1.7; margin-bottom:24px; }
-  .btn-go-dash { display:inline-flex; align-items:center; gap:9px; background:var(--dark); color:var(--white); padding:13px 34px; border-radius:6px; font-size:15px; font-weight:700; text-decoration:none; transition:background .2s; }
-  .btn-go-dash:hover { background:var(--dark-hover); color:var(--white); }
-  .auth-note { font-size:12px; color:#bbb; text-align:center; margin-top:16px; display:flex; align-items:center; justify-content:center; gap:6px; }
-  @media(max-width:640px) { .form-panel { padding:24px 16px; } }
-</style>
-</head>
-<body class="d-flex flex-column min-vh-100">
+      /* Form elements */
+      .form-section { margin-bottom: 20px; }
+      .form-label {
+        display: block; font-size: 0.8rem; font-weight: 600;
+        color: #374151; margin-bottom: 6px;
+      }
+      .form-label span { color: #ef4444; }
+      .form-input, .form-select, .form-textarea {
+        width: 100%; padding: 11px 14px;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.9rem; color: #1a2236;
+        outline: none; background: #fff;
+        transition: border-color 0.18s, box-shadow 0.18s;
+      }
+      .form-input:focus, .form-select:focus, .form-textarea:focus {
+        border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+      .form-textarea { resize: vertical; min-height: 80px; }
+      .form-hint { font-size: 0.73rem; color: #94a3b8; margin-top: 4px; }
 
-<?php if ($success): ?>
-<div class="success-overlay show">
-  <div class="success-box">
-    <div class="success-icon-wrap"><i class="fa-solid fa-paper-plane"></i></div>
-    <div class="success-title">Request Submitted!</div>
-    <div class="success-body">Your request has been received and is now pending review by barangay staff. You will be notified once it is ready.</div>
-    <a href="dashboard.html" class="btn-go-dash"><i class="fa-solid fa-house"></i>Back to Dashboard</a>
-  </div>
-</div>
-<?php endif; ?>
+      /* Choice cards (pickup/delivery / payment) */
+      .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .choice-card {
+        border: 1.5px solid #e2e8f0; border-radius: 12px;
+        padding: 14px; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        text-align: center; transition: all 0.18s;
+        background: #fff;
+      }
+      .choice-card:hover { border-color: #2563eb; background: #eff6ff; }
+      .choice-card.selected { border-color: #2563eb; background: #eff6ff; }
+      .choice-card.selected .choice-icon { color: #2563eb; }
+      .choice-icon { font-size: 1.4rem; color: #94a3b8; transition: color 0.18s; }
+      .choice-label { font-size: 0.82rem; font-weight: 700; color: #1a2236; }
+      .choice-sub { font-size: 0.7rem; color: #667085; }
 
-<nav class="site-nav">
-  <div class="container">
-    <div class="d-flex align-items-center justify-content-between">
-      <a href="home.html" class="d-flex align-items-center gap-2 text-decoration-none">
-        <div class="nav-seal"><img src="alapan.png" alt="Logo"></div>
-        <div><span class="nav-brgy">Barangay</span><span class="nav-name">Alapan I-A</span></div>
-      </a>
-      <a href="dashboard.html" class="nav-link-light"><i class="fa-solid fa-arrow-left me-1"></i>Dashboard</a>
-    </div>
-  </div>
-</nav>
+      /* Payment methods */
+      .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .payment-option {
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        padding: 12px 8px; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        transition: all 0.15s; background: #fff;
+      }
+      .payment-option:hover { border-color: #2563eb; background: #eff6ff; }
+      .payment-option.selected { border-color: #2563eb; background: #eff6ff; }
+      .payment-option i { font-size: 1.2rem; color: #94a3b8; }
+      .payment-option.selected i { color: #2563eb; }
+      .payment-option span { font-size: 0.72rem; font-weight: 600; color: #374151; text-align: center; }
 
-<div class="page-header">
-  <div class="container">
-    <div class="badge-label"><i class="fa-solid fa-file-lines me-1"></i>Transactions</div>
-    <h1>Request a Document</h1>
-    <p>Browse available services, select one, and fill in the required details.</p>
-  </div>
-</div>
+      /* Fee summary */
+      .fee-summary {
+        background: #f8fafc; border-radius: 12px;
+        padding: 14px 16px; margin-top: 8px;
+      }
+      .fee-row {
+        display: flex; justify-content: space-between;
+        font-size: 0.82rem; color: #374151;
+        padding: 4px 0;
+      }
+      .fee-row.total {
+        border-top: 1.5px solid #e2e8f0;
+        margin-top: 6px; padding-top: 8px;
+        font-weight: 700; color: #1a2236; font-size: 0.9rem;
+      }
+      .free-tag { color: #16a34a; font-weight: 700; }
 
-<div class="flex-grow-1 py-5">
-<div class="container-xl">
+      /* Alert / info box */
+      .info-box {
+        background: #eff6ff; border: 1px solid #bfdbfe;
+        border-radius: 10px; padding: 10px 14px;
+        font-size: 0.78rem; color: #1d4ed8;
+        display: flex; gap: 8px; align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .info-box i { margin-top: 2px; flex-shrink: 0; }
 
-  <?php if ($error): ?>
-  <div class="alert-err mb-4"><i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i><span><?= htmlspecialchars($error) ?></span></div>
-  <?php endif; ?>
+      /* Requirements list */
+      .req-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+      .req-list li {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.82rem; color: #374151;
+        background: #f8fafc; border-radius: 8px;
+        padding: 8px 12px;
+      }
+      .req-list li i { color: #94a3b8; font-size: 0.75rem; }
 
-  <div class="request-layout">
+      /* Divider */
+      .modal-divider { height: 1px; background: #f1f5f9; margin: 4px 0 16px; }
 
-    <!-- ══ CATEGORY SIDEBAR ══ -->
-    <div class="cat-sidebar">
-      <div class="cat-sidebar-title"><i class="fa-solid fa-layer-group me-2"></i>Categories</div>
-      <button class="cat-btn active" onclick="filterCat('all', this)">
-        <i class="fa-solid fa-grip"></i>All Services <span class="cat-count">18</span>
-      </button>
-      <button class="cat-btn" onclick="filterCat('certificates', this)">
-        <i class="fa-solid fa-certificate"></i>Certificates <span class="cat-count">8</span>
-      </button>
-      <button class="cat-btn" onclick="filterCat('identification', this)">
-        <i class="fa-solid fa-id-card"></i>Identification <span class="cat-count">1</span>
-      </button>
-      <button class="cat-btn" onclick="filterCat('business', this)">
-        <i class="fa-solid fa-store"></i>Business <span class="cat-count">2</span>
-      </button>
-      <button class="cat-btn" onclick="filterCat('social', this)">
-        <i class="fa-solid fa-hands-holding-child"></i>Social Services <span class="cat-count">5</span>
-      </button>
-      <button class="cat-btn" onclick="filterCat('legal', this)">
-        <i class="fa-solid fa-scale-balanced"></i>Legal <span class="cat-count">2</span>
-      </button>
-    </div>
+      /* Modal footer */
+      .modal-footer {
+        padding: 16px 24px 22px;
+        display: flex; gap: 10px; justify-content: flex-end;
+        position: sticky; bottom: 0; background: #fff;
+        border-radius: 0 0 20px 20px;
+      }
+      .btn {
+        padding: 10px 22px; border-radius: 10px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.88rem; font-weight: 700;
+        cursor: pointer; border: none; transition: all 0.15s;
+        display: flex; align-items: center; gap: 7px;
+      }
+      .btn-secondary {
+        background: #f1f5f9; color: #374151;
+      }
+      .btn-secondary:hover { background: #e2e8f0; }
+      .btn-primary {
+        background: #2563eb; color: #fff;
+        box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      }
+      .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+      .btn-success {
+        background: #16a34a; color: #fff;
+        box-shadow: 0 2px 8px rgba(22,163,74,0.25);
+      }
+      .btn-success:hover { background: #15803d; transform: translateY(-1px); }
 
-    <!-- ══ RIGHT PANEL ══ -->
-    <div>
-      <!-- Search -->
-      <div class="search-wrap">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Search for a document or service…" oninput="searchServices()">
-      </div>
+      /* Success state */
+      .success-state {
+        text-align: center; padding: 32px 24px 20px;
+        display: none;
+      }
+      .success-state.visible { display: block; }
+      .success-icon {
+        width: 70px; height: 70px;
+        background: #f0fdf4; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 1.8rem; color: #16a34a;
+      }
+      .success-state h3 { font-size: 1.15rem; font-weight: 700; color: #1a2236; margin-bottom: 6px; }
+      .success-state p { font-size: 0.85rem; color: #667085; line-height: 1.5; }
+      .ref-tag {
+        display: inline-block; margin-top: 14px;
+        background: #eff6ff; color: #2563eb;
+        font-size: 0.78rem; font-weight: 700;
+        padding: 6px 16px; border-radius: 20px;
+        letter-spacing: 0.5px;
+      }
 
-      <!-- Service Grid -->
-      <div class="service-grid" id="serviceGrid">
+      /* No results */
+      .no-results {
+        text-align: center; padding: 48px 24px;
+        color: #94a3b8;
+        display: none;
+      }
+      .no-results.visible { display: block; }
+      .no-results i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+      .no-results p { font-size: 0.9rem; }
 
-        <!-- CERTIFICATES -->
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Barangay Clearance')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-file-circle-check"></i></div>
-          <div class="svc-name">Barangay Clearance</div>
-          <div class="svc-desc">Good moral standing for employment, loans, and other requirements.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱50</span><span class="stag stag-days">1–2 days</span></div>
+      /* Hidden class */
+      .hidden { display: none !important; }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <h2>BarangayKonek</h2>
+          <span>Resident</span>
         </div>
 
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of Residency')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-house-circle-check"></i></div>
-          <div class="svc-name">Certificate of Residency</div>
-          <div class="svc-desc">Certifies that you are a resident of Barangay Alapan I-A.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱50</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of Indigency')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
-          <div class="svc-name">Certificate of Indigency</div>
-          <div class="svc-desc">For residents qualifying for financial assistance programs.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of Good Moral Character')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-star"></i></div>
-          <div class="svc-name">Good Moral Character</div>
-          <div class="svc-desc">Certifies good standing and character within the barangay.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱50</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of No Income')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-money-bill-slash"></i></div>
-          <div class="svc-name">Certificate of No Income</div>
-          <div class="svc-desc">Certifies that you have no source of income.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of First Time Job Seeker')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-briefcase"></i></div>
-          <div class="svc-name">First Time Job Seeker</div>
-          <div class="svc-desc">Required under RA 11261 for first-time job seekers.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">Same day</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of Solo Parent')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-person-breastfeeding"></i></div>
-          <div class="svc-name">Certificate of Solo Parent</div>
-          <div class="svc-desc">For solo parents availing of government benefits and discounts.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="certificates" onclick="selectService(this,'Certificate of Cohabitation')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-people-roof"></i></div>
-          <div class="svc-name">Certificate of Cohabitation</div>
-          <div class="svc-desc">Certifies that two individuals are living together as partners.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱50</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <!-- IDENTIFICATION -->
-        <div class="service-card" data-cat="identification" onclick="selectService(this,'Barangay ID')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-id-card"></i></div>
-          <div class="svc-name">Barangay ID</div>
-          <div class="svc-desc">Official barangay identification card for residents.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱100</span><span class="stag stag-days">3–5 days</span></div>
-        </div>
-
-        <!-- BUSINESS -->
-        <div class="service-card" data-cat="business" onclick="selectService(this,'Business Permit (New)')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-store"></i></div>
-          <div class="svc-name">Business Permit (New)</div>
-          <div class="svc-desc">For new businesses operating within the barangay.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱200</span><span class="stag stag-days">3–5 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="business" onclick="selectService(this,'Business Permit (Renewal)')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-rotate"></i></div>
-          <div class="svc-name">Business Permit (Renewal)</div>
-          <div class="svc-desc">Annual renewal of existing barangay business clearance.</div>
-          <div class="svc-tags"><span class="stag stag-fee">₱150</span><span class="stag stag-days">1–3 days</span></div>
-        </div>
-
-        <!-- SOCIAL SERVICES -->
-        <div class="service-card" data-cat="social" onclick="selectService(this,'PWD Certificate')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-wheelchair"></i></div>
-          <div class="svc-name">PWD Certificate</div>
-          <div class="svc-desc">Barangay endorsement for persons with disability benefits.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="social" onclick="selectService(this,'Senior Citizen Endorsement')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-person-cane"></i></div>
-          <div class="svc-name">Senior Citizen Endorsement</div>
-          <div class="svc-desc">Barangay endorsement letter for senior citizen benefits.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">Same day</span></div>
-        </div>
-
-        <div class="service-card" data-cat="social" onclick="selectService(this,'4Ps / DSWD Endorsement')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-people-group"></i></div>
-          <div class="svc-name">4Ps / DSWD Endorsement</div>
-          <div class="svc-desc">Endorsement letter for DSWD or Pantawid Pamilya programs.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">1–2 days</span></div>
-        </div>
-
-        <div class="service-card" data-cat="social" onclick="selectService(this,'Burial Assistance Request')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-cross"></i></div>
-          <div class="svc-name">Burial Assistance Request</div>
-          <div class="svc-desc">Financial assistance request for bereaved indigent families.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">Same day</span></div>
-        </div>
-
-        <div class="service-card" data-cat="social" onclick="selectService(this,'Financial Assistance Request')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-          <div class="svc-name">Financial Assistance Request</div>
-          <div class="svc-desc">Request for emergency financial aid from the barangay.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">2–3 days</span></div>
-        </div>
-
-        <!-- LEGAL -->
-        <div class="service-card" data-cat="legal" onclick="selectService(this,'Barangay Endorsement Letter')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
-          <div class="svc-name">Endorsement Letter</div>
-          <div class="svc-desc">Official barangay letter for NBI, passport, court, or hospital use.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">Same day</span></div>
-        </div>
-
-        <div class="service-card" data-cat="legal" onclick="selectService(this,'Barangay Protection Order')">
-          <div class="check-badge"><i class="fa-solid fa-check"></i></div>
-          <div class="svc-icon"><i class="fa-solid fa-shield-heart"></i></div>
-          <div class="svc-name">Barangay Protection Order</div>
-          <div class="svc-desc">Emergency protection order for VAWC (violence against women and children) cases.</div>
-          <div class="svc-tags"><span class="stag stag-free">Free</span><span class="stag stag-days">Same day</span></div>
-        </div>
-
-      </div><!-- /service-grid -->
-
-      <div class="no-results" id="noResults">
-        <i class="fa-solid fa-magnifying-glass"></i>No services found. Try a different search or category.
-      </div>
-
-    </div><!-- /right panel -->
-  </div><!-- /request-layout -->
-
-  <!-- ══ FORM PANEL (full width below) ══ -->
-  <div class="form-panel" id="formPanel">
-    <form method="POST" action="request.php" enctype="multipart/form-data">
-      <input type="hidden" name="service_type"   id="serviceTypeInput">
-      <input type="hidden" name="delivery"        id="deliveryInput" value="Pickup">
-      <input type="hidden" name="payment_method"  id="paymentInput"  value="">
-
-      <div class="selected-summary">
-        <div class="ss-icon" id="summaryIcon"><i class="fa-solid fa-file"></i></div>
-        <div>
-          <div class="ss-name" id="summaryName">—</div>
-          <div class="ss-sub"  id="summaryFee">—</div>
-        </div>
-      </div>
-
-      <!-- OWNERSHIP WARNING -->
-      <div class="ownership-warn">
-        <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
-        <div>
-          <strong>Important Notice</strong><br>
-          This request will be processed under: <strong><?= htmlspecialchars($fullName) ?></strong>.
-          This document is for <strong>your personal use only</strong>.
-          <label class="own-check" for="ownConfirm">
-            <input type="checkbox" id="ownConfirm" required>
-            I confirm this document is being requested for myself.
-          </label>
-        </div>
-      </div>
-
-      <!-- PROFILE INFO -->
-      <div class="form-section-title"><i class="fa-solid fa-user"></i>Requestor's Information</div>
-      <div class="profile-summary mb-3">
-        <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
-        <div>
-          <div class="profile-info-name"><?= htmlspecialchars($fullName) ?></div>
-          <div class="profile-info-sub">
-            <?= htmlspecialchars($profile['GENDER'] ?? '') ?>
-            <?php if ($profile && $profile['BIRTHDATE']): ?>&nbsp;·&nbsp;<?= $profile['BIRTHDATE']->format('F d, Y') ?><?php endif; ?>
-            &nbsp;·&nbsp;<?= htmlspecialchars($profile['MOBILE_NUMBER'] ?? '') ?>
-            &nbsp;·&nbsp;<?= htmlspecialchars($profile['EMAIL'] ?? '') ?>
+        <div class="profile profile--compact">
+          <div class="avatar-ring">
+            <i class="fa-solid fa-user avatar-placeholder"></i>
+          </div>
+          <div class="profile-meta">
+            <h3>Corbin Gutierrez</h3>
+            <p>City of Imus, Alapan 1-A</p>
+            <span class="portal-badge">Resident Portal</span>
           </div>
         </div>
-      </div>
-      <p style="font-size:12px;color:#aaa;margin-bottom:22px;"><i class="fa-solid fa-circle-info me-1"></i>Profile details are pulled from your registration. Update your profile if any info is incorrect.</p>
 
-      <!-- REQUIREMENTS -->
-      <div class="req-box"><div class="req-box-title"><i class="fa-solid fa-clipboard-list me-2"></i>Requirements</div><div id="reqList"></div></div>
+        <nav class="menu">
+          <a href="dashboard.html">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="request.php">
+            <i class="fa-solid fa-file-lines nav-icon"></i>
+            <span>Request Documents</span>
+          </a>
+          <a href="residentconcern.html">
+            <i class="fa-solid fa-circle-exclamation nav-icon"></i>
+            <span>Concerns</span>
+          </a>
+          <a href="residentcommunity.html">
+            <i class="fa-solid fa-users nav-icon"></i>
+            <span>Community</span>
+          </a>
+          <a href="residentrequest.html" class="active">
+            <i class="fa-solid fa-clipboard-list nav-icon"></i>
+            <span>My Requests</span>
+          </a>
+        </nav>
 
-      <!-- PURPOSE -->
-      <div class="form-section-title"><i class="fa-solid fa-circle-info"></i>Request Details</div>
-      <div class="row g-3 mb-3">
-        <div class="col-12">
-          <label class="field-label"><i class="fa-solid fa-bullseye"></i>Purpose *</label>
-          <input type="text" class="field-input" name="purpose" placeholder="e.g. For employment, scholarship, bank requirement…" required>
+        <div class="community-sidebar-section">
+          <h4>Quick Access</h4>
         </div>
-      </div>
 
-      <!-- SERVICE SPECIFIC FIELDS -->
-      <div id="serviceSpecificFields"></div>
+        <a href="home.html" class="logout">
+          <i class="fa-solid fa-right-from-bracket nav-icon"></i>
+          <span>Logout</span>
+        </a>
+      </aside>
 
-      <!-- DELIVERY -->
-      <div class="form-section-title mt-2"><i class="fa-solid fa-truck"></i>How to Receive Your Document</div>
-      <div class="delivery-toggle">
-        <button type="button" class="deliv-btn active" id="btnPickup" onclick="setDelivery('Pickup')">
-          <i class="fa-solid fa-building-columns"></i>Pickup at Barangay Hall
-        </button>
-        <button type="button" class="deliv-btn" id="btnDelivery" onclick="setDelivery('Delivery')">
-          <i class="fa-solid fa-truck"></i>Home Delivery
-        </button>
-      </div>
-      <div id="addressField" style="display:none;" class="mb-3">
-        <label class="field-label"><i class="fa-solid fa-location-dot"></i>Delivery Address *</label>
-        <input type="text" class="field-input" name="delivery_address" id="deliveryAddress" placeholder="House No., Street, Purok, Barangay Alapan I-A">
-      </div>
+      <!-- MAIN -->
+      <main class="content">
+        <div class="content-inner">
 
-      <!-- PAYMENT -->
-      <div id="paymentSection">
-        <div class="form-section-title mt-2"><i class="fa-solid fa-credit-card"></i>Payment Method</div>
-        <div class="payment-grid">
-          <div class="pay-card" id="pay-cash"   onclick="setPayment('Cash on Pickup')"><i class="fa-solid fa-money-bill-wave"></i>Cash on Pickup</div>
-          <div class="pay-card" id="pay-gcash"  onclick="setPayment('GCash')"><i class="fa-solid fa-mobile-screen-button"></i>GCash</div>
-          <div class="pay-card" id="pay-maya"   onclick="setPayment('Maya')"><i class="fa-solid fa-wallet"></i>Maya</div>
-          <div class="pay-card" id="pay-cod"    onclick="setPayment('Cash on Delivery')"><i class="fa-solid fa-hand-holding-dollar"></i>Cash on Delivery</div>
+          <!-- Topbar -->
+          <div class="topbar">
+            <div class="greeting-block">
+              <h1>Request <span class="accent-name">Documents</span></h1>
+              <p class="subtitle">Search and request official barangay documents easily.</p>
+            </div>
+            <div class="topbar-right">
+              <div class="user-chip">
+                <div class="user-chip-avatar-wrap">
+                  <i class="fa-solid fa-user" style="color:#b4ff39;font-size:1rem;"></i>
+                </div>
+                <div class="user-chip-info">
+                  <span class="user-chip-name">Corbin Gutierrez</span>
+                  <span class="user-chip-role">Resident</span>
+                </div>
+                <a href="notifications.html" class="user-chip-bell-wrap">
+                  <i class="fa-solid fa-bell user-chip-bell"></i>
+                  <span class="user-chip-notif">2</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search -->
+          <div class="search-section">
+            <p class="search-label">Find a document</p>
+            <div class="search-bar">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="searchInput" placeholder="e.g. Barangay Clearance, Indigency, Certificate of Residency…" />
+            </div>
+            <div class="filter-pills">
+              <div class="pill active" data-filter="all">All</div>
+              <div class="pill" data-filter="free">Free</div>
+              <div class="pill" data-filter="paid">Paid</div>
+              <div class="pill" data-filter="certificate">Certificate</div>
+              <div class="pill" data-filter="clearance">Clearance</div>
+              <div class="pill" data-filter="permit">Permit</div>
+            </div>
+          </div>
+
+          <!-- Document Grid -->
+          <p class="doc-section-title" id="docSectionTitle">Available Documents</p>
+          <div class="doc-grid" id="docGrid"></div>
+          <div class="no-results" id="noResults">
+            <i class="fa-solid fa-file-circle-question"></i>
+            <p>No documents found for "<span id="noResultsQuery"></span>"</p>
+          </div>
+
         </div>
-      </div>
-      <p style="font-size:11px;color:#777;margin-bottom:22px;" id="payNote"></p>
+      </main>
+    </div>
 
-      <!-- NOTES -->
-      <div class="row g-3 mb-4">
-        <div class="col-12">
-          <label class="field-label"><i class="fa-solid fa-comment"></i>Additional Notes <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0;">(optional)</span></label>
-          <textarea class="field-input" name="notes" rows="3" placeholder="Any other information or special instructions…" style="resize:vertical;"></textarea>
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal" id="modal">
+
+        <!-- Success screen -->
+        <div class="success-state" id="successState">
+          <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+          <h3>Request Submitted!</h3>
+          <p>Your document request has been received. You will be notified once it is ready.</p>
+          <div class="ref-tag" id="refTag"></div>
+          <div style="margin-top:20px;padding:0 0 4px;">
+            <button class="btn btn-primary" onclick="closeModal()" style="width:100%;justify-content:center;">
+              <i class="fa-solid fa-house"></i> Back to Dashboard
+            </button>
+          </div>
         </div>
+
+        <!-- Form screen -->
+        <div id="formScreen">
+          <div class="modal-header">
+            <div class="modal-header-left">
+              <div class="modal-doc-icon" id="modalDocIcon"></div>
+              <div>
+                <div class="modal-title" id="modalTitle"></div>
+                <div class="modal-subtitle" id="modalSubtitle"></div>
+              </div>
+            </div>
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <!-- Steps -->
+          <div class="modal-steps">
+            <div class="step-dot active" id="step1dot">1</div>
+            <div class="step-line" id="line12"></div>
+            <div class="step-dot" id="step2dot">2</div>
+            <div class="step-line" id="line23"></div>
+            <div class="step-dot" id="step3dot">3</div>
+          </div>
+
+          <div class="modal-body">
+
+            <!-- STEP 1: Requirements -->
+            <div id="step1">
+              <div style="margin-bottom:14px;margin-top:6px;">
+                <p style="font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:10px;">
+                  <i class="fa-solid fa-list-check" style="color:#2563eb;margin-right:6px;"></i>Requirements Needed
+                </p>
+                <ul class="req-list" id="reqList"></ul>
+              </div>
+              <div class="modal-divider"></div>
+              <div class="form-section">
+                <label class="form-label">Purpose of Request <span>*</span></label>
+                <select class="form-select" id="purposeSelect">
+                  <option value="">Select purpose…</option>
+                  <option>Employment</option>
+                  <option>Scholarship Application</option>
+                  <option>Bank / Financial Transactions</option>
+                  <option>Government Transactions</option>
+                  <option>Travel / Visa Application</option>
+                  <option>School Enrollment</option>
+                  <option>Legal Purposes</option>
+                  <option>Others</option>
+                </select>
+              </div>
+              <div class="form-section">
+                <label class="form-label">Additional Notes</label>
+                <textarea class="form-textarea" id="notesInput" placeholder="Any special instructions or additional information…"></textarea>
+              </div>
+            </div>
+
+            <!-- STEP 2: Delivery -->
+            <div id="step2" class="hidden">
+              <div class="form-section" style="margin-top:6px;">
+                <label class="form-label" style="margin-bottom:10px;">How would you like to receive your document? <span>*</span></label>
+                <div class="choice-grid">
+                  <div class="choice-card" data-delivery="pickup" onclick="selectDelivery('pickup')">
+                    <div class="choice-icon"><i class="fa-solid fa-store"></i></div>
+                    <div class="choice-label">Pick Up</div>
+                    <div class="choice-sub">at Barangay Hall</div>
+                  </div>
+                  <div class="choice-card" data-delivery="delivery" onclick="selectDelivery('delivery')">
+                    <div class="choice-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                    <div class="choice-label">Home Delivery</div>
+                    <div class="choice-sub">₱50 delivery fee</div>
+                  </div>
+                </div>
+              </div>
+              <div id="deliveryAddressSection" class="hidden">
+                <div class="form-section">
+                  <label class="form-label">Delivery Address <span>*</span></label>
+                  <input type="text" class="form-input" id="deliveryAddress" placeholder="House No., Street, Subdivision…" />
+                  <p class="form-hint">Please provide your complete address for accurate delivery.</p>
+                </div>
+                <div class="form-section">
+                  <label class="form-label">Contact Number <span>*</span></label>
+                  <input type="text" class="form-input" id="contactNumber" placeholder="09XX XXX XXXX" />
+                </div>
+              </div>
+              <div id="pickupInfoBox" class="info-box hidden">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>You may pick up your document at the <strong>Barangay Hall</strong> during office hours: <strong>Monday – Friday, 8:00 AM – 5:00 PM</strong>. Please bring a valid ID.</span>
+              </div>
+            </div>
+
+            <!-- STEP 3: Payment -->
+            <div id="step3" class="hidden">
+              <div class="modal-divider" style="margin-top:6px;"></div>
+              <div id="freeDocSection" class="hidden">
+                <div class="info-box" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span>This document is <strong>free of charge</strong>. No payment is required.</span>
+                </div>
+              </div>
+              <div id="paidDocSection" class="hidden">
+                <div class="form-section">
+                  <label class="form-label" style="margin-bottom:10px;">Select Payment Method <span>*</span></label>
+                  <div class="payment-grid">
+                    <div class="payment-option" data-pay="cash" onclick="selectPayment('cash')">
+                      <i class="fa-solid fa-money-bills"></i>
+                      <span>Cash on Pick Up</span>
+                    </div>
+                    <div class="payment-option" data-pay="gcash" onclick="selectPayment('gcash')">
+                      <i class="fa-solid fa-mobile-screen-button"></i>
+                      <span>GCash</span>
+                    </div>
+                    <div class="payment-option" data-pay="paymaya" onclick="selectPayment('paymaya')">
+                      <i class="fa-solid fa-credit-card"></i>
+                      <span>Maya</span>
+                    </div>
+                  </div>
+                  <div id="cashDeliveryNote" class="form-hint hidden" style="margin-top:8px;color:#dc2626;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Cash payment for deliveries is collected upon receipt.
+                  </div>
+                </div>
+              </div>
+              <div class="fee-summary">
+                <p style="font-size:0.78rem;font-weight:700;color:#374151;margin-bottom:8px;">Order Summary</p>
+                <div class="fee-row">
+                  <span id="summaryDocName">Document</span>
+                  <span id="summaryDocFee">₱0</span>
+                </div>
+                <div class="fee-row" id="deliveryFeeRow" style="display:none;">
+                  <span>Delivery Fee</span>
+                  <span>₱50</span>
+                </div>
+                <div class="fee-row total">
+                  <span>Total</span>
+                  <span id="summaryTotal">₱0</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="backBtn" onclick="prevStep()" style="display:none;">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+              Next <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
+    </div>
 
-      <button type="submit" class="btn-submit" id="submitBtn" disabled>
-        <i class="fa-solid fa-paper-plane"></i>Submit Request
-      </button>
-      <p style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;"><i class="fa-solid fa-lock me-1"></i>Confirm ownership and select a payment method to enable submission.</p>
+    <script>
+      /* ── DATA ── */
+      const documents = [
+        {
+          id: 1, name: "Barangay Clearance",
+          desc: "General purpose clearance for residents in good standing.",
+          icon: "fa-solid fa-stamp", iconClass: "icon--blue",
+          fee: 50, feeLabel: "₱50", category: ["clearance"],
+          popular: true,
+          requirements: ["Valid Government ID", "Proof of Residency", "Accomplished Request Form"],
+        },
+        {
+          id: 2, name: "Certificate of Indigency",
+          desc: "For residents needing assistance or applying for benefits.",
+          icon: "fa-solid fa-hand-holding-heart", iconClass: "icon--green",
+          fee: 0, feeLabel: "Free", category: ["certificate", "free"],
+          requirements: ["Valid ID", "Proof of Residency (Utility Bill)"],
+        },
+        {
+          id: 3, name: "Certificate of Residency",
+          desc: "Confirms that an individual is a resident of the barangay.",
+          icon: "fa-solid fa-house-circle-check", iconClass: "icon--teal",
+          fee: 30, feeLabel: "₱30", category: ["certificate"],
+          requirements: ["Valid Government ID", "Proof of Address (Electric/Water Bill)"],
+        },
+        {
+          id: 4, name: "Business Permit Clearance",
+          desc: "Required for businesses operating within the barangay.",
+          icon: "fa-solid fa-briefcase", iconClass: "icon--yellow",
+          fee: 200, feeLabel: "₱200", category: ["permit"],
+          requirements: ["DTI or SEC Registration", "Valid ID of Owner", "Sketch of Business Location"],
+        },
+        {
+          id: 5, name: "Barangay ID",
+          desc: "Official barangay identification card for residents.",
+          icon: "fa-solid fa-id-card", iconClass: "icon--purple",
+          fee: 100, feeLabel: "₱100", category: [],
+          popular: true,
+          requirements: ["1x1 ID Picture (white background)", "Proof of Residency", "Valid ID"],
+        },
+        {
+          id: 6, name: "Certificate of Good Moral",
+          desc: "Attests to the good moral character of the resident.",
+          icon: "fa-solid fa-award", iconClass: "icon--blue",
+          fee: 30, feeLabel: "₱30", category: ["certificate"],
+          requirements: ["Valid Government ID", "Proof of Address"],
+        },
+        {
+          id: 7, name: "Solo Parent Certificate",
+          desc: "For solo parents availing of government benefits and assistance.",
+          icon: "fa-solid fa-person-breastfeeding", iconClass: "icon--red",
+          fee: 0, feeLabel: "Free", category: ["certificate", "free"],
+          requirements: ["Birth Certificate of Child/Children", "Valid ID", "DSWD Solo Parent Card (if existing)"],
+        },
+        {
+          id: 8, name: "Death Certificate Request",
+          desc: "Barangay certification related to a deceased resident.",
+          icon: "fa-solid fa-file-circle-xmark", iconClass: "icon--red",
+          fee: 0, feeLabel: "Free", category: ["certificate", "free"],
+          requirements: ["PSA Death Certificate", "Valid ID of Requester", "Proof of Relation"],
+        },
+        {
+          id: 9, name: "Fencing Permit",
+          desc: "Required before constructing or renovating a fence.",
+          icon: "fa-solid fa-fence", iconClass: "icon--yellow",
+          fee: 150, feeLabel: "₱150", category: ["permit"],
+          requirements: ["Lot Title or Tax Declaration", "Property Sketch / Plan", "Valid ID of Owner"],
+        },
+        {
+          id: 10, name: "Barangay Blotter Request",
+          desc: "Official record for incidents or complaints filed in the barangay.",
+          icon: "fa-solid fa-book-open", iconClass: "icon--teal",
+          fee: 0, feeLabel: "Free", category: ["clearance", "free"],
+          requirements: ["Valid Government ID", "Incident Details / Written Statement"],
+        },
+      ];
 
-    </form>
-  </div>
+      /* ── STATE ── */
+      let currentDoc = null;
+      let currentStep = 1;
+      let selectedDelivery = null;
+      let selectedPayment = null;
+      let activeFilter = 'all';
 
-  <div class="auth-note mt-4">
-    <i class="fa-solid fa-shield-halved"></i>Barangay Alapan I-A &middot; Imus, Cavite &middot; Official Portal &middot; 2026
-  </div>
-</div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-const services = {
-  'Barangay Clearance':                 { fee:'₱50 · 1–2 days',  free:false, req:['Valid government-issued ID (from profile)','Cedula / Community Tax Certificate'], fields:'clearance' },
-  'Certificate of Residency':           { fee:'₱50 · 1–2 days',  free:false, req:['Valid government-issued ID (from profile)','Proof of address (utility bill or lease contract)'], fields:'residency' },
-  'Certificate of Indigency':           { fee:'Free · 1–2 days', free:true,  req:['Valid government-issued ID (from profile)','Proof of income or unemployment'], fields:'indigency' },
-  'Certificate of Good Moral Character':{ fee:'₱50 · 1–2 days',  free:false, req:['Valid government-issued ID (from profile)','Cedula / Community Tax Certificate'], fields:'goodmoral' },
-  'Certificate of No Income':           { fee:'Free · 1–2 days', free:true,  req:['Valid government-issued ID (from profile)','Sworn statement of no income'], fields:'noincome' },
-  'Certificate of First Time Job Seeker':{ fee:'Free · Same day', free:true, req:['Valid government-issued ID (from profile)','Proof of being a first-time job seeker (diploma, school records, or affidavit)'], fields:'firstjob' },
-  'Certificate of Solo Parent':         { fee:'Free · 1–2 days', free:true,  req:['Valid government-issued ID (from profile)','Solo Parent ID or proof of solo parent status'], fields:'soloparent' },
-  'Certificate of Cohabitation':        { fee:'₱50 · 1–2 days',  free:false, req:['Your valid government-issued ID (from profile)','Valid ID of Partner','Proof of shared residence (utility bill or lease contract)'], fields:'cohabitation' },
-  'Barangay ID':                        { fee:'₱100 · 3–5 days', free:false, req:['1x1 or 2x2 ID photo with white background','Valid government-issued ID (from profile)'], fields:'barangayid' },
-  'Business Permit (New)':              { fee:'₱200 · 3–5 days', free:false, req:['Valid government-issued ID (from profile)','DTI or SEC registration','Lease contract or proof of business location','Cedula / Community Tax Certificate'], fields:'businessnew' },
-  'Business Permit (Renewal)':          { fee:'₱150 · 1–3 days', free:false, req:['Valid government-issued ID (from profile)','Previous barangay business permit','Updated Cedula / Community Tax Certificate'], fields:'businessrenewal' },
-  'PWD Certificate':                    { fee:'Free · 1–2 days', free:true,  req:['Valid government-issued ID (from profile)','Medical certificate or PWD diagnosis','Recent 1x1 photo'], fields:'pwd' },
-  'Senior Citizen Endorsement':         { fee:'Free · Same day', free:true,  req:['Valid government-issued ID (from profile)','PSA Birth Certificate or Senior Citizen ID'], fields:'seniorcitizen' },
-  '4Ps / DSWD Endorsement':             { fee:'Free · 1–2 days', free:true,  req:['Valid government-issued ID (from profile)','Proof of indigency or 4Ps membership'], fields:'dswd' },
-  'Burial Assistance Request':          { fee:'Free · Same day', free:true,  req:['Valid government-issued ID (from profile)','Death certificate of the deceased','Proof of indigency'], fields:'burial' },
-  'Financial Assistance Request':       { fee:'Free · 2–3 days', free:true,  req:['Valid government-issued ID (from profile)','Proof of emergency or hardship (medical bill, enrollment form, etc.)'], fields:'financial' },
-  'Barangay Endorsement Letter':        { fee:'Free · Same day', free:true,  req:['Valid government-issued ID (from profile)'], fields:'endorsement' },
-  'Barangay Protection Order':          { fee:'Free · Same day', free:true,  req:['Valid government-issued ID (from profile)','Written account of the incident or abuse','Supporting evidence (optional)'], fields:'bpo' }
-};
+      /* ── RENDER GRID ── */
+      function renderGrid(docs) {
+        const grid = document.getElementById('docGrid');
+        const noResults = document.getElementById('noResults');
+        grid.innerHTML = '';
+        if (docs.length === 0) {
+          noResults.classList.add('visible');
+          return;
+        }
+        noResults.classList.remove('visible');
+        docs.forEach(doc => {
+          const isFree = doc.fee === 0;
+          const card = document.createElement('div');
+          card.className = 'doc-card';
+          card.innerHTML = `
+            ${doc.popular ? '<div class="doc-card-badge badge--popular">⭐ Popular</div>' : ''}
+            <div class="doc-card-icon ${doc.iconClass}"><i class="${doc.icon}"></i></div>
+            <div class="doc-card-name">${doc.name}</div>
+            <div class="doc-card-desc">${doc.desc}</div>
+            <div class="doc-card-fee ${isFree ? 'fee--free' : 'fee--paid'}">
+              <i class="fa-solid ${isFree ? 'fa-circle-check' : 'fa-peso-sign'}"></i>
+              ${doc.feeLabel}
+            </div>
+          `;
+          card.addEventListener('click', () => openModal(doc));
+          grid.appendChild(card);
+        });
+      }
 
-// Field templates per service type
-const fieldTemplates = {
+      function filterDocs() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        let filtered = documents;
+        if (activeFilter !== 'all') {
+          if (activeFilter === 'free') filtered = filtered.filter(d => d.fee === 0);
+          else if (activeFilter === 'paid') filtered = filtered.filter(d => d.fee > 0);
+          else filtered = filtered.filter(d => d.category.includes(activeFilter));
+        }
+        if (query) {
+          filtered = filtered.filter(d =>
+            d.name.toLowerCase().includes(query) || d.desc.toLowerCase().includes(query)
+          );
+          document.getElementById('noResultsQuery').textContent = query;
+        }
+        const title = query
+          ? `Results for "${query}" (${filtered.length})`
+          : `Available Documents (${filtered.length})`;
+        document.getElementById('docSectionTitle').textContent = title;
+        renderGrid(filtered);
+      }
 
-  clearance: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-hashtag"></i>Cedula / CTC No. *</label><input type="text" class="field-input" name="cedula_number" placeholder="e.g. 12345678"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Cedula *</label><div class="upload-zone" id="uz-cedula"><input type="file" name="cedula_photo" accept="image/*,.pdf" onchange="markUpload(this,'uz-cedula','fn-cedula')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-cedula"></div></div></div>
-    </div>`,
+      document.getElementById('searchInput').addEventListener('input', filterDocs);
+      document.querySelectorAll('.pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          activeFilter = pill.dataset.filter;
+          filterDocs();
+        });
+      });
 
-  residency: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-calendar"></i>Years Residing in Barangay *</label><input type="number" class="field-input" name="years_residing" placeholder="e.g. 5" min="1"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-location-dot"></i>Full Home Address *</label><input type="text" class="field-input" name="full_address" placeholder="House No., Street, Purok"></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Address *</label><div class="upload-zone" id="uz-proof-addr"><input type="file" name="proof_address" accept="image/*,.pdf" onchange="markUpload(this,'uz-proof-addr','fn-proof-addr')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Utility bill or lease contract · Max 5MB</div><div class="upload-filename" id="fn-proof-addr"></div></div></div>
-    </div>`,
+      /* ── MODAL ── */
+      function openModal(doc) {
+        currentDoc = doc;
+        currentStep = 1;
+        selectedDelivery = null;
+        selectedPayment = null;
 
-  indigency: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-peso-sign"></i>Monthly Household Income *</label><input type="text" class="field-input" name="monthly_income" placeholder="e.g. 5000 or None / Unemployed"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-people-group"></i>No. of Family Members *</label><input type="number" class="field-input" name="family_members" placeholder="e.g. 4" min="1"></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Income / Unemployment *</label><div class="upload-zone" id="uz-income"><input type="file" name="proof_income" accept="image/*,.pdf" onchange="markUpload(this,'uz-income','fn-income')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Pay slip, unemployment cert, or sworn statement · Max 5MB</div><div class="upload-filename" id="fn-income"></div></div></div>
-    </div>`,
+        // Header
+        document.getElementById('modalTitle').textContent = doc.name;
+        document.getElementById('modalSubtitle').textContent = doc.desc;
+        const iconEl = document.getElementById('modalDocIcon');
+        iconEl.className = `modal-doc-icon ${doc.iconClass}`;
+        iconEl.innerHTML = `<i class="${doc.icon}"></i>`;
 
-  goodmoral: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-hashtag"></i>Cedula / CTC No. *</label><input type="text" class="field-input" name="cedula_number" placeholder="e.g. 12345678"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Cedula *</label><div class="upload-zone" id="uz-cedula-gm"><input type="file" name="cedula_photo_gm" accept="image/*,.pdf" onchange="markUpload(this,'uz-cedula-gm','fn-cedula-gm')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-cedula-gm"></div></div></div>
-    </div>`,
+        // Requirements
+        const reqList = document.getElementById('reqList');
+        reqList.innerHTML = doc.requirements.map(r =>
+          `<li><i class="fa-solid fa-circle-dot"></i>${r}</li>`
+        ).join('');
 
-  noincome: `
-    <div class="row g-3 mb-3">
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Sworn Statement of No Income *</label><div class="upload-zone" id="uz-sworn"><input type="file" name="sworn_statement" accept="image/*,.pdf" onchange="markUpload(this,'uz-sworn','fn-sworn')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Notarized affidavit or barangay-issued statement · Max 5MB</div><div class="upload-filename" id="fn-sworn"></div></div></div>
-    </div>`,
+        // Reset form
+        document.getElementById('purposeSelect').value = '';
+        document.getElementById('notesInput').value = '';
+        document.getElementById('deliveryAddress').value = '';
+        document.getElementById('contactNumber').value = '';
+        document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
+        document.getElementById('deliveryAddressSection').classList.add('hidden');
+        document.getElementById('pickupInfoBox').classList.add('hidden');
 
-  firstjob: `
-    <div class="row g-3 mb-3">
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of First-Time Job Seeker Status *</label><div class="upload-zone" id="uz-firstjob"><input type="file" name="firstjob_proof" accept="image/*,.pdf" onchange="markUpload(this,'uz-firstjob','fn-firstjob')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Diploma, school records, or affidavit · Max 5MB</div><div class="upload-filename" id="fn-firstjob"></div></div></div>
-    </div>`,
+        // Summary
+        document.getElementById('summaryDocName').textContent = doc.name;
+        document.getElementById('summaryDocFee').textContent = doc.fee === 0 ? 'Free' : `₱${doc.fee}`;
 
-  soloparent: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-hashtag"></i>Solo Parent ID No. <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0;">(if available)</span></label><input type="text" class="field-input" name="solo_parent_id" placeholder="e.g. SP-2024-001"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Solo Parent Status *</label><div class="upload-zone" id="uz-sp"><input type="file" name="solo_parent_proof" accept="image/*,.pdf" onchange="markUpload(this,'uz-sp','fn-sp')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-sp"></div></div></div>
-    </div>`,
+        // Show/hide sections
+        document.getElementById('successState').classList.remove('visible');
+        document.getElementById('formScreen').style.display = '';
 
-  cohabitation: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-user"></i>Partner's Full Name *</label><input type="text" class="field-input" name="partner_name" placeholder="e.g. Maria Santos dela Cruz"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-calendar"></i>Partner's Date of Birth *</label><input type="date" class="field-input" name="partner_dob"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Partner's Valid ID *</label><div class="upload-zone" id="uz-partner-id"><input type="file" name="partner_id" accept="image/*,.pdf" onchange="markUpload(this,'uz-partner-id','fn-partner-id')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Both sides · Max 5MB</div><div class="upload-filename" id="fn-partner-id"></div></div></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Shared Residence *</label><div class="upload-zone" id="uz-shared-res"><input type="file" name="shared_residence" accept="image/*,.pdf" onchange="markUpload(this,'uz-shared-res','fn-shared-res')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Utility bill or lease contract · Max 5MB</div><div class="upload-filename" id="fn-shared-res"></div></div></div>
-    </div>`,
+        showStep(1);
+        document.getElementById('modalOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
 
-  barangayid: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-palette"></i>Preferred ID Color *</label><select class="field-input" name="id_color"><option value="">Select…</option><option>Blue</option><option>Green</option><option>Red</option></select></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-droplet"></i>Blood Type *</label><select class="field-input" name="blood_type"><option value="">Select…</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-phone"></i>Emergency Contact Name *</label><input type="text" class="field-input" name="emergency_contact" placeholder="Full name"></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-mobile-screen"></i>Emergency Contact No. *</label><input type="text" class="field-input" name="emergency_contact_num" placeholder="09XX-XXX-XXXX"></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-image"></i>Upload 1x1 / 2x2 ID Photo *</label><div class="upload-zone" id="uz-idphoto"><input type="file" name="id_photo" accept="image/*" onchange="markUpload(this,'uz-idphoto','fn-idphoto')"><div class="upload-zone-text"><strong>Click to upload</strong><br>White background · JPG or PNG · Max 5MB</div><div class="upload-filename" id="fn-idphoto"></div></div></div>
-    </div>`,
+      function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+      }
 
-  businessnew: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-store"></i>Business Name *</label><input type="text" class="field-input" name="business_name" placeholder="e.g. Juan's Sari-Sari Store"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-briefcase"></i>Business Type *</label><select class="field-input" name="business_type"><option value="">Select…</option><option>Sari-Sari Store</option><option>Food Stall</option><option>Repair Shop</option><option>Salon / Barbershop</option><option>Online Selling</option><option>Other</option></select></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-location-dot"></i>Business Address *</label><input type="text" class="field-input" name="business_address" placeholder="House No., Street, Purok"></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload DTI / SEC Registration *</label><div class="upload-zone" id="uz-dti"><input type="file" name="dti_reg" accept="image/*,.pdf" onchange="markUpload(this,'uz-dti','fn-dti')"><div class="upload-zone-text"><strong>Click to upload</strong><br>If applicable · Max 5MB</div><div class="upload-filename" id="fn-dti"></div></div></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-file-contract"></i>Upload Lease / Proof of Location *</label><div class="upload-zone" id="uz-lease"><input type="file" name="lease_contract" accept="image/*,.pdf" onchange="markUpload(this,'uz-lease','fn-lease')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-lease"></div></div></div>
-      <div class="col-md-4"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Cedula *</label><div class="upload-zone" id="uz-cedula-biz"><input type="file" name="cedula_biz" accept="image/*,.pdf" onchange="markUpload(this,'uz-cedula-biz','fn-cedula-biz')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-cedula-biz"></div></div></div>
-    </div>`,
+      document.getElementById('modalOverlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('modalOverlay')) closeModal();
+      });
 
-  businessrenewal: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-store"></i>Business Name *</label><input type="text" class="field-input" name="business_name" placeholder="e.g. Juan's Sari-Sari Store"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-briefcase"></i>Business Type *</label><select class="field-input" name="business_type"><option value="">Select…</option><option>Sari-Sari Store</option><option>Food Stall</option><option>Repair Shop</option><option>Salon / Barbershop</option><option>Online Selling</option><option>Other</option></select></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-location-dot"></i>Business Address *</label><input type="text" class="field-input" name="business_address" placeholder="House No., Street, Purok"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Previous Business Permit *</label><div class="upload-zone" id="uz-prev-permit"><input type="file" name="prev_permit" accept="image/*,.pdf" onchange="markUpload(this,'uz-prev-permit','fn-prev-permit')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-prev-permit"></div></div></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Updated Cedula *</label><div class="upload-zone" id="uz-cedula-renew"><input type="file" name="cedula_renewal" accept="image/*,.pdf" onchange="markUpload(this,'uz-cedula-renew','fn-cedula-renew')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-cedula-renew"></div></div></div>
-    </div>`,
+      function showStep(n) {
+        currentStep = n;
+        [1,2,3].forEach(i => {
+          document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
+          const dot = document.getElementById(`step${i}dot`);
+          dot.classList.remove('active','done');
+          if (i < n) dot.classList.add('done'), dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>';
+          else if (i === n) dot.classList.add('active'), dot.textContent = i;
+          else dot.textContent = i;
+        });
+        document.getElementById('line12').classList.toggle('done', n > 1);
+        document.getElementById('line23').classList.toggle('done', n > 2);
+        document.getElementById('backBtn').style.display = n > 1 ? '' : 'none';
 
-  pwd: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-wheelchair"></i>Type of Disability *</label><select class="field-input" name="pwd_type"><option value="">Select…</option><option>Physical</option><option>Visual</option><option>Hearing</option><option>Speech</option><option>Intellectual</option><option>Psychosocial</option><option>Other</option></select></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Medical Certificate / PWD Diagnosis *</label><div class="upload-zone" id="uz-pwd-cert"><input type="file" name="pwd_cert" accept="image/*,.pdf" onchange="markUpload(this,'uz-pwd-cert','fn-pwd-cert')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-pwd-cert"></div></div></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-image"></i>Upload Recent 1x1 Photo *</label><div class="upload-zone" id="uz-pwd-photo"><input type="file" name="pwd_photo" accept="image/*" onchange="markUpload(this,'uz-pwd-photo','fn-pwd-photo')"><div class="upload-zone-text"><strong>Click to upload</strong><br>White background · JPG or PNG · Max 5MB</div><div class="upload-filename" id="fn-pwd-photo"></div></div></div>
-    </div>`,
+        const nextBtn = document.getElementById('nextBtn');
+        if (n === 3) {
+          nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
+          nextBtn.className = 'btn btn-success';
+        } else {
+          nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+          nextBtn.className = 'btn btn-primary';
+        }
 
-  seniorcitizen: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-hashtag"></i>OSCA ID No. <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0;">(if available)</span></label><input type="text" class="field-input" name="sc_osca_id" placeholder="e.g. SC-2024-001"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload PSA Birth Certificate or Senior Citizen ID *</label><div class="upload-zone" id="uz-sc-proof"><input type="file" name="sc_proof" accept="image/*,.pdf" onchange="markUpload(this,'uz-sc-proof','fn-sc-proof')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Max 5MB</div><div class="upload-filename" id="fn-sc-proof"></div></div></div>
-    </div>`,
+        // Step 3 setup
+        if (n === 3) {
+          const isFree = currentDoc.fee === 0;
+          document.getElementById('freeDocSection').classList.toggle('hidden', !isFree);
+          document.getElementById('paidDocSection').classList.toggle('hidden', isFree);
+          const deliveryFee = selectedDelivery === 'delivery' ? 50 : 0;
+          document.getElementById('deliveryFeeRow').style.display = deliveryFee ? '' : 'none';
+          const docFee = currentDoc.fee;
+          const total = docFee + deliveryFee;
+          document.getElementById('summaryTotal').textContent = total === 0 ? 'Free' : `₱${total}`;
+          // Show/hide cash note
+          const cashNote = document.getElementById('cashDeliveryNote');
+          cashNote.classList.add('hidden');
+        }
+      }
 
-  dswd: `
-    <div class="row g-3 mb-3">
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Indigency or 4Ps Membership *</label><div class="upload-zone" id="uz-dswd-proof"><input type="file" name="dswd_proof" accept="image/*,.pdf" onchange="markUpload(this,'uz-dswd-proof','fn-dswd-proof')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-dswd-proof"></div></div></div>
-    </div>`,
+      function nextStep() {
+        if (currentStep === 1) {
+          if (!document.getElementById('purposeSelect').value) {
+            document.getElementById('purposeSelect').style.borderColor = '#ef4444';
+            document.getElementById('purposeSelect').focus();
+            setTimeout(() => document.getElementById('purposeSelect').style.borderColor = '', 1500);
+            return;
+          }
+          showStep(2);
+        } else if (currentStep === 2) {
+          if (!selectedDelivery) {
+            alert('Please select how you would like to receive your document.');
+            return;
+          }
+          if (selectedDelivery === 'delivery') {
+            if (!document.getElementById('deliveryAddress').value.trim()) {
+              document.getElementById('deliveryAddress').focus();
+              return;
+            }
+            if (!document.getElementById('contactNumber').value.trim()) {
+              document.getElementById('contactNumber').focus();
+              return;
+            }
+          }
+          showStep(3);
+        } else if (currentStep === 3) {
+          const isFree = currentDoc.fee === 0;
+          const deliveryFee = selectedDelivery === 'delivery' ? 50 : 0;
+          const needsPayment = (currentDoc.fee > 0 || deliveryFee > 0);
+          if (needsPayment && !selectedPayment) {
+            alert('Please select a payment method.');
+            return;
+          }
+          submitRequest();
+        }
+      }
 
-  burial: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-user"></i>Name of Deceased *</label><input type="text" class="field-input" name="deceased_name" placeholder="Full name of the deceased"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-people-arrows"></i>Your Relationship to Deceased *</label><input type="text" class="field-input" name="deceased_relationship" placeholder="e.g. Son, Daughter, Spouse"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Death Certificate *</label><div class="upload-zone" id="uz-death-cert"><input type="file" name="death_cert" accept="image/*,.pdf" onchange="markUpload(this,'uz-death-cert','fn-death-cert')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-death-cert"></div></div></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Proof of Indigency *</label><div class="upload-zone" id="uz-burial-ind"><input type="file" name="burial_indigency" accept="image/*,.pdf" onchange="markUpload(this,'uz-burial-ind','fn-burial-ind')"><div class="upload-zone-text"><strong>Click to upload</strong><br>JPG, PNG or PDF · Max 5MB</div><div class="upload-filename" id="fn-burial-ind"></div></div></div>
-    </div>`,
+      function prevStep() {
+        if (currentStep > 1) showStep(currentStep - 1);
+      }
 
-  financial: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-list"></i>Type of Assistance *</label><select class="field-input" name="assistance_type"><option value="">Select…</option><option>Medical</option><option>Educational</option><option>Emergency</option><option>Livelihood</option><option>Other</option></select></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-comment-dots"></i>Reason for Request *</label><textarea class="field-input" name="assistance_reason" rows="3" placeholder="Briefly describe your situation and why you need assistance…" style="resize:vertical;"></textarea></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Supporting Document *</label><div class="upload-zone" id="uz-fin-proof"><input type="file" name="financial_proof" accept="image/*,.pdf" onchange="markUpload(this,'uz-fin-proof','fn-fin-proof')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Medical bill, enrollment form, or other supporting proof · Max 5MB</div><div class="upload-filename" id="fn-fin-proof"></div></div></div>
-    </div>`,
+      function selectDelivery(type) {
+        selectedDelivery = type;
+        document.querySelectorAll('.choice-card').forEach(c => {
+          c.classList.toggle('selected', c.dataset.delivery === type);
+        });
+        document.getElementById('deliveryAddressSection').classList.toggle('hidden', type !== 'delivery');
+        document.getElementById('pickupInfoBox').classList.toggle('hidden', type !== 'pickup');
+      }
 
-  endorsement: `
-    <div class="row g-3 mb-3">
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-building"></i>Addressed To *</label><input type="text" class="field-input" name="endorsement_recipient" placeholder="e.g. NBI, DFA Passport Office, RTC Branch 20"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-bullseye"></i>Specific Purpose *</label><input type="text" class="field-input" name="endorsement_purpose" placeholder="e.g. NBI Clearance application, Passport renewal"></div>
-    </div>`,
+      function selectPayment(type) {
+        selectedPayment = type;
+        document.querySelectorAll('.payment-option').forEach(p => {
+          p.classList.toggle('selected', p.dataset.pay === type);
+        });
+        // Show note if cash + delivery
+        const cashNote = document.getElementById('cashDeliveryNote');
+        cashNote.classList.toggle('hidden', !(type === 'cash' && selectedDelivery === 'delivery'));
+      }
 
-  bpo: `
-    <div class="row g-3 mb-3">
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-user-slash"></i>Name of Respondent / Abuser *</label><input type="text" class="field-input" name="respondent" placeholder="Full name of the person committing abuse"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-calendar-day"></i>Date of Last Incident *</label><input type="date" class="field-input" name="incident_date"></div>
-      <div class="col-md-6"><label class="field-label"><i class="fa-solid fa-location-dot"></i>Place of Incident *</label><input type="text" class="field-input" name="incident_place" placeholder="e.g. Home address, Purok 3"></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-comment-dots"></i>Describe the Incident *</label><textarea class="field-input" name="incident_desc" rows="4" placeholder="Provide a detailed account of the abuse or violence…" style="resize:vertical;"></textarea></div>
-      <div class="col-12"><label class="field-label"><i class="fa-solid fa-upload"></i>Upload Evidence <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0;">(optional)</span></label><div class="upload-zone" id="uz-bpo-ev"><input type="file" name="bpo_evidence" accept="image/*,.pdf" onchange="markUpload(this,'uz-bpo-ev','fn-bpo-ev')"><div class="upload-zone-text"><strong>Click to upload</strong><br>Photos, screenshots, or documents · Max 5MB</div><div class="upload-filename" id="fn-bpo-ev"></div></div></div>
-    </div>`
-};
+      function submitRequest() {
+        const ref = 'BRY-' + Date.now().toString().slice(-6);
+        document.getElementById('refTag').textContent = `Reference No: ${ref}`;
+        document.getElementById('formScreen').style.display = 'none';
+        document.getElementById('successState').classList.add('visible');
+      }
 
-let currentService = '';
-let paymentChosen  = false;
-
-function filterCat(cat, btn) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.service-card').forEach(card => {
-    const match = cat === 'all' || card.dataset.cat === cat;
-    card.classList.toggle('hidden', !match);
-  });
-  applySearch();
-}
-
-function searchServices() { applySearch(); }
-
-function applySearch() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
-  let visible = 0;
-  document.querySelectorAll('.service-card:not(.hidden)').forEach(card => {
-    const text = card.innerText.toLowerCase();
-    const show = !q || text.includes(q);
-    card.style.display = show ? '' : 'none';
-    if (show) visible++;
-  });
-  document.getElementById('noResults').style.display = visible === 0 ? 'block' : 'none';
-}
-
-function selectService(card, name) {
-  document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
-  card.classList.add('selected');
-  currentService = name;
-
-  const svc = services[name];
-  document.getElementById('serviceTypeInput').value  = name;
-  document.getElementById('summaryName').textContent = name;
-  document.getElementById('summaryFee').textContent  = svc.fee;
-
-  // Find icon from clicked card
-  const iconEl = card.querySelector('.svc-icon i');
-  const iconClass = iconEl ? iconEl.className : 'fa-solid fa-file';
-  document.getElementById('summaryIcon').innerHTML = `<i class="${iconClass}"></i>`;
-
-  document.getElementById('reqList').innerHTML = svc.req
-    .map(r => `<div class="req-item"><i class="fa-solid fa-circle-dot"></i>${r}</div>`).join('');
-
-  document.getElementById('serviceSpecificFields').innerHTML = fieldTemplates[svc.fields] || '';
-
-  setDelivery('Pickup');
-
-  const panel = document.getElementById('formPanel');
-  panel.classList.add('show');
-  setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
-}
-
-function setDelivery(mode) {
-  document.getElementById('deliveryInput').value = mode;
-  document.getElementById('btnPickup').classList.toggle('active',   mode === 'Pickup');
-  document.getElementById('btnDelivery').classList.toggle('active', mode === 'Delivery');
-  document.getElementById('addressField').style.display = mode === 'Delivery' ? 'block' : 'none';
-  document.getElementById('deliveryAddress') && (document.getElementById('deliveryAddress').required = mode === 'Delivery');
-
-  const isFree     = currentService ? services[currentService]?.free : false;
-  const paySection = document.getElementById('paymentSection');
-  const payNote    = document.getElementById('payNote');
-  const payCash    = document.getElementById('pay-cash');
-  const payGcash   = document.getElementById('pay-gcash');
-  const payMaya    = document.getElementById('pay-maya');
-  const payCod     = document.getElementById('pay-cod');
-
-  paymentChosen = false;
-  ['pay-cash','pay-gcash','pay-maya','pay-cod'].forEach(id => document.getElementById(id).classList.remove('active'));
-  document.getElementById('paymentInput').value = '';
-
-  if (isFree && mode === 'Pickup') {
-    paySection.style.display = 'none';
-    payNote.textContent = 'This document is free. No payment required. Just present your valid ID when picking up.';
-    document.getElementById('paymentInput').value = 'Free';
-    paymentChosen = true;
-  } else if (isFree && mode === 'Delivery') {
-    paySection.style.display = 'block';
-    payCash.style.display = 'none'; payGcash.style.display = 'none'; payMaya.style.display = 'none'; payCod.style.display = '';
-    payNote.textContent = 'This document is free. Cash on delivery covers the courier fee only.';
-  } else if (mode === 'Pickup') {
-    paySection.style.display = 'block';
-    payCash.style.display = ''; payGcash.style.display = ''; payMaya.style.display = ''; payCod.style.display = 'none';
-    payNote.textContent = '';
-  } else {
-    paySection.style.display = 'block';
-    payCash.style.display = 'none'; payGcash.style.display = ''; payMaya.style.display = ''; payCod.style.display = '';
-    payNote.textContent = '';
-  }
-  checkSubmit();
-}
-
-function setPayment(method) {
-  document.getElementById('paymentInput').value = method;
-  ['pay-cash','pay-gcash','pay-maya','pay-cod'].forEach(id => document.getElementById(id).classList.remove('active'));
-  const notes = {
-    'Cash on Pickup':   'Bring the exact amount when you collect at the barangay hall.',
-    'GCash':            'You will receive a GCash payment request once your request is approved.',
-    'Maya':             'You will receive a Maya payment link once your request is approved.',
-    'Cash on Delivery': 'Pay the courier in cash when your document arrives at your address.'
-  };
-  if (method) {
-    const map = {'Cash on Pickup':'pay-cash','GCash':'pay-gcash','Maya':'pay-maya','Cash on Delivery':'pay-cod'};
-    document.getElementById(map[method]).classList.add('active');
-    document.getElementById('payNote').textContent = notes[method];
-    paymentChosen = true;
-  } else { paymentChosen = false; }
-  checkSubmit();
-}
-
-function checkSubmit() {
-  const confirmed = document.getElementById('ownConfirm').checked;
-  document.getElementById('submitBtn').disabled = !(confirmed && paymentChosen);
-}
-
-document.getElementById('ownConfirm').addEventListener('change', checkSubmit);
-
-function markUpload(input, zoneId, fnId) {
-  if (input.files && input.files[0]) {
-    document.getElementById(zoneId).classList.add('has-file');
-    const fn = document.getElementById(fnId);
-    fn.innerHTML = '<i class="fa-solid fa-check me-1"></i>' + input.files[0].name;
-    fn.style.display = 'block';
-  }
-}
-</script>
-</body>
+      /* ── INIT ── */
+      renderGrid(documents);
+    </script>
+  </body>
 </html>
