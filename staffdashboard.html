@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="staff.css" />
+  </head>
+
+  <body>
+    <div class="staff-page">
+      <header class="staff-topbar">
+        <div class="staff-topbar-left">
+          <details class="staff-menu-box">
+            <summary class="staff-menu-btn" aria-label="Open menu">
+              <span></span>
+              <span></span>
+              <span></span>
+            </summary>
+
+            <div class="staff-menu-list">
+              <a href="staffdashboard.html" class="active">Dashboard</a>
+              <a href="#">Requests</a>
+              <a href="#">Concerns</a>
+              <a href="#">Announcements</a>
+              <a href="#">Residents</a>
+              <a href="#">Reports</a>
+              <a href="home.html">Logout</a>
+            </div>
+          </details>
+
+          <div class="staff-brand">
+            <h1>Barangay Alapan 1-A</h1>
+            <p>Staff Operations</p>
+          </div>
+        </div>
+
+        <div class="staff-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="text"
+            placeholder="Search requests, residents, or concerns"
+          />
+        </div>
+
+        <div class="staff-topbar-right">
+          <a href="#" class="staff-icon-btn" aria-label="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+
+          <a
+            href="notifications.html"
+            class="staff-icon-btn staff-bell-btn"
+            aria-label="Notifications"
+          >
+            <i class="fa-regular fa-bell staff-bell-icon"></i>
+            <span class="staff-bell-count">3</span>
+          </a>
+
+          <a href="#" class="staff-user-box">
+            <img src="corbin.jpg" alt="Staff Photo" class="staff-user-photo" />
+            <div class="staff-user-text">
+              <strong>Corbin Gutierrez</strong>
+              <span>Barangay Staff</span>
+            </div>
+            <i class="fa-solid fa-chevron-down"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="staff-main">
+        <section class="staff-hero">
+          <button type="button" class="staff-day-btn">
+            Today
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+        </section>
+
+        <section class="staff-stats">
+          <div class="staff-stat-card">
+            <div class="staff-stat-top">
+              <span class="staff-stat-label">Pending Requests</span>
+            </div>
+            <strong class="staff-stat-number">18</strong>
+            <p class="staff-stat-note">Documents waiting for review</p>
+          </div>
+
+          <div class="staff-stat-card">
+            <div class="staff-stat-top">
+              <span class="staff-stat-label">Open Concerns</span>
+            </div>
+            <strong class="staff-stat-number">6</strong>
+            <p class="staff-stat-note">Cases needing follow-up</p>
+          </div>
+
+          <div class="staff-stat-card">
+            <div class="staff-stat-top">
+              <span class="staff-stat-label">Released Today</span>
+            </div>
+            <strong class="staff-stat-number">11</strong>
+            <p class="staff-stat-note">Completed transactions</p>
+          </div>
+
+          <div class="staff-stat-card">
+            <div class="staff-stat-top">
+              <span class="staff-stat-label">Walk-in Queue</span>
+            </div>
+            <strong class="staff-stat-number">9</strong>
+            <p class="staff-stat-note">Residents currently waiting</p>
+          </div>
+        </section>
+
+        <section class="staff-work-grid">
+          <div class="staff-left">
+            <div class="staff-panel">
+              <div class="staff-panel-head">
+                <h3>Priority Requests</h3>
+                <a href="#">View all</a>
+              </div>
+
+              <div class="staff-work-list">
+                <div class="staff-work-item">
+                  <div class="staff-work-info">
+                    <strong>Barangay Clearance</strong>
+                    <p>Maria Santos • Submitted 8:15 AM</p>
+                  </div>
+                  <div class="staff-work-side">
+                    <span class="staff-badge blue-badge">Pending</span>
+                    <button type="button" class="staff-btn">Review</button>
+                  </div>
+                </div>
+
+                <div class="staff-work-item">
+                  <div class="staff-work-info">
+                    <strong>Certificate of Residency</strong>
+                    <p>Joshua Cruz • Submitted 8:42 AM</p>
+                  </div>
+                  <div class="staff-work-side">
+                    <span class="staff-badge lime-badge">Ready</span>
+                    <button type="button" class="staff-btn">Release</button>
+                  </div>
+                </div>
+
+                <div class="staff-work-item">
+                  <div class="staff-work-info">
+                    <strong>Business Permit Endorsement</strong>
+                    <p>Angela Reyes • Submitted 9:05 AM</p>
+                  </div>
+                  <div class="staff-work-side">
+                    <span class="staff-badge red-badge">Urgent</span>
+                    <button type="button" class="staff-btn">Open</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="staff-panel">
+              <div class="staff-panel-head">
+                <h3>Concern Monitoring</h3>
+                <a href="#">Manage list</a>
+              </div>
+
+              <table class="staff-table">
+                <thead>
+                  <tr>
+                    <th>Resident</th>
+                    <th>Concern</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Peter Gomez</td>
+                    <td>Drainage blockage</td>
+                    <td><span class="staff-badge red-badge">Open</span></td>
+                    <td>
+                      <button type="button" class="staff-table-btn">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Lara Mendoza</td>
+                    <td>Street light issue</td>
+                    <td><span class="staff-badge blue-badge">Ongoing</span></td>
+                    <td>
+                      <button type="button" class="staff-table-btn">
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Ella Torres</td>
+                    <td>Garbage collection</td>
+                    <td>
+                      <span class="staff-badge green-badge">Resolved</span>
+                    </td>
+                    <td>
+                      <button type="button" class="staff-table-btn">
+                        Archive
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="staff-right">
+            <div class="staff-panel">
+              <div class="staff-panel-head">
+                <h3>Today Queue</h3>
+              </div>
+
+              <div class="staff-queue-list">
+                <div class="staff-queue-item">
+                  <span class="staff-time">09:00</span>
+                  <div>
+                    <strong>Resident verification</strong>
+                    <p>3 records waiting for validation</p>
+                  </div>
+                </div>
+
+                <div class="staff-queue-item">
+                  <span class="staff-time">10:30</span>
+                  <div>
+                    <strong>Announcement draft</strong>
+                    <p>Finalize clean-up drive notice</p>
+                  </div>
+                </div>
+
+                <div class="staff-queue-item">
+                  <span class="staff-time">01:00</span>
+                  <div>
+                    <strong>Release documents</strong>
+                    <p>Queue window opens after lunch</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="staff-panel">
+              <div class="staff-panel-head">
+                <h3>Quick Actions</h3>
+              </div>
+
+              <div class="staff-action-grid">
+                <button type="button" class="staff-action-box">
+                  <i class="fa-solid fa-file-signature"></i>
+                  <span>Approve Requests</span>
+                </button>
+
+                <button type="button" class="staff-action-box">
+                  <i class="fa-solid fa-bullhorn"></i>
+                  <span>Post Update</span>
+                </button>
+
+                <button type="button" class="staff-action-box">
+                  <i class="fa-solid fa-clipboard-check"></i>
+                  <span>Verify Records</span>
+                </button>
+
+                <button type="button" class="staff-action-box">
+                  <i class="fa-solid fa-phone-volume"></i>
+                  <span>Contact Resident</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
