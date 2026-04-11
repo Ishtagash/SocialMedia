@@ -525,7 +525,7 @@
         </div>
 
         <nav class="menu">
-          <a href="dashboard.html">
+          <a href="dashboard.php">
             <i class="fa-solid fa-house nav-icon"></i>
             <span>Dashboard</span>
           </a>
