@@ -275,6 +275,8 @@ function concernStatusBadge($status) {
     }
     .evidence-pdf-link:hover { text-decoration: underline; }
 
+    
+
     .logout-confirm-overlay { position:fixed; inset:0; z-index:2000; background:rgba(5,22,80,0.65); display:none; align-items:center; justify-content:center; }
     .logout-confirm-overlay.open { display:flex; }
     .logout-confirm-box { background:#fff; border-radius:12px; padding:36px 32px; max-width:380px; width:90%; text-align:center; border-top:4px solid #ccff00; box-shadow:0 16px 48px rgba(5,22,80,0.28); }
@@ -343,7 +345,7 @@ function concernStatusBadge($status) {
       </div>
       <div class="topbar-right">
         <div class="bell-wrap-pos">
-          <button type="button" id="bellBtn" onclick="toggleNotif()"
+          <button type="button" id="bellBtn" class="community-header-icon community-bell-link" onclick="toggleNotif()"
             style="width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:all 0.2s ease;position:relative;">
             <i class="fa-regular fa-bell" style="font-size:17px;color:var(--navy);"></i>
             <?php if ($unreadCount > 0): ?>
