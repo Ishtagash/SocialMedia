@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Requests</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="staff.css" />
+  </head>
+
+  <body>
+    <div class="staff-page staff-request-page">
+      <header class="staff-topbar">
+        <div class="staff-topbar-left">
+          <details class="staff-menu-box">
+            <summary class="staff-menu-btn" aria-label="Open menu">
+              <span></span>
+              <span></span>
+              <span></span>
+            </summary>
+
+            <div class="staff-menu-list">
+              <a href="staffdashboard.html">Dashboard</a>
+              <a href="staffrequest.html" class="active">Requests</a>
+              <a href="#">Concerns</a>
+              <a href="#">Announcements</a>
+              <a href="#">Residents</a>
+              <a href="#">Reports</a>
+              <a href="home.html">Logout</a>
+            </div>
+          </details>
+
+          <div class="staff-brand">
+            <h1>Barangay Alapan 1-A</h1>
+            <p>Staff Operations</p>
+          </div>
+        </div>
+
+        <div class="staff-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="text"
+            placeholder="Search requests, residents, or concerns"
+          />
+        </div>
+
+        <div class="staff-topbar-right">
+          <a href="#" class="staff-icon-btn" aria-label="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+
+          <a
+            href="notifications.html"
+            class="staff-icon-btn staff-bell-btn"
+            aria-label="Notifications"
+          >
+            <i class="fa-regular fa-bell staff-bell-icon"></i>
+            <span class="staff-bell-count">3</span>
+          </a>
+
+          <a href="#" class="staff-user-box">
+            <img src="corbin.jpg" alt="Staff Photo" class="staff-user-photo" />
+            <div class="staff-user-text">
+              <strong>Corbin Gutierrez</strong>
+              <span>Barangay Staff</span>
+            </div>
+            <i class="fa-solid fa-chevron-down"></i>
+          </a>
+        </div>
+      </header>
+
+      <main class="staff-main staff-request-main">
+        <section class="request-desk-head">
+          <div class="request-desk-title">
+            <h2>Request Desk</h2>
+            <p>
+              Track, review, and manage all resident document requests in one
+              table.
+            </p>
+          </div>
+
+          <div class="request-desk-actions">
+            <button type="button" class="request-manage-btn">
+              <i class="fa-solid fa-table-cells-large"></i>
+              Manage Table
+            </button>
+
+            <button type="button" class="request-create-btn">
+              <i class="fa-solid fa-plus"></i>
+              New Walk-in
+            </button>
+          </div>
+        </section>
+
+        <section class="request-toolbar-card">
+          <div class="request-toolbar-left">
+            <div class="request-inline-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search request, resident, or document"
+              />
+            </div>
+
+            <select class="request-filter-select">
+              <option>Last 30 days</option>
+              <option>Today</option>
+              <option>Last 7 days</option>
+              <option>This month</option>
+            </select>
+
+            <select class="request-filter-select">
+              <option>All Priority</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+
+            <select class="request-filter-select">
+              <option>All Status</option>
+              <option>Pending</option>
+              <option>Checking</option>
+              <option>Ready</option>
+              <option>Released</option>
+            </select>
+          </div>
+
+          <div class="request-toolbar-right">
+            <button type="button" class="request-filter-btn">
+              <i class="fa-solid fa-filter"></i>
+              Filter
+            </button>
+          </div>
+        </section>
+
+        <section class="request-table-shell">
+          <div class="request-table-scroll">
+            <table class="request-table-modern">
+              <thead>
+                <tr>
+                  <th class="request-check-col">
+                    <input type="checkbox" />
+                  </th>
+                  <th>Ticket ID</th>
+                  <th>Resident</th>
+                  <th>Document</th>
+                  <th>Priority</th>
+                  <th>Payment</th>
+                  <th>Assigned Staff</th>
+                  <th>Date Filed</th>
+                  <th>Last Activity</th>
+                  <th class="request-action-col">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-9247</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar blue-avatar">MS</div>
+                      <div>
+                        <strong>Maria Santos</strong>
+                        <p>Purok 3</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Barangay Clearance</td>
+                  <td>
+                    <span class="request-priority low-priority">Low</span>
+                  </td>
+                  <td>Cash</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar lime-avatar">CG</div>
+                      <span>Corbin</span>
+                    </div>
+                  </td>
+                  <td>20 Sept 2025</td>
+                  <td>20 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">
+                      Review
+                    </button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-9138</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar red-avatar">JR</div>
+                      <div>
+                        <strong>Joshua Cruz</strong>
+                        <p>Purok 2</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>File Upload Error</td>
+                  <td>
+                    <span class="request-priority low-priority">Low</span>
+                  </td>
+                  <td>GCash</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar violet-avatar">RB</div>
+                      <span>Robert</span>
+                    </div>
+                  </td>
+                  <td>18 Sept 2025</td>
+                  <td>19 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">Open</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8940</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar teal-avatar">AR</div>
+                      <div>
+                        <strong>Angela Reyes</strong>
+                        <p>Purok 5</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Business Permit Endorsement</td>
+                  <td>
+                    <span class="request-priority medium-priority">Medium</span>
+                  </td>
+                  <td>Maya</td>
+                  <td>
+                    <a href="#" class="request-assign-link">+ Assign staff</a>
+                  </td>
+                  <td>16 Sept 2025</td>
+                  <td>18 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">
+                      Assign
+                    </button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8864</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar blue-avatar">CD</div>
+                      <div>
+                        <strong>Carlo Dizon</strong>
+                        <p>Purok 1</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Incorrect Billing Information</td>
+                  <td>
+                    <span class="request-priority high-priority">High</span>
+                  </td>
+                  <td>Cash</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar violet-avatar">JN</div>
+                      <span>Jones</span>
+                    </div>
+                  </td>
+                  <td>12 Sept 2025</td>
+                  <td>12 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">Fix</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8721</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar teal-avatar">LF</div>
+                      <div>
+                        <strong>Lea Fernandez</strong>
+                        <p>Purok 4</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Feedback on User Interface</td>
+                  <td>
+                    <span class="request-priority low-priority">Low</span>
+                  </td>
+                  <td>Free</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar lime-avatar">AX</div>
+                      <span>Alexander</span>
+                    </div>
+                  </td>
+                  <td>09 Sept 2025</td>
+                  <td>11 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">View</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8679</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar red-avatar">IR</div>
+                      <div>
+                        <strong>Isabella Ramos</strong>
+                        <p>Purok 6</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Unexpected App Crash</td>
+                  <td>
+                    <span class="request-priority medium-priority">Medium</span>
+                  </td>
+                  <td>GCash</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar violet-avatar">AD</div>
+                      <span>Anderson</span>
+                    </div>
+                  </td>
+                  <td>04 Sept 2025</td>
+                  <td>05 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">Check</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8413</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar blue-avatar">JD</div>
+                      <div>
+                        <strong>James Dann</strong>
+                        <p>Purok 2</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Data Sync Issue</td>
+                  <td>
+                    <span class="request-priority medium-priority">Medium</span>
+                  </td>
+                  <td>Maya</td>
+                  <td>
+                    <div class="request-staff-cell">
+                      <div class="request-avatar lime-avatar">JF</div>
+                      <span>Jennifer</span>
+                    </div>
+                  </td>
+                  <td>02 Sept 2025</td>
+                  <td>02 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">Open</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td class="request-code">BRY-8250</td>
+                  <td>
+                    <div class="request-person-cell">
+                      <div class="request-avatar teal-avatar">MG</div>
+                      <div>
+                        <strong>Maria Garcia</strong>
+                        <p>Purok 7</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Unable to Reset Password</td>
+                  <td>
+                    <span class="request-priority low-priority">Low</span>
+                  </td>
+                  <td>Free</td>
+                  <td>
+                    <a href="#" class="request-assign-link">+ Assign staff</a>
+                  </td>
+                  <td>31 Aug 2025</td>
+                  <td>01 Sept 2025</td>
+                  <td>
+                    <button type="button" class="request-row-btn">
+                      Assign
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="request-table-footer">
+            <div class="request-footer-left">Page 1 of 12</div>
+
+            <div class="request-pagination">
+              <button type="button" class="page-btn disabled">
+                <i class="fa-solid fa-angle-left"></i>
+              </button>
+              <button type="button" class="page-btn active">1</button>
+              <button type="button" class="page-btn">2</button>
+              <button type="button" class="page-btn">3</button>
+              <span class="page-dots">...</span>
+              <button type="button" class="page-btn">12</button>
+              <button type="button" class="page-btn">
+                <i class="fa-solid fa-angle-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

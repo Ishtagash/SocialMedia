@@ -15,6 +15,199 @@
     />
     <link rel="stylesheet" href="base.css" />
     <link rel="stylesheet" href="superadmin.css" />
+
+    <style>
+      /* Staff page layout: main left + sidebar right */
+      .staff-page-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
+        align-items: start;
+      }
+
+      /* ── LEFT: single container wrapping toolbar + table ── */
+      .staff-main-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      /* Toolbar row inside the panel */
+      .staff-panel-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(5, 22, 80, 0.02);
+        flex-wrap: wrap;
+      }
+
+      .staff-panel-search {
+        flex: 1;
+        min-width: 200px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+      }
+
+      .staff-panel-search i {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .staff-panel-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .staff-panel-select {
+        height: 40px;
+        min-width: 150px;
+        padding: 0 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 13px;
+        outline: none;
+      }
+
+      /* Panel header row (title + link) */
+      .staff-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .staff-panel-head h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--navy);
+        margin: 0;
+      }
+
+      .staff-panel-link {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--navy);
+        text-decoration: none;
+        opacity: 0.55;
+      }
+
+      .staff-panel-link:hover {
+        opacity: 1;
+      }
+
+      /* Table inside panel */
+      .staff-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      /* ── RIGHT: stat cards stacked ── */
+      .staff-side {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .staff-stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .staff-stat-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 6px;
+      }
+
+      .staff-stat-num {
+        display: block;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--navy);
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .staff-stat-note {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.45;
+      }
+
+      /* Top bar */
+      .staff-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .staff-top-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .staff-top-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      @media (max-width: 1100px) {
+        .staff-page-layout {
+          grid-template-columns: 1fr;
+        }
+        .staff-side {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 680px) {
+        .staff-side {
+          grid-template-columns: 1fr;
+        }
+        .staff-panel-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .staff-panel-search {
+          min-width: 100%;
+        }
+        .staff-panel-select {
+          min-width: 100%;
+        }
+      }
+    </style>
   </head>
 
   <body class="superadmin-body">
@@ -22,7 +215,7 @@
       <header class="superadmin-header">
         <div class="superadmin-brand">
           <h1>Barangay Alapan 1-A</h1>
-          <p>Super Admin Dashboard</p>
+          <p>Super Admin</p>
         </div>
 
         <nav class="superadmin-nav">
@@ -31,11 +224,9 @@
             >Staff Accounts</a
           >
           <a href="superadminresidentaccount.html">Residents</a>
-          <a href="#">Barangay Profile</a>
           <a href="#">Announcements</a>
           <a href="#">Reports</a>
-          <a href="#">Audit Logs</a>
-          <a href="#">Settings</a>
+          <a href="superadminauditlogs.html">Audit Logs</a>
         </nav>
 
         <div class="superadmin-header-right">
@@ -43,156 +234,180 @@
             <i class="fa-solid fa-bell"></i>
             <span class="superadmin-bell-count">2</span>
           </a>
-
           <div class="superadmin-user">
             <div class="superadmin-user-info">
               <span class="superadmin-user-name">Super Admin</span>
             </div>
           </div>
-
           <a href="home.html" class="superadmin-logout">Logout</a>
         </div>
       </header>
 
       <main class="superadmin-content">
-        <section class="superadmin-page-head">
-          <div class="staff-page-actions">
+        <!-- Top bar -->
+        <div class="staff-top-bar">
+          <div class="staff-top-actions">
             <button class="superadmin-primary-btn">
               <i class="fa-solid fa-user-plus"></i>
               Add Staff Account
             </button>
-
             <button class="superadmin-outline-btn">
               <i class="fa-solid fa-file-export"></i>
               Export List
             </button>
           </div>
-        </section>
+        </div>
 
-        <section class="superadmin-stats short-stats">
-          <div class="superadmin-stat-card stat-lime">
-            <span class="superadmin-stat-label">Total Staff</span>
-            <strong class="superadmin-stat-number">34</strong>
-            <p class="superadmin-stat-note">All registered staff accounts</p>
-          </div>
-
-          <div class="superadmin-stat-card stat-green">
-            <span class="superadmin-stat-label">Active Accounts</span>
-            <strong class="superadmin-stat-number">29</strong>
-            <p class="superadmin-stat-note">Currently enabled accounts</p>
-          </div>
-
-          <div class="superadmin-stat-card stat-red">
-            <span class="superadmin-stat-label">Disabled Accounts</span>
-            <strong class="superadmin-stat-number">5</strong>
-            <p class="superadmin-stat-note">Temporarily restricted accounts</p>
-          </div>
-        </section>
-
-        <section class="superadmin-panel staff-toolbar-panel">
-          <div class="staff-toolbar">
-            <div class="staff-search">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" placeholder="Search name or role..." />
+        <!-- Page layout -->
+        <div class="staff-page-layout">
+          <!-- LEFT: toolbar + table in one container -->
+          <div class="staff-main-panel">
+            <!-- Toolbar -->
+            <div class="staff-panel-toolbar">
+              <div class="staff-panel-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search name or role..." />
+              </div>
+              <select class="staff-panel-select">
+                <option>All Roles</option>
+                <option>Secretary</option>
+                <option>Treasurer</option>
+                <option>Kagawad</option>
+                <option>SK Chairwoman</option>
+                <option>Captain</option>
+              </select>
+              <select class="staff-panel-select">
+                <option>All Status</option>
+                <option>Active</option>
+                <option>Disabled</option>
+              </select>
             </div>
 
-            <select class="staff-filter">
-              <option>All Roles</option>
-              <option>Secretary</option>
-              <option>Treasurer</option>
-              <option>Kagawad</option>
-              <option>SK Chairwoman</option>
-              <option>Captain</option>
-            </select>
+            <!-- Table header row -->
+            <div class="staff-panel-head">
+              <h4>Staff Account List</h4>
+              <a href="superadminauditlogs.html" class="staff-panel-link"
+                >View All</a
+              >
+            </div>
 
-            <select class="staff-filter">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Disabled</option>
-            </select>
+            <!-- Table -->
+            <div class="staff-table-wrap">
+              <table class="superadmin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Maria Santos</td>
+                    <td>Secretary</td>
+                    <td>maria@barangay.com</td>
+                    <td><span class="table-status active">Active</span></td>
+                    <td>Today, 8:15 AM</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Disable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Juan Dela Cruz</td>
+                    <td>Treasurer</td>
+                    <td>juan@barangay.com</td>
+                    <td><span class="table-status active">Active</span></td>
+                    <td>Today, 9:02 AM</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Disable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Pedro Reyes</td>
+                    <td>Kagawad</td>
+                    <td>pedro@barangay.com</td>
+                    <td><span class="table-status inactive">Disabled</span></td>
+                    <td>Yesterday</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Enable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Liza Gomez</td>
+                    <td>SK Chairwoman</td>
+                    <td>liza@barangay.com</td>
+                    <td><span class="table-status active">Active</span></td>
+                    <td>Today, 10:31 AM</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Disable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Ramon Cruz</td>
+                    <td>Captain</td>
+                    <td>ramon@barangay.com</td>
+                    <td><span class="table-status active">Active</span></td>
+                    <td>Today, 7:45 AM</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Disable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Ana Villanueva</td>
+                    <td>Kagawad</td>
+                    <td>ana@barangay.com</td>
+                    <td><span class="table-status active">Active</span></td>
+                    <td>Today, 11:05 AM</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Disable</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Carlos Bautista</td>
+                    <td>Kagawad</td>
+                    <td>carlos@barangay.com</td>
+                    <td><span class="table-status inactive">Disabled</span></td>
+                    <td>Mar 10, 2026</td>
+                    <td class="staff-action-cell">
+                      <button class="table-btn">Edit</button>
+                      <button class="table-btn table-btn-light">Enable</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </section>
 
-        <section class="superadmin-panel staff-table-panel">
-          <div class="superadmin-panel-header superadmin-panel-row">
-            <h4>Staff Account List</h4>
-            <a href="#" class="superadmin-link">View Audit</a>
+          <!-- RIGHT: stat cards -->
+          <div class="staff-side">
+            <div class="staff-stat-card">
+              <span class="staff-stat-label">Total Staff</span>
+              <strong class="staff-stat-num">34</strong>
+              <p class="staff-stat-note">All registered staff accounts</p>
+            </div>
+
+            <div class="staff-stat-card">
+              <span class="staff-stat-label">Active Accounts</span>
+              <strong class="staff-stat-num">29</strong>
+              <p class="staff-stat-note">Currently enabled accounts</p>
+            </div>
+
+            <div class="staff-stat-card">
+              <span class="staff-stat-label">Disabled Accounts</span>
+              <strong class="staff-stat-num">5</strong>
+              <p class="staff-stat-note">Temporarily restricted accounts</p>
+            </div>
           </div>
-
-          <table class="superadmin-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Last Active</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Maria Santos</td>
-                <td>Secretary</td>
-                <td>maria@barangay.com</td>
-                <td><span class="table-status active">Active</span></td>
-                <td>Today, 8:15 AM</td>
-                <td class="staff-action-cell">
-                  <button class="table-btn">Edit</button>
-                  <button class="table-btn table-btn-light">Disable</button>
-                </td>
-              </tr>
-
-              <tr>
-                <td>Juan Dela Cruz</td>
-                <td>Treasurer</td>
-                <td>juan@barangay.com</td>
-                <td><span class="table-status active">Active</span></td>
-                <td>Today, 9:02 AM</td>
-                <td class="staff-action-cell">
-                  <button class="table-btn">Edit</button>
-                  <button class="table-btn table-btn-light">Disable</button>
-                </td>
-              </tr>
-
-              <tr>
-                <td>Pedro Reyes</td>
-                <td>Kagawad</td>
-                <td>pedro@barangay.com</td>
-                <td><span class="table-status inactive">Disabled</span></td>
-                <td>Yesterday</td>
-                <td class="staff-action-cell">
-                  <button class="table-btn">Edit</button>
-                  <button class="table-btn table-btn-light">Enable</button>
-                </td>
-              </tr>
-
-              <tr>
-                <td>Liza Gomez</td>
-                <td>SK Chairwoman</td>
-                <td>liza@barangay.com</td>
-                <td><span class="table-status active">Active</span></td>
-                <td>Today, 10:31 AM</td>
-                <td class="staff-action-cell">
-                  <button class="table-btn">Edit</button>
-                  <button class="table-btn table-btn-light">Disable</button>
-                </td>
-              </tr>
-
-              <tr>
-                <td>Ramon Cruz</td>
-                <td>Captain</td>
-                <td>ramon@barangay.com</td>
-                <td><span class="table-status active">Active</span></td>
-                <td>Today, 7:45 AM</td>
-                <td class="staff-action-cell">
-                  <button class="table-btn">Edit</button>
-                  <button class="table-btn table-btn-light">Disable</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+        </div>
       </main>
     </div>
   </body>
