@@ -29,11 +29,9 @@
           <a href="superadmindashboard.html" class="active">Dashboard</a>
           <a href="superadminstaffaccount.html">Staff Accounts</a>
           <a href="superadminresidentaccount.html">Residents</a>
-          <a href="#">Barangay Profile</a>
-          <a href="#">Announcements</a>
-          <a href="#">Reports</a>
-          <a href="#">Audit Logs</a>
-          <a href="#">Settings</a>
+          <a href="superadminannouncement.html">Announcements</a>
+          <a href="superadminreports.html">Reports</a>
+          <a href="superadminauditlogs.html">Audit Logs</a>
         </nav>
 
         <div class="superadmin-header-right">
@@ -41,232 +39,235 @@
             <i class="fa-solid fa-bell"></i>
             <span class="superadmin-bell-count">2</span>
           </a>
-
           <div class="superadmin-user">
             <div class="superadmin-user-info">
               <span class="superadmin-user-name">Super Admin</span>
             </div>
           </div>
-
           <a href="home.html" class="superadmin-logout">Logout</a>
         </div>
       </header>
 
-      <main class="superadmin-content">
-        <section class="superadmin-top"></section>
-
-        <section class="superadmin-stats">
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Total Residents</span>
-            <strong class="superadmin-card-number">123</strong>
-            <p class="superadmin-card-note">Registered resident accounts</p>
+      <main class="dashboard-wrapper">
+        <!-- TOP BAR -->
+        <div class="dashboard-topbar">
+          <div class="dashboard-topbar-left">
+            <h2>Dashboard Overview</h2>
+            <p>Tuesday, April 14, 2026</p>
           </div>
-
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Active Staff</span>
-            <strong class="superadmin-card-number">34</strong>
-            <p class="superadmin-card-note">Staff with active access</p>
+          <div class="dashboard-topbar-actions">
+            <button class="superadmin-primary-btn">
+              <i class="fa-solid fa-user-plus"></i>
+              Add Staff
+            </button>
+            <button class="superadmin-outline-btn">
+              <i class="fa-solid fa-file-export"></i>
+              Export Report
+            </button>
           </div>
+        </div>
 
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Pending Registrations</span>
-            <strong class="superadmin-card-number">7</strong>
-            <p class="superadmin-card-note">Waiting for verification</p>
+        <!-- STATS -->
+        <div class="dashboard-stat-row">
+          <div class="dashboard-stat-box">
+            <span class="dashboard-stat-label">Total Residents</span>
+            <span class="dashboard-stat-value">123</span>
+            <span class="dashboard-stat-sub">Registered accounts</span>
           </div>
-
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Open Concerns</span>
-            <strong class="superadmin-card-number">12</strong>
-            <p class="superadmin-card-note">Needs staff attention</p>
+          <div class="dashboard-stat-box">
+            <span class="dashboard-stat-label">Pending Verification</span>
+            <span class="dashboard-stat-value">7</span>
+            <span class="dashboard-stat-sub">Awaiting review</span>
           </div>
-
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Announcements Posted</span>
-            <strong class="superadmin-card-number">18</strong>
-            <p class="superadmin-card-note">Published this month</p>
+          <div class="dashboard-stat-box">
+            <span class="dashboard-stat-label">Active Staff</span>
+            <span class="dashboard-stat-value">34</span>
+            <span class="dashboard-stat-sub">Currently enabled</span>
           </div>
-
-          <div class="superadmin-card">
-            <span class="superadmin-card-label">Security Alerts</span>
-            <strong class="superadmin-card-number">2</strong>
-            <p class="superadmin-card-note">Requires review</p>
+          <div class="dashboard-stat-box">
+            <span class="dashboard-stat-label">Open Requests</span>
+            <span class="dashboard-stat-value">18</span>
+            <span class="dashboard-stat-sub">Unresolved requests</span>
           </div>
-        </section>
-
-        <section class="superadmin-section">
-          <div class="superadmin-section-title">
-            <h3>Quick Actions</h3>
+          <div class="dashboard-stat-box">
+            <span class="dashboard-stat-label">Open Concerns</span>
+            <span class="dashboard-stat-value">12</span>
+            <span class="dashboard-stat-sub">Filed concerns</span>
           </div>
+        </div>
 
-          <div class="superadmin-action-grid">
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Staff Accounts</h4>
+        <!-- BODY -->
+        <div class="dashboard-body">
+          <!-- LEFT -->
+          <div class="dashboard-col">
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h4>Needs Attention Today</h4>
+                <a href="#">View All</a>
               </div>
-              <div class="superadmin-panel-actions">
-                <button>Add Staff Account</button>
-                <button>Assign Roles</button>
-                <button>Disable Account</button>
+              <div class="dashboard-panel-body">
+                <div class="dashboard-alert-item">
+                  <div class="dashboard-alert-text">
+                    <strong
+                      >7 resident accounts waiting for verification</strong
+                    >
+                    <p>Review newly submitted resident registrations.</p>
+                  </div>
+                  <button class="dashboard-btn">Review</button>
+                </div>
+                <div class="dashboard-alert-item">
+                  <div class="dashboard-alert-text">
+                    <strong>5 document requests marked overdue</strong>
+                    <p>Pending requests have not been processed on time.</p>
+                  </div>
+                  <button class="dashboard-btn dashboard-btn-ghost">
+                    Open
+                  </button>
+                </div>
+                <div class="dashboard-alert-item">
+                  <div class="dashboard-alert-text">
+                    <strong>2 failed login alerts detected</strong>
+                    <p>
+                      Check recent security activity and account access logs.
+                    </p>
+                  </div>
+                  <button class="dashboard-btn dashboard-btn-ghost">
+                    Check
+                  </button>
+                </div>
+                <div class="dashboard-alert-item">
+                  <div class="dashboard-alert-text">
+                    <strong>3 disabled resident accounts need review</strong>
+                    <p>
+                      Decide whether to restore or keep account restrictions.
+                    </p>
+                  </div>
+                  <button class="dashboard-btn dashboard-btn-ghost">
+                    Inspect
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Resident Management</h4>
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h4>Pending Verification</h4>
+                <a href="superadminresidentaccount.html">Review All</a>
               </div>
-              <div class="superadmin-panel-actions">
-                <button>View Residents</button>
-                <button>Verify Accounts</button>
-                <button>Manage Households</button>
-              </div>
-            </div>
-
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Announcements</h4>
-              </div>
-              <div class="superadmin-panel-actions">
-                <button>Create Announcement</button>
-                <button>Manage Categories</button>
-                <button>Archive Posts</button>
-              </div>
-            </div>
-
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Reports</h4>
-              </div>
-              <div class="superadmin-panel-actions">
-                <button>Generate Reports</button>
-                <button>View Analytics</button>
-                <button>Export Data</button>
+              <div class="dashboard-panel-body">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Purok</th>
+                      <th>Submitted</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Ana Lopez</td>
+                      <td>Purok 2</td>
+                      <td>Mar 12, 2026</td>
+                      <td><button class="dashboard-btn">Review</button></td>
+                    </tr>
+                    <tr>
+                      <td>Ryan Gomez</td>
+                      <td>Purok 1</td>
+                      <td>Mar 12, 2026</td>
+                      <td><button class="dashboard-btn">Review</button></td>
+                    </tr>
+                    <tr>
+                      <td>Kristine Mendoza</td>
+                      <td>Purok 4</td>
+                      <td>Mar 11, 2026</td>
+                      <td><button class="dashboard-btn">Review</button></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        </section>
 
-        <section class="superadmin-main">
-          <div class="superadmin-left">
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header superadmin-panel-row">
-                <h4>Staff Account Overview</h4>
-                <a href="#">Manage All</a>
+          <!-- RIGHT -->
+          <div class="dashboard-col">
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h4>Quick Actions</h4>
               </div>
-
-              <table class="superadmin-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Last Active</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Maria Santos</td>
-                    <td>Secretary</td>
-                    <td>Active</td>
-                    <td>Today, 8:15 AM</td>
-                    <td><button class="table-button">Manage</button></td>
-                  </tr>
-                  <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>Treasurer</td>
-                    <td>Active</td>
-                    <td>Today, 9:02 AM</td>
-                    <td><button class="table-button">Manage</button></td>
-                  </tr>
-                  <tr>
-                    <td>Pedro Reyes</td>
-                    <td>Kagawad</td>
-                    <td>Inactive</td>
-                    <td>Yesterday</td>
-                    <td><button class="table-button">Manage</button></td>
-                  </tr>
-                  <tr>
-                    <td>Liza Gomez</td>
-                    <td>SK Chairwoman</td>
-                    <td>Active</td>
-                    <td>Today, 10:31 AM</td>
-                    <td><button class="table-button">Manage</button></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="dashboard-quick-actions">
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-user-plus"></i>
+                  Add Staff Account
+                </button>
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-user-check"></i>
+                  Verify Residents
+                </button>
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-scroll"></i>
+                  View Audit Logs
+                </button>
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-file-export"></i>
+                  Export Reports
+                </button>
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-bullhorn"></i>
+                  Announcements
+                </button>
+                <button class="dashboard-action-btn">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  Security Alerts
+                </button>
+              </div>
             </div>
 
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header superadmin-panel-row">
-                <h4>Recent Audit Logs</h4>
-                <a href="#">View Logs</a>
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h4>Recent Activity</h4>
+                <a href="superadminauditlogs.html">View Logs</a>
               </div>
-
-              <table class="superadmin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Action</th>
-                    <th>Module</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Secretary</td>
-                    <td>Approved Barangay Clearance</td>
-                    <td>Requests</td>
-                    <td>Mar 12, 2026</td>
-                  </tr>
-                  <tr>
-                    <td>Treasurer</td>
-                    <td>Verified Payment Record</td>
-                    <td>Payment</td>
-                    <td>Mar 12, 2026</td>
-                  </tr>
-                  <tr>
-                    <td>Super Admin</td>
-                    <td>Created Staff Account</td>
-                    <td>Staff Accounts</td>
-                    <td>Mar 11, 2026</td>
-                  </tr>
-                  <tr>
-                    <td>Captain</td>
-                    <td>Posted Official Announcement</td>
-                    <td>Announcements</td>
-                    <td>Mar 11, 2026</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="dashboard-panel-body">
+                <div class="dashboard-activity-item">
+                  <span class="dashboard-activity-user">Super Admin</span>
+                  <span class="dashboard-activity-desc"
+                    >Created a new staff account for Secretary</span
+                  >
+                  <span class="dashboard-activity-time">10:15 AM</span>
+                </div>
+                <div class="dashboard-activity-item">
+                  <span class="dashboard-activity-user">Maria Santos</span>
+                  <span class="dashboard-activity-desc"
+                    >Approved Barangay Clearance request</span
+                  >
+                  <span class="dashboard-activity-time">9:42 AM</span>
+                </div>
+                <div class="dashboard-activity-item">
+                  <span class="dashboard-activity-user">Juan Dela Cruz</span>
+                  <span class="dashboard-activity-desc"
+                    >Updated payment entry record</span
+                  >
+                  <span class="dashboard-activity-time">9:18 AM</span>
+                </div>
+                <div class="dashboard-activity-item">
+                  <span class="dashboard-activity-user">Emily Rodriguez</span>
+                  <span class="dashboard-activity-desc"
+                    >Changed request processing settings</span
+                  >
+                  <span class="dashboard-activity-time">8:55 AM</span>
+                </div>
+                <div class="dashboard-activity-item">
+                  <span class="dashboard-activity-user">Super Admin</span>
+                  <span class="dashboard-activity-desc"
+                    >Disabled staff account — Pedro Reyes</span
+                  >
+                  <span class="dashboard-activity-time">8:30 AM</span>
+                </div>
+              </div>
             </div>
           </div>
-
-          <aside class="superadmin-right">
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Security Controls</h4>
-              </div>
-
-              <div class="superadmin-panel-actions">
-                <button>Force Password Reset</button>
-                <button>Lock Suspicious Account</button>
-                <button>Review Login Attempts</button>
-              </div>
-            </div>
-
-            <div class="superadmin-panel">
-              <div class="superadmin-panel-header">
-                <h4>Barangay Profile</h4>
-              </div>
-
-              <div class="superadmin-panel-actions">
-                <button>Edit Barangay Information</button>
-                <button>Update Logo</button>
-                <button>Edit Document Templates</button>
-              </div>
-            </div>
-          </aside>
-        </section>
+        </div>
       </main>
     </div>
   </body>
