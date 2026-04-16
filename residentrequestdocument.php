@@ -10,61 +10,122 @@ $serverName = "LAPTOP-8KOIBQER\SQLEXPRESS";
 $connectionOptions = ["Database" => "SocialMedia", "Uid" => "", "PWD" => ""];
 $conn = sqlsrv_connect($serverName, $connectionOptions);
 
+if ($conn === false) {
+    die("Connection failed: " . print_r(sqlsrv_errors(), true));
+}
+
 $userId = $_SESSION['user_id'];
 
-$regSql  = "SELECT FIRST_NAME, LAST_NAME, ID_PHOTO_PATH FROM REGISTRATION WHERE USER_ID = ?";
+$regSql  = "SELECT FIRST_NAME, LAST_NAME, GENDER, PROFILE_PICTURE, ADDRESS, CONTACT_NUMBER FROM REGISTRATION WHERE USER_ID = ?";
 $regStmt = sqlsrv_query($conn, $regSql, [$userId]);
-$regRow  = sqlsrv_fetch_array($regStmt, SQLSRV_FETCH_ASSOC);
+if ($regStmt === false) {
+    die("Query failed: " . print_r(sqlsrv_errors(), true));
+}
+$regRow = sqlsrv_fetch_array($regStmt, SQLSRV_FETCH_ASSOC);
 
-$firstName      = $regRow ? htmlspecialchars(rtrim($regRow['FIRST_NAME'])) : 'Resident';
-$lastName       = $regRow ? htmlspecialchars(rtrim($regRow['LAST_NAME']))  : '';
-$fullName       = $firstName . ' ' . $lastName;
-$profilePicture = ($regRow && $regRow['ID_PHOTO_PATH']) ? htmlspecialchars($regRow['ID_PHOTO_PATH']) : 'default_avatar.png';
+$firstName       = $regRow ? htmlspecialchars(rtrim($regRow['FIRST_NAME'])) : 'Resident';
+$lastName        = $regRow ? htmlspecialchars(rtrim($regRow['LAST_NAME']))  : '';
+$fullName        = $firstName . ' ' . $lastName;
+$gender          = $regRow ? strtolower(rtrim($regRow['GENDER'] ?? '')) : '';
+$residentAddress = $regRow ? htmlspecialchars(rtrim($regRow['ADDRESS'] ?? '')) : '';
+$residentContact = $regRow ? htmlspecialchars(rtrim($regRow['CONTACT_NUMBER'] ?? '')) : '';
 
-$annCount = 0;
-$annStmt  = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1");
-$annRow   = sqlsrv_fetch_array($annStmt, SQLSRV_FETCH_ASSOC);
-if ($annRow) $annCount = (int)$annRow['CNT'];
+if ($regRow && !empty($regRow['PROFILE_PICTURE'])) {
+    $profilePicture = htmlspecialchars($regRow['PROFILE_PICTURE']);
+} elseif ($gender === 'male') {
+    $profilePicture = 'default/male.png';
+} elseif ($gender === 'female') {
+    $profilePicture = 'default/female.png';
+} else {
+    $profilePicture = 'default/neutral.png';
+}
 
-$submitSuccess = false;
-$submitError   = '';
-$newRequestId  = null;
+$unreadRow   = sqlsrv_fetch_array(sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM NOTIFICATIONS WHERE USER_ID = ? AND IS_READ = 0", [$userId]), SQLSRV_FETCH_ASSOC);
+$unreadCount = $unreadRow ? (int)$unreadRow['CNT'] : 0;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_request') {
-    $documentType    = trim($_POST['document_type']);
-    $purpose         = trim($_POST['purpose']);
-    $notes           = trim($_POST['notes']);
-    $deliveryMethod  = trim($_POST['delivery_method']);
-    $deliveryAddress = trim($_POST['delivery_address'] ?? '');
-    $contactNumber   = trim($_POST['contact_number'] ?? '');
-    $paymentMethod   = trim($_POST['payment_method'] ?? '');
+$notifStmt = sqlsrv_query($conn,
+    "SELECT TOP 15 NOTIFICATION_ID, MESSAGE, TYPE, IS_READ, CREATED_AT, REFERENCE_ID
+     FROM NOTIFICATIONS WHERE USER_ID = ? ORDER BY CREATED_AT DESC",
+    [$userId]
+);
+$notifications = [];
+while ($row = sqlsrv_fetch_array($notifStmt, SQLSRV_FETCH_ASSOC)) {
+    $notifications[] = $row;
+}
 
-    if (empty($documentType) || empty($purpose) || empty($deliveryMethod)) {
-        $submitError = 'Please complete all required fields.';
-    } else {
-        $fullPurpose = $purpose;
-        if ($notes) $fullPurpose .= ' — ' . $notes;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'read_notif' && isset($_POST['notif_id'])) {
+        $notifId = (int)$_POST['notif_id'];
+        sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
+        header("Location: residentrequestdocument.php");
+        exit();
+    }
+    if ($_POST['action'] === 'mark_all_read') {
+        sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE USER_ID = ?", [$userId]);
+        header("Location: residentrequestdocument.php");
+        exit();
+    }
+    if ($_POST['action'] === 'submit_request') {
+        header('Content-Type: application/json');
 
-        $sql  = "INSERT INTO DOCUMENT_REQUESTS (USER_ID, DOCUMENT_TYPE, PURPOSE, STATUS, CREATED_AT) VALUES (?, ?, ?, 'PENDING', GETDATE())";
-        $stmt = sqlsrv_query($conn, $sql, [$userId, $documentType, $fullPurpose]);
+        $documentType   = trim($_POST['document_type'] ?? '');
+        $notes          = trim($_POST['notes'] ?? '');
+        $deliveryMethod = trim($_POST['delivery_method'] ?? '');
+
+        if (empty($documentType) || empty($deliveryMethod)) {
+            echo json_encode(['success' => false, 'error' => 'Please complete all required fields.']);
+            exit();
+        }
+
+        $purposeValue = $notes !== '' ? $notes : 'N/A';
+
+        $sql    = "INSERT INTO DOCUMENT_REQUESTS (USER_ID, DOCUMENT_TYPE, PURPOSE, DELIVERY_METHOD, STATUS, CREATED_AT)
+                   VALUES (?, ?, ?, ?, 'PENDING', GETDATE())";
+        $params = [$userId, $documentType, $purposeValue, $deliveryMethod];
+        $stmt   = sqlsrv_query($conn, $sql, $params);
 
         if ($stmt === false) {
-            $submitError = 'Failed to submit request. Please try again.';
-        } else {
-            $idStmt = sqlsrv_query($conn, "SELECT TOP 1 REQUEST_ID FROM DOCUMENT_REQUESTS WHERE USER_ID = ? ORDER BY CREATED_AT DESC", [$userId]);
-            $idRow  = sqlsrv_fetch_array($idStmt, SQLSRV_FETCH_ASSOC);
-            $newRequestId  = $idRow ? (int)$idRow['REQUEST_ID'] : 0;
-            $submitSuccess = true;
+            echo json_encode(['success' => false, 'error' => 'Failed to submit request. ' . print_r(sqlsrv_errors(), true)]);
+            exit();
         }
-    }
 
-    header('Content-Type: application/json');
-    if ($submitSuccess) {
-        echo json_encode(['success' => true, 'ref' => 'REQ-' . str_pad($newRequestId, 4, '0', STR_PAD_LEFT)]);
-    } else {
-        echo json_encode(['success' => false, 'error' => $submitError]);
+        $idStmt = sqlsrv_query($conn, "SELECT TOP 1 REQUEST_ID FROM DOCUMENT_REQUESTS WHERE USER_ID = ? ORDER BY CREATED_AT DESC", [$userId]);
+        $idRow  = sqlsrv_fetch_array($idStmt, SQLSRV_FETCH_ASSOC);
+        $newId  = $idRow ? (int)$idRow['REQUEST_ID'] : 0;
+
+        $uploaded = 0;
+        $uploadDir = 'uploads/requests/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        if ($newId > 0 && isset($_FILES)) {
+            foreach ($_FILES as $fieldName => $fileData) {
+                if (strpos($fieldName, 'req_file_') !== 0) continue;
+                if ($fileData['error'] !== UPLOAD_ERR_OK) continue;
+
+                $label    = trim($_POST['req_label_' . substr($fieldName, 9)] ?? $fieldName);
+                $origName = basename($fileData['name']);
+                $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                $allowed  = ['jpg','jpeg','png','pdf','heic','webp'];
+                if (!in_array($ext, $allowed)) continue;
+
+                $safeName = 'req_' . $newId . '_' . time() . '_' . $uploaded . '.' . $ext;
+                $destPath = $uploadDir . $safeName;
+
+                if (move_uploaded_file($fileData['tmp_name'], $destPath)) {
+                    $fileSql    = "INSERT INTO DOCUMENT_REQUEST_FILES (REQUEST_ID, FILE_LABEL, FILE_NAME, FILE_PATH)
+                                   VALUES (?, ?, ?, ?)";
+                    $fileParams = [$newId, $label, $origName, $destPath];
+                    sqlsrv_query($conn, $fileSql, $fileParams);
+                    $uploaded++;
+                }
+            }
+        }
+
+        echo json_encode(['success' => true, 'ref' => 'REQ-' . str_pad($newId, 4, '0', STR_PAD_LEFT)]);
+        exit();
     }
-    exit();
 }
 ?>
 <!doctype html>
@@ -75,18 +136,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   <title>Request Documents — BarangayKonek</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="resident.css" />
+  <style>
+    .sidebar-divider { height:1px; background:rgba(255,255,255,0.08); margin:6px 14px; }
+
+    .bell-wrap-pos { position:relative; }
+    .notif-dropdown {
+      position:absolute; top:calc(100% + 10px); right:0; width:340px;
+      background:#fff; border:1px solid rgba(5,22,80,0.12); border-radius:10px;
+      box-shadow:0 8px 30px rgba(5,22,80,0.16); z-index:999; display:none;
+      max-height:480px; overflow-y:auto;
+    }
+    .notif-dropdown.open { display:block; }
+    .notif-dropdown-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px 10px; border-bottom:1px solid rgba(5,22,80,0.08);
+      position:sticky; top:0; background:#fff; z-index:1;
+    }
+    .notif-dropdown-header h4 { font-size:14px; font-weight:700; color:#051650; margin:0; }
+    .notif-mark-all { font-size:12px; color:#051650; font-weight:700; background:none; border:none; padding:0; font-family:inherit; cursor:pointer; }
+    .notif-mark-all:hover { text-decoration:underline; }
+    .notif-item { display:block; padding:0; border-bottom:1px solid rgba(5,22,80,0.05); background:#fff; cursor:pointer; transition:background 0.15s; width:100%; text-align:left; border-left:none; border-right:none; border-top:none; font-family:inherit; }
+    .notif-item:hover { background:#f5f7ff; }
+    .notif-item.unread { background:rgba(204,255,0,0.07); }
+    .notif-item-top { display:flex; align-items:flex-start; gap:10px; padding:11px 14px 8px; }
+    .notif-item-icon { width:34px; height:34px; border-radius:50%; background:#051650; color:#ccff00; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+    .notif-item-text { font-size:13px; color:#333; line-height:1.45; flex:1; }
+    .notif-item-time { font-size:11px; color:#aaa; margin-top:3px; }
+    .notif-unread-dot { width:8px; height:8px; border-radius:50%; background:#ccff00; border:1.5px solid #051650; flex-shrink:0; margin-top:6px; }
+    .notif-empty { padding:28px; text-align:center; font-size:13px; color:#aaa; }
+
+    /* File upload inputs */
+    .req-upload-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+    .req-upload-item {
+      background: rgba(5,22,80,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .req-upload-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .req-upload-label .req-required { color: var(--red); }
+    .req-file-input {
+      display: block;
+      width: 100%;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .req-file-input:focus { outline: none; border-color: var(--navy); }
+    .req-file-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .req-file-preview {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #15803d;
+      font-weight: 600;
+    }
+    .req-file-preview.visible { display: flex; }
+    .req-confirm-note {
+      font-size:12px; color:var(--text-muted); margin-top:10px; padding:10px 12px;
+      background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.15);
+      border-radius:10px; display:flex; align-items:flex-start; gap:8px;
+    }
+    .req-confirm-note i { margin-top:2px; color:#3b82f6; flex-shrink:0; }
+
+    /* Phone validation */
+    .input-error { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,77,77,0.1) !important; }
+    .field-error-msg { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
+    .field-error-msg.visible { display: block; }
+
+    .logout-confirm-overlay { position:fixed; inset:0; z-index:2000; background:rgba(5,22,80,0.65); display:none; align-items:center; justify-content:center; }
+    .logout-confirm-overlay.open { display:flex; }
+    .logout-confirm-box { background:#fff; border-radius:12px; padding:36px 32px; max-width:380px; width:90%; text-align:center; border-top:4px solid #ccff00; box-shadow:0 16px 48px rgba(5,22,80,0.28); }
+    .logout-confirm-icon { width:56px; height:56px; border-radius:50%; background:#051650; color:#ccff00; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 16px; }
+    .logout-confirm-box h3 { font-size:20px; font-weight:700; color:#051650; margin-bottom:8px; }
+    .logout-confirm-box p  { font-size:14px; color:#666; margin-bottom:24px; line-height:1.6; }
+    .logout-confirm-btns { display:flex; gap:10px; justify-content:center; }
+    .btn-logout-confirm { background:#051650; color:#ccff00; border:none; padding:11px 28px; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+    .btn-logout-cancel  { background:transparent; color:#051650; border:1px solid rgba(5,22,80,0.25); padding:11px 28px; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+  </style>
 </head>
 <body>
-<div class="container">
-  <aside class="sidebar resident-community-sidebar">
-    <div class="sidebar-brand">
-      <h2>BarangayKonek</h2>
-      <span>Resident</span>
+
+<div class="logout-confirm-overlay" id="logoutModal">
+  <div class="logout-confirm-box">
+    <div class="logout-confirm-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+    <h3>Log out?</h3>
+    <p>You will be returned to the home page.</p>
+    <div class="logout-confirm-btns">
+      <button type="button" class="btn-logout-cancel" onclick="closeLogout()">Cancel</button>
+      <a href="logout.php" class="btn-logout-confirm"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
     </div>
+  </div>
+</div>
+
+<div class="container">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h2>BarangayKonek</h2><span>Resident</span></div>
     <div class="profile profile--compact">
       <div class="avatar-ring">
         <img src="<?= $profilePicture ?>" alt="Resident Photo" />
@@ -98,56 +263,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       </div>
     </div>
     <nav class="menu">
-      <a href="residentdashboard.php">
-        <i class="fa-solid fa-house nav-icon"></i>
-        <span>Dashboard</span>
-      </a>
-      <a href="residentrequestdocument.php" class="active">
-        <i class="fa-solid fa-file-lines nav-icon"></i>
-        <span>Request Documents</span>
-      </a>
-      <a href="residentconcern.php">
-        <i class="fa-solid fa-circle-exclamation nav-icon"></i>
-        <span>Concerns</span>
-      </a>
-      <a href="residentcommunity.php">
-        <i class="fa-solid fa-users nav-icon"></i>
-        <span>Community</span>
-      </a>
-      <a href="residentrequest.php">
-        <i class="fa-solid fa-clipboard-list nav-icon"></i>
-        <span>My Requests</span>
-      </a>
+      <a href="residentdashboard.php"><i class="fa-solid fa-house nav-icon"></i><span>Dashboard</span></a>
+      <a href="residentrequestdocument.php" class="active"><i class="fa-solid fa-file-lines nav-icon"></i><span>Request Documents</span></a>
+      <a href="residentconcern.php"><i class="fa-solid fa-circle-exclamation nav-icon"></i><span>Concerns</span></a>
+      <a href="residentcommunity.php"><i class="fa-solid fa-users nav-icon"></i><span>Community</span></a>
+      <a href="residentrequest.php"><i class="fa-solid fa-clipboard-list nav-icon"></i><span>My Requests</span></a>
     </nav>
-    <div class="community-sidebar-section">
-      <h4>Quick Access</h4>
-    </div>
-    <a href="home.html" class="logout">
-      <i class="fa-solid fa-right-from-bracket nav-icon"></i>
-      <span>Logout</span>
-    </a>
+    <div class="sidebar-divider"></div>
+    <nav class="menu">
+      <a href="settings.php"><i class="fa-solid fa-gear nav-icon"></i><span>Settings</span></a>
+    </nav>
+    <div style="flex:1;"></div>
+    <button type="button" class="logout" onclick="openLogout()" style="background:none;border:none;width:100%;text-align:left;cursor:pointer;font-family:inherit;">
+      <i class="fa-solid fa-right-from-bracket nav-icon"></i><span>Logout</span>
+    </button>
   </aside>
 
   <main class="content">
     <div class="content-inner">
       <div class="topbar">
         <div class="greeting-block">
-          <h1>Request <span class="accent-name">Documents</span></h1>
+          <h1>Request <span style="color:var(--navy);">Documents</span></h1>
           <p class="subtitle">Search and request official barangay documents easily.</p>
         </div>
         <div class="topbar-right">
-          <div class="user-chip">
-            <div class="user-chip-avatar-wrap">
-              <img src="<?= $profilePicture ?>" alt="Resident Photo" class="user-chip-img" />
+          <div class="bell-wrap-pos">
+            <button type="button" id="bellBtn" onclick="toggleNotif()"
+              style="width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:all 0.2s ease;position:relative;">
+              <i class="fa-regular fa-bell" style="font-size:17px;color:var(--navy);"></i>
+              <?php if ($unreadCount > 0): ?>
+              <span style="position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--lime);color:var(--navy);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);"><?= $unreadCount ?></span>
+              <?php endif; ?>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-dropdown-header">
+                <h4>Notifications <?php if ($unreadCount > 0): ?><span style="font-size:11px;color:#888;font-weight:400;">(<?= $unreadCount ?> unread)</span><?php endif; ?></h4>
+                <?php if ($unreadCount > 0): ?>
+                <form method="POST" action="residentrequestdocument.php" style="margin:0;">
+                  <input type="hidden" name="action" value="mark_all_read">
+                  <button type="submit" class="notif-mark-all">Mark all read</button>
+                </form>
+                <?php endif; ?>
+              </div>
+              <?php if (empty($notifications)): ?>
+              <div class="notif-empty"><i class="fa-regular fa-bell" style="font-size:28px;display:block;margin-bottom:8px;"></i>No notifications yet.</div>
+              <?php else: ?>
+              <?php foreach ($notifications as $notif):
+                $isUnread = !(bool)$notif['IS_READ'];
+                $notifId  = (int)$notif['NOTIFICATION_ID'];
+                $refId    = $notif['REFERENCE_ID'] ? (int)$notif['REFERENCE_ID'] : 0;
+                $typeKey  = rtrim($notif['TYPE']);
+                $iconMap  = ['LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment','ANNOUNCEMENT'=>'fa-bullhorn','REQUEST'=>'fa-file-lines'];
+                $icon     = $iconMap[$typeKey] ?? 'fa-bell';
+                $timeAgo  = $notif['CREATED_AT']->format('M d, g:i A');
+              ?>
+              <form method="POST" action="residentrequestdocument.php" style="display:block;margin:0;padding:0;">
+                <input type="hidden" name="action" value="read_notif">
+                <input type="hidden" name="notif_id" value="<?= $notifId ?>">
+                <input type="hidden" name="notif_type" value="<?= htmlspecialchars($typeKey) ?>">
+                <input type="hidden" name="ref_id" value="<?= $refId ?>">
+                <button type="submit" class="notif-item <?= $isUnread ? 'unread' : '' ?>">
+                  <div class="notif-item-top">
+                    <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                    <div class="notif-item-text">
+                      <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
+                      <div class="notif-item-time"><?= $timeAgo ?></div>
+                    </div>
+                    <?php if ($isUnread): ?><div class="notif-unread-dot"></div><?php endif; ?>
+                  </div>
+                </button>
+              </form>
+              <?php endforeach; ?>
+              <?php endif; ?>
             </div>
-            <div class="user-chip-info">
-              <span class="user-chip-name"><?= $fullName ?></span>
-              <span class="user-chip-role">Resident</span>
-            </div>
-            <a href="residentdashboard.php" class="user-chip-bell-wrap">
-              <i class="fa-solid fa-bell user-chip-bell"></i>
-              <span class="user-chip-notif"><?= $annCount ?></span>
-            </a>
           </div>
         </div>
       </div>
@@ -186,8 +374,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       <p>Your document request has been received. You will be notified once it is ready.</p>
       <div class="ref-tag" id="refTag"></div>
       <div style="margin-top:20px;padding:0 0 4px;">
-        <button class="btn btn-primary" onclick="closeModal()" style="width:100%;justify-content:center;">
-          <i class="fa-solid fa-house"></i> Back to Dashboard
+        <button class="btn btn-primary" onclick="window.location.href='residentrequest.php'" style="width:100%;justify-content:center;">
+          <i class="fa-solid fa-clipboard-list"></i> View My Requests
         </button>
       </div>
     </div>
@@ -213,34 +401,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       </div>
 
       <div class="modal-body">
+
+        <!-- STEP 1: Requirements Upload -->
         <div id="step1">
-          <div style="margin-bottom:14px;margin-top:6px;">
+          <div style="margin-bottom:6px;margin-top:8px;">
             <p style="font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:10px;">
-              <i class="fa-solid fa-list-check" style="color:#2563eb;margin-right:6px;"></i>Requirements Needed
+              <i class="fa-solid fa-paperclip" style="color:#2563eb;margin-right:6px;"></i>
+              Upload Requirements — Please attach the following documents:
             </p>
-            <ul class="req-list" id="reqList"></ul>
+            <div class="req-upload-list" id="reqUploadList"></div>
+            <div class="req-confirm-note">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Accepted formats: JPG, PNG, PDF, HEIC, WEBP. Max 5MB per file. All requirements must be uploaded before proceeding.</span>
+            </div>
           </div>
-          <div class="modal-divider"></div>
+          <div class="modal-divider" style="margin-top:14px;"></div>
           <div class="form-section">
-            <label class="form-label">Purpose of Request <span>*</span></label>
-            <select class="form-select" id="purposeSelect">
-              <option value="">Select purpose…</option>
-              <option>Employment</option>
-              <option>Scholarship Application</option>
-              <option>Bank / Financial Transactions</option>
-              <option>Government Transactions</option>
-              <option>Travel / Visa Application</option>
-              <option>School Enrollment</option>
-              <option>Legal Purposes</option>
-              <option>Others</option>
-            </select>
-          </div>
-          <div class="form-section">
-            <label class="form-label">Additional Notes</label>
-            <textarea class="form-textarea" id="notesInput" placeholder="Any special instructions or additional information…"></textarea>
+            <label class="form-label">Additional Notes <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <textarea class="form-textarea" id="notesInput" placeholder="Any special instructions, name spelling corrections, or additional information…"></textarea>
           </div>
         </div>
 
+        <!-- STEP 2: Delivery -->
         <div id="step2" class="hidden">
           <div class="form-section" style="margin-top:6px;">
             <label class="form-label" style="margin-bottom:10px;">How would you like to receive your document? <span>*</span></label>
@@ -253,27 +435,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               <div class="choice-card" data-delivery="delivery" onclick="selectDelivery('delivery')">
                 <div class="choice-icon"><i class="fa-solid fa-motorcycle"></i></div>
                 <div class="choice-label">Home Delivery</div>
-                <div class="choice-sub">₱50 delivery fee</div>
+                <div class="choice-sub">&#8369;50 delivery fee</div>
               </div>
             </div>
           </div>
+
+          <div id="pickupInfoBox" class="info-box hidden">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>You selected <strong>Pick Up</strong>. The staff will notify you once your document is ready for pickup. Please bring a valid ID when claiming.</span>
+          </div>
+
           <div id="deliveryAddressSection" class="hidden">
             <div class="form-section">
               <label class="form-label">Delivery Address <span>*</span></label>
               <input type="text" class="form-input" id="deliveryAddress" placeholder="House No., Street, Subdivision…" />
-              <p class="form-hint">Please provide your complete address for accurate delivery.</p>
+              <p class="form-hint">Your address on file has been pre-filled. Please verify or update if needed.</p>
             </div>
             <div class="form-section">
               <label class="form-label">Contact Number <span>*</span></label>
-              <input type="text" class="form-input" id="contactNumber" placeholder="09XX XXX XXXX" />
+              <input type="text" class="form-input" id="contactNumber" placeholder="09XX XXX XXXX"
+                oninput="validatePhone(this)" onblur="validatePhone(this)" maxlength="11" />
+              <p class="form-hint">Must be an 11-digit Philippine mobile number starting with 09.</p>
+              <div class="field-error-msg" id="phoneError">Please enter a valid 11-digit number (e.g. 09171234567).</div>
             </div>
-          </div>
-          <div id="pickupInfoBox" class="info-box hidden">
-            <i class="fa-solid fa-circle-info"></i>
-            <span>You may pick up your document at the <strong>Barangay Hall</strong> during office hours: <strong>Monday – Friday, 8:00 AM – 5:00 PM</strong>. Please bring a valid ID.</span>
           </div>
         </div>
 
+        <!-- STEP 3: Payment & Summary -->
         <div id="step3" class="hidden">
           <div class="modal-divider" style="margin-top:6px;"></div>
           <div id="freeDocSection" class="hidden">
@@ -294,13 +482,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                   <i class="fa-solid fa-mobile-screen-button"></i>
                   <span>GCash</span>
                 </div>
-                <div class="payment-option" data-pay="paymaya" onclick="selectPayment('paymaya')">
+                <div class="payment-option" data-pay="maya" onclick="selectPayment('maya')">
                   <i class="fa-solid fa-credit-card"></i>
                   <span>Maya</span>
                 </div>
               </div>
               <div id="cashDeliveryNote" class="form-hint hidden" style="margin-top:8px;color:#dc2626;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Cash payment for deliveries is collected upon receipt.
+                <i class="fa-solid fa-triangle-exclamation"></i> Cash payment for deliveries is collected upon receipt of the document.
               </div>
             </div>
           </div>
@@ -308,16 +496,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <p style="font-size:0.78rem;font-weight:700;color:#374151;margin-bottom:8px;">Order Summary</p>
             <div class="fee-row">
               <span id="summaryDocName">Document</span>
-              <span id="summaryDocFee">₱0</span>
+              <span id="summaryDocFee">Free</span>
             </div>
             <div class="fee-row" id="deliveryFeeRow" style="display:none;">
               <span>Delivery Fee</span>
-              <span>₱50</span>
+              <span>&#8369;50</span>
             </div>
             <div class="fee-row total">
               <span>Total</span>
-              <span id="summaryTotal">₱0</span>
+              <span id="summaryTotal">Free</span>
             </div>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e;display:flex;align-items:flex-start;gap:8px;">
+            <i class="fa-solid fa-receipt" style="margin-top:2px;flex-shrink:0;"></i>
+            <span>A receipt will be issued by the barangay staff upon approval and payment processing.</span>
           </div>
         </div>
       </div>
@@ -335,43 +527,142 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 <script>
+const residentAddress = <?= json_encode($residentAddress) ?>;
+const residentContact = <?= json_encode($residentContact) ?>;
+
 const documents = [
-  { id: 1, name: "Barangay Clearance", desc: "General purpose clearance for residents in good standing.", icon: "fa-solid fa-stamp", iconClass: "icon--blue", fee: 50, feeLabel: "₱50", category: ["clearance"], popular: true, requirements: ["Valid Government ID", "Proof of Residency", "Accomplished Request Form"] },
-  { id: 2, name: "Certificate of Indigency", desc: "For residents needing assistance or applying for benefits.", icon: "fa-solid fa-hand-holding-heart", iconClass: "icon--green", fee: 0, feeLabel: "Free", category: ["certificate", "free"], requirements: ["Valid ID", "Proof of Residency (Utility Bill)"] },
-  { id: 3, name: "Certificate of Residency", desc: "Confirms that an individual is a resident of the barangay.", icon: "fa-solid fa-house-circle-check", iconClass: "icon--teal", fee: 30, feeLabel: "₱30", category: ["certificate"], requirements: ["Valid Government ID", "Proof of Address (Electric/Water Bill)"] },
-  { id: 4, name: "Business Permit Clearance", desc: "Required for businesses operating within the barangay.", icon: "fa-solid fa-briefcase", iconClass: "icon--yellow", fee: 200, feeLabel: "₱200", category: ["permit"], requirements: ["DTI or SEC Registration", "Valid ID of Owner", "Sketch of Business Location"] },
-  { id: 5, name: "Barangay ID", desc: "Official barangay identification card for residents.", icon: "fa-solid fa-id-card", iconClass: "icon--purple", fee: 100, feeLabel: "₱100", category: [], popular: true, requirements: ["1x1 ID Picture (white background)", "Proof of Residency", "Valid ID"] },
-  { id: 6, name: "Certificate of Good Moral", desc: "Attests to the good moral character of the resident.", icon: "fa-solid fa-award", iconClass: "icon--blue", fee: 30, feeLabel: "₱30", category: ["certificate"], requirements: ["Valid Government ID", "Proof of Address"] },
-  { id: 7, name: "Solo Parent Certificate", desc: "For solo parents availing of government benefits and assistance.", icon: "fa-solid fa-person-breastfeeding", iconClass: "icon--red", fee: 0, feeLabel: "Free", category: ["certificate", "free"], requirements: ["Birth Certificate of Child/Children", "Valid ID", "DSWD Solo Parent Card (if existing)"] },
-  { id: 8, name: "Death Certificate Request", desc: "Barangay certification related to a deceased resident.", icon: "fa-solid fa-file-circle-xmark", iconClass: "icon--red", fee: 0, feeLabel: "Free", category: ["certificate", "free"], requirements: ["PSA Death Certificate", "Valid ID of Requester", "Proof of Relation"] },
-  { id: 9, name: "Fencing Permit", desc: "Required before constructing or renovating a fence.", icon: "fa-solid fa-fence", iconClass: "icon--yellow", fee: 150, feeLabel: "₱150", category: ["permit"], requirements: ["Lot Title or Tax Declaration", "Property Sketch / Plan", "Valid ID of Owner"] },
-  { id: 10, name: "Barangay Blotter Request", desc: "Official record for incidents or complaints filed in the barangay.", icon: "fa-solid fa-book-open", iconClass: "icon--teal", fee: 0, feeLabel: "Free", category: ["clearance", "free"], requirements: ["Valid Government ID", "Incident Details / Written Statement"] },
+  {
+    id: 1, name: "Barangay Clearance",
+    desc: "General purpose clearance for residents in good standing.",
+    icon: "fa-solid fa-stamp", iconClass: "icon--blue",
+    fee: 50, feeLabel: "50", category: ["clearance"], popular: true,
+    requirements: [
+      { label: "Valid Government ID",    hint: "e.g. PhilSys, Driver's License, Passport, SSS, UMID" },
+      { label: "Proof of Residency",     hint: "e.g. Utility bill, lease contract, or barangay certification" },
+      { label: "Accomplished Request Form", hint: "Signed request form from the barangay" }
+    ]
+  },
+  {
+    id: 2, name: "Certificate of Indigency",
+    desc: "For residents needing assistance or applying for benefits.",
+    icon: "fa-solid fa-hand-holding-heart", iconClass: "icon--green",
+    fee: 0, feeLabel: "Free", category: ["certificate"], popular: false,
+    requirements: [
+      { label: "Valid ID",               hint: "Any government-issued ID" },
+      { label: "Proof of Residency",     hint: "Utility bill or barangay certification" }
+    ]
+  },
+  {
+    id: 3, name: "Certificate of Residency",
+    desc: "Confirms that an individual is a resident of the barangay.",
+    icon: "fa-solid fa-house-circle-check", iconClass: "icon--teal",
+    fee: 30, feeLabel: "30", category: ["certificate"], popular: false,
+    requirements: [
+      { label: "Valid Government ID",    hint: "Any government-issued ID" },
+      { label: "Proof of Address",       hint: "Electric or water bill showing your address" }
+    ]
+  },
+  {
+    id: 4, name: "Business Permit Clearance",
+    desc: "Required for businesses operating within the barangay.",
+    icon: "fa-solid fa-briefcase", iconClass: "icon--yellow",
+    fee: 200, feeLabel: "200", category: ["permit"], popular: false,
+    requirements: [
+      { label: "DTI or SEC Registration", hint: "Business registration certificate" },
+      { label: "Valid ID of Owner",        hint: "Government-issued ID of the business owner" },
+      { label: "Sketch of Business Location", hint: "Hand-drawn or printed location map" }
+    ]
+  },
+  {
+    id: 5, name: "Barangay ID",
+    desc: "Official barangay identification card for residents.",
+    icon: "fa-solid fa-id-card", iconClass: "icon--purple",
+    fee: 100, feeLabel: "100", category: [], popular: true,
+    requirements: [
+      { label: "1x1 ID Picture (white background)", hint: "Recent photo with white background" },
+      { label: "Proof of Residency",                hint: "Utility bill or lease contract" },
+      { label: "Valid Government ID",               hint: "Any government-issued ID" }
+    ]
+  },
+  {
+    id: 6, name: "Certificate of Good Moral",
+    desc: "Attests to the good moral character of the resident.",
+    icon: "fa-solid fa-award", iconClass: "icon--blue",
+    fee: 30, feeLabel: "30", category: ["certificate"], popular: false,
+    requirements: [
+      { label: "Valid Government ID", hint: "Any government-issued ID" },
+      { label: "Proof of Address",    hint: "Utility bill or barangay certification" }
+    ]
+  },
+  {
+    id: 7, name: "Solo Parent Certificate",
+    desc: "For solo parents availing of government benefits and assistance.",
+    icon: "fa-solid fa-person-breastfeeding", iconClass: "icon--red",
+    fee: 0, feeLabel: "Free", category: ["certificate"], popular: false,
+    requirements: [
+      { label: "Birth Certificate of Child/Children", hint: "PSA-issued birth certificate" },
+      { label: "Valid ID",                            hint: "Any government-issued ID" },
+      { label: "DSWD Solo Parent Card (if existing)", hint: "If you already have one, attach a copy" }
+    ]
+  },
+  {
+    id: 8, name: "Death Certificate Request",
+    desc: "Barangay certification related to a deceased resident.",
+    icon: "fa-solid fa-file-circle-xmark", iconClass: "icon--red",
+    fee: 0, feeLabel: "Free", category: ["certificate"], popular: false,
+    requirements: [
+      { label: "PSA Death Certificate",     hint: "Official PSA-issued death certificate" },
+      { label: "Valid ID of Requester",     hint: "Government-issued ID of the person filing the request" },
+      { label: "Proof of Relation",         hint: "Birth certificate, marriage certificate, or affidavit" }
+    ]
+  },
+  {
+    id: 9, name: "Fencing Permit",
+    desc: "Required before constructing or renovating a fence.",
+    icon: "fa-solid fa-border-all", iconClass: "icon--yellow",
+    fee: 150, feeLabel: "150", category: ["permit"], popular: false,
+    requirements: [
+      { label: "Lot Title or Tax Declaration", hint: "Proof of property ownership" },
+      { label: "Property Sketch / Plan",       hint: "Drawing or blueprint of proposed fence" },
+      { label: "Valid ID of Owner",            hint: "Government-issued ID of the property owner" }
+    ]
+  },
+  {
+    id: 10, name: "Barangay Blotter Request",
+    desc: "Official record for incidents or complaints filed in the barangay.",
+    icon: "fa-solid fa-book-open", iconClass: "icon--teal",
+    fee: 0, feeLabel: "Free", category: ["clearance"], popular: false,
+    requirements: [
+      { label: "Valid Government ID",            hint: "Any government-issued ID" },
+      { label: "Written Incident Statement",     hint: "A brief written account of the incident" }
+    ]
+  }
 ];
 
-let currentDoc     = null;
-let currentStep    = 1;
+let currentDoc       = null;
+let currentStep      = 1;
 let selectedDelivery = null;
 let selectedPayment  = null;
-let activeFilter   = 'all';
+let activeFilter     = 'all';
 
 function renderGrid(docs) {
-  const grid = document.getElementById('docGrid');
+  const grid      = document.getElementById('docGrid');
   const noResults = document.getElementById('noResults');
-  grid.innerHTML = '';
+  grid.innerHTML  = '';
   if (docs.length === 0) { noResults.classList.add('visible'); return; }
   noResults.classList.remove('visible');
   docs.forEach(doc => {
     const isFree = doc.fee === 0;
-    const card = document.createElement('div');
+    const card   = document.createElement('div');
     card.className = 'doc-card';
     card.innerHTML = `
-      ${doc.popular ? '<div class="doc-card-badge badge--popular">⭐ Popular</div>' : ''}
+      ${doc.popular ? '<div class="doc-card-badge badge--popular">Popular</div>' : ''}
       <div class="doc-card-icon ${doc.iconClass}"><i class="${doc.icon}"></i></div>
       <div class="doc-card-name">${doc.name}</div>
       <div class="doc-card-desc">${doc.desc}</div>
       <div class="doc-card-fee ${isFree ? 'fee--free' : 'fee--paid'}">
         <i class="fa-solid ${isFree ? 'fa-circle-check' : 'fa-peso-sign'}"></i>
-        ${doc.feeLabel}
+        ${isFree ? 'Free' : '&#8369;' + doc.feeLabel}
       </div>
     `;
     card.addEventListener('click', () => openModal(doc));
@@ -380,12 +671,12 @@ function renderGrid(docs) {
 }
 
 function filterDocs() {
-  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const query  = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = documents;
   if (activeFilter !== 'all') {
-    if (activeFilter === 'free') filtered = filtered.filter(d => d.fee === 0);
+    if (activeFilter === 'free')      filtered = filtered.filter(d => d.fee === 0);
     else if (activeFilter === 'paid') filtered = filtered.filter(d => d.fee > 0);
-    else filtered = filtered.filter(d => d.category.includes(activeFilter));
+    else                              filtered = filtered.filter(d => d.category.includes(activeFilter));
   }
   if (query) {
     filtered = filtered.filter(d => d.name.toLowerCase().includes(query) || d.desc.toLowerCase().includes(query));
@@ -408,28 +699,73 @@ document.querySelectorAll('.pill').forEach(pill => {
 });
 
 function openModal(doc) {
-  currentDoc = doc; currentStep = 1; selectedDelivery = null; selectedPayment = null;
+  currentDoc = doc;
+  currentStep = 1;
+  selectedDelivery = null;
+  selectedPayment  = null;
+
   document.getElementById('modalTitle').textContent    = doc.name;
   document.getElementById('modalSubtitle').textContent = doc.desc;
   const iconEl = document.getElementById('modalDocIcon');
   iconEl.className = `modal-doc-icon ${doc.iconClass}`;
   iconEl.innerHTML = `<i class="${doc.icon}"></i>`;
-  document.getElementById('reqList').innerHTML = doc.requirements.map(r => `<li><i class="fa-solid fa-circle-dot"></i>${r}</li>`).join('');
-  document.getElementById('purposeSelect').value = '';
-  document.getElementById('notesInput').value    = '';
-  document.getElementById('deliveryAddress').value = '';
-  document.getElementById('contactNumber').value   = '';
+
+  const uploadList = document.getElementById('reqUploadList');
+  uploadList.innerHTML = doc.requirements.map((r, i) => `
+    <div class="req-upload-item" id="upload_item_${i}">
+      <div class="req-upload-label">
+        <i class="fa-solid fa-paperclip" style="color:#3b82f6;font-size:11px;"></i>
+        ${r.label} <span class="req-required">*</span>
+      </div>
+      <input type="file" class="req-file-input" id="req_file_${i}"
+        accept=".jpg,.jpeg,.png,.pdf,.heic,.webp"
+        data-label="${r.label.replace(/"/g,'&quot;')}"
+        onchange="onFileSelected(this, ${i})" />
+      <div class="req-file-hint">${r.hint}</div>
+      <div class="req-file-preview" id="req_preview_${i}">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="req_preview_name_${i}"></span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('notesInput').value = '';
   document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
   document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
   document.getElementById('deliveryAddressSection').classList.add('hidden');
   document.getElementById('pickupInfoBox').classList.add('hidden');
+  document.getElementById('contactNumber').value   = '';
+  document.getElementById('deliveryAddress').value = '';
+  document.getElementById('phoneError').classList.remove('visible');
+  document.getElementById('contactNumber').classList.remove('input-error');
+
   document.getElementById('summaryDocName').textContent = doc.name;
-  document.getElementById('summaryDocFee').textContent  = doc.fee === 0 ? 'Free' : `₱${doc.fee}`;
+  document.getElementById('summaryDocFee').textContent  = doc.fee === 0 ? 'Free' : '\u20b1' + doc.feeLabel;
   document.getElementById('successState').classList.remove('visible');
   document.getElementById('formScreen').style.display = '';
   showStep(1);
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function onFileSelected(input, i) {
+  const preview     = document.getElementById('req_preview_' + i);
+  const previewName = document.getElementById('req_preview_name_' + i);
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const maxMB = 5;
+    if (file.size > maxMB * 1024 * 1024) {
+      alert('File "' + file.name + '" exceeds the 5MB limit. Please choose a smaller file.');
+      input.value = '';
+      preview.classList.remove('visible');
+      return;
+    }
+    previewName.textContent = file.name;
+    preview.classList.add('visible');
+    input.classList.remove('input-error');
+  } else {
+    preview.classList.remove('visible');
+  }
 }
 
 function closeModal() {
@@ -443,52 +779,100 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 function showStep(n) {
   currentStep = n;
-  [1,2,3].forEach(i => {
+  [1, 2, 3].forEach(i => {
     document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
     const dot = document.getElementById(`step${i}dot`);
-    dot.classList.remove('active','done');
-    if (i < n) { dot.classList.add('done'); dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
-    else if (i === n) { dot.classList.add('active'); dot.textContent = i; }
-    else { dot.textContent = i; }
+    dot.classList.remove('active', 'done');
+    if (i < n)       { dot.classList.add('done'); dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
+    else if (i === n){ dot.classList.add('active'); dot.textContent = i; }
+    else             { dot.textContent = i; }
   });
   document.getElementById('line12').classList.toggle('done', n > 1);
   document.getElementById('line23').classList.toggle('done', n > 2);
   document.getElementById('backBtn').style.display = n > 1 ? '' : 'none';
   const nextBtn = document.getElementById('nextBtn');
-  if (n === 3) { nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request'; nextBtn.className = 'btn btn-success'; }
-  else { nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>'; nextBtn.className = 'btn btn-primary'; }
   if (n === 3) {
-    const isFree = currentDoc.fee === 0;
+    nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
+    nextBtn.className = 'btn btn-success';
+  } else {
+    nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+    nextBtn.className = 'btn btn-primary';
+  }
+  if (n === 3) {
+    const isFree      = currentDoc.fee === 0;
     document.getElementById('freeDocSection').classList.toggle('hidden', !isFree);
     document.getElementById('paidDocSection').classList.toggle('hidden', isFree);
     const deliveryFee = selectedDelivery === 'delivery' ? 50 : 0;
     document.getElementById('deliveryFeeRow').style.display = deliveryFee ? '' : 'none';
     const total = currentDoc.fee + deliveryFee;
-    document.getElementById('summaryTotal').textContent = total === 0 ? 'Free' : `₱${total}`;
+    document.getElementById('summaryTotal').textContent = total === 0 ? 'Free' : '\u20b1' + total;
     document.getElementById('cashDeliveryNote').classList.add('hidden');
   }
 }
 
+function validatePhone(input) {
+  const val     = input.value.replace(/\s/g, '');
+  const errMsg  = document.getElementById('phoneError');
+  const isValid = /^09\d{9}$/.test(val);
+  if (!isValid && val.length > 0) {
+    input.classList.add('input-error');
+    errMsg.classList.add('visible');
+  } else {
+    input.classList.remove('input-error');
+    errMsg.classList.remove('visible');
+  }
+  input.value = input.value.replace(/[^0-9]/g, '');
+}
+
 function nextStep() {
   if (currentStep === 1) {
-    if (!document.getElementById('purposeSelect').value) {
-      document.getElementById('purposeSelect').style.borderColor = '#ef4444';
-      document.getElementById('purposeSelect').focus();
-      setTimeout(() => document.getElementById('purposeSelect').style.borderColor = '', 1500);
+    const count = currentDoc.requirements.length;
+    let allUploaded = true;
+    for (let i = 0; i < count; i++) {
+      const fileInput = document.getElementById('req_file_' + i);
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        fileInput.classList.add('input-error');
+        allUploaded = false;
+      } else {
+        fileInput.classList.remove('input-error');
+      }
+    }
+    if (!allUploaded) {
+      alert('Please upload all required documents before proceeding.');
       return;
     }
     showStep(2);
+
   } else if (currentStep === 2) {
-    if (!selectedDelivery) { alert('Please select how you would like to receive your document.'); return; }
+    if (!selectedDelivery) {
+      alert('Please select how you would like to receive your document.');
+      return;
+    }
     if (selectedDelivery === 'delivery') {
-      if (!document.getElementById('deliveryAddress').value.trim()) { document.getElementById('deliveryAddress').focus(); return; }
-      if (!document.getElementById('contactNumber').value.trim())   { document.getElementById('contactNumber').focus(); return; }
+      const addr    = document.getElementById('deliveryAddress').value.trim();
+      const phone   = document.getElementById('contactNumber').value.replace(/\s/g, '');
+      const isValid = /^09\d{9}$/.test(phone);
+      if (!addr) {
+        document.getElementById('deliveryAddress').focus();
+        document.getElementById('deliveryAddress').classList.add('input-error');
+        return;
+      }
+      if (!isValid) {
+        document.getElementById('contactNumber').focus();
+        document.getElementById('contactNumber').classList.add('input-error');
+        document.getElementById('phoneError').classList.add('visible');
+        return;
+      }
     }
     showStep(3);
+
   } else if (currentStep === 3) {
     const deliveryFee  = selectedDelivery === 'delivery' ? 50 : 0;
     const needsPayment = (currentDoc.fee > 0 || deliveryFee > 0);
-    if (needsPayment && !selectedPayment) { alert('Please select a payment method.'); return; }
+    if (needsPayment && !selectedPayment) {
+      alert('Please select a payment method.');
+      return;
+    }
     submitRequest();
   }
 }
@@ -500,6 +884,10 @@ function selectDelivery(type) {
   document.querySelectorAll('.choice-card').forEach(c => c.classList.toggle('selected', c.dataset.delivery === type));
   document.getElementById('deliveryAddressSection').classList.toggle('hidden', type !== 'delivery');
   document.getElementById('pickupInfoBox').classList.toggle('hidden', type !== 'pickup');
+  if (type === 'delivery') {
+    document.getElementById('deliveryAddress').value = residentAddress;
+    document.getElementById('contactNumber').value   = residentContact;
+  }
 }
 
 function selectPayment(type) {
@@ -509,28 +897,56 @@ function selectPayment(type) {
 }
 
 function submitRequest() {
+  const nextBtn     = document.getElementById('nextBtn');
+  nextBtn.disabled  = true;
+  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting\u2026';
+
   const data = new FormData();
-  data.append('action',           'submit_request');
-  data.append('document_type',    currentDoc.name);
-  data.append('purpose',          document.getElementById('purposeSelect').value);
-  data.append('notes',            document.getElementById('notesInput').value);
-  data.append('delivery_method',  selectedDelivery);
-  data.append('delivery_address', document.getElementById('deliveryAddress').value);
-  data.append('contact_number',   document.getElementById('contactNumber').value);
-  data.append('payment_method',   selectedPayment || '');
+  data.append('action',          'submit_request');
+  data.append('document_type',   currentDoc.name);
+  data.append('notes',           document.getElementById('notesInput').value);
+  data.append('delivery_method', selectedDelivery);
+
+  currentDoc.requirements.forEach((r, i) => {
+    const fileInput = document.getElementById('req_file_' + i);
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      data.append('req_file_' + i,  fileInput.files[0]);
+      data.append('req_label_' + i, r.label);
+    }
+  });
 
   fetch('residentrequestdocument.php', { method: 'POST', body: data })
-    .then(r => r.json())
+    .then(res => res.json())
     .then(res => {
       if (res.success) {
-        document.getElementById('refTag').textContent = `Reference No: ${res.ref}`;
+        document.getElementById('refTag').textContent = 'Reference No: ' + res.ref;
         document.getElementById('formScreen').style.display = 'none';
         document.getElementById('successState').classList.add('visible');
       } else {
         alert('Error: ' + res.error);
+        nextBtn.disabled  = false;
+        nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
       }
+    })
+    .catch(() => {
+      alert('A network error occurred. Please try again.');
+      nextBtn.disabled  = false;
+      nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
     });
 }
+
+function toggleNotif() { document.getElementById('notifDropdown').classList.toggle('open'); }
+document.addEventListener('click', function(e) {
+  const btn = document.getElementById('bellBtn');
+  const dd  = document.getElementById('notifDropdown');
+  if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
+});
+
+function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
+function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
+document.getElementById('logoutModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('logoutModal')) closeLogout();
+});
 
 renderGrid(documents);
 </script>
