@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt   = sqlsrv_query($conn, $sql, $params);
 
         if ($stmt === false) {
-            echo json_encode(['success' => false, 'error' => 'Failed to submit request. ' . print_r(sqlsrv_errors(), true)]);
+            echo json_encode(['success' => false, 'error' => 'Failed to submit request. Please try again.']);
             exit();
         }
 
@@ -93,37 +93,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $idRow  = sqlsrv_fetch_array($idStmt, SQLSRV_FETCH_ASSOC);
         $newId  = $idRow ? (int)$idRow['REQUEST_ID'] : 0;
 
-        $uploaded = 0;
-        $uploadDir = 'uploads/requests/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
+        if ($newId > 0) {
+            $uploadDir = 'uploads/request_files/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $allowed = ['jpg', 'jpeg', 'png', 'pdf', 'heic', 'webp'];
 
-        if ($newId > 0 && isset($_FILES)) {
-            foreach ($_FILES as $fieldName => $fileData) {
-                if (strpos($fieldName, 'req_file_') !== 0) continue;
-                if ($fileData['error'] !== UPLOAD_ERR_OK) continue;
-
-                $label    = trim($_POST['req_label_' . substr($fieldName, 9)] ?? $fieldName);
-                $origName = basename($fileData['name']);
-                $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                $allowed  = ['jpg','jpeg','png','pdf','heic','webp'];
-                if (!in_array($ext, $allowed)) continue;
-
-                $safeName = 'req_' . $newId . '_' . time() . '_' . $uploaded . '.' . $ext;
-                $destPath = $uploadDir . $safeName;
-
-                if (move_uploaded_file($fileData['tmp_name'], $destPath)) {
-                    $fileSql    = "INSERT INTO DOCUMENT_REQUEST_FILES (REQUEST_ID, FILE_LABEL, FILE_NAME, FILE_PATH)
-                                   VALUES (?, ?, ?, ?)";
-                    $fileParams = [$newId, $label, $origName, $destPath];
-                    sqlsrv_query($conn, $fileSql, $fileParams);
-                    $uploaded++;
+            $i = 0;
+            while (isset($_FILES['req_file_' . $i])) {
+                $fileSlot = $_FILES['req_file_' . $i];
+                $label    = trim($_POST['req_label_' . $i] ?? ('Requirement ' . ($i + 1)));
+                if ($fileSlot['error'] === UPLOAD_ERR_OK) {
+                    $origName = basename($fileSlot['name']);
+                    $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                    if (in_array($ext, $allowed) && $fileSlot['size'] <= 5 * 1024 * 1024) {
+                        $safeName = $newId . '_' . $i . '_' . time() . '.' . $ext;
+                        $destPath = $uploadDir . $safeName;
+                        if (move_uploaded_file($fileSlot['tmp_name'], $destPath)) {
+                            $fileSql = "INSERT INTO DOCUMENT_REQUEST_FILES (REQUEST_ID, FILE_NAME, FILE_PATH, UPLOADED_AT)
+                                        VALUES (?, ?, ?, GETDATE())";
+                            sqlsrv_query($conn, $fileSql, [$newId, $label . ' — ' . $origName, $destPath]);
+                        }
+                    }
                 }
+                $i++;
             }
         }
 
-        echo json_encode(['success' => true, 'ref' => 'REQ-' . str_pad($newId, 4, '0', STR_PAD_LEFT)]);
+        echo json_encode(['success' => true, 'request_id' => $newId]);
         exit();
     }
 }
@@ -169,7 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     .notif-unread-dot { width:8px; height:8px; border-radius:50%; background:#ccff00; border:1.5px solid #051650; flex-shrink:0; margin-top:6px; }
     .notif-empty { padding:28px; text-align:center; font-size:13px; color:#aaa; }
 
-    /* File upload inputs */
     .req-upload-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
     .req-upload-item {
       background: rgba(5,22,80,0.03);
@@ -219,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
     .req-confirm-note i { margin-top:2px; color:#3b82f6; flex-shrink:0; }
 
-    /* Phone validation */
     .input-error { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,77,77,0.1) !important; }
     .field-error-msg { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
     .field-error-msg.visible { display: block; }
@@ -288,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
         <div class="topbar-right">
           <div class="bell-wrap-pos">
-            <button type="button" id="bellBtn" onclick="toggleNotif()"
+            <button type="button" id="bellBtn" class="community-header-icon community-bell-link" onclick="toggleNotif()"
               style="width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:all 0.2s ease;position:relative;">
               <i class="fa-regular fa-bell" style="font-size:17px;color:var(--navy);"></i>
               <?php if ($unreadCount > 0): ?>
@@ -368,11 +364,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modal">
+
     <div class="success-state" id="successState">
       <div class="success-icon"><i class="fa-solid fa-check"></i></div>
       <h3>Request Submitted!</h3>
       <p>Your document request has been received. You will be notified once it is ready.</p>
-      <div class="ref-tag" id="refTag"></div>
+      <div style="margin-top:14px;font-size:13px;color:var(--text-muted);">
+        Request ID: <strong id="requestIdDisplay" style="color:var(--navy);font-family:'Space Mono',monospace;"></strong>
+      </div>
       <div style="margin-top:20px;padding:0 0 4px;">
         <button class="btn btn-primary" onclick="window.location.href='residentrequest.php'" style="width:100%;justify-content:center;">
           <i class="fa-solid fa-clipboard-list"></i> View My Requests
@@ -402,7 +401,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
       <div class="modal-body">
 
-        <!-- STEP 1: Requirements Upload -->
         <div id="step1">
           <div style="margin-bottom:6px;margin-top:8px;">
             <p style="font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:10px;">
@@ -422,7 +420,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           </div>
         </div>
 
-        <!-- STEP 2: Delivery -->
         <div id="step2" class="hidden">
           <div class="form-section" style="margin-top:6px;">
             <label class="form-label" style="margin-bottom:10px;">How would you like to receive your document? <span>*</span></label>
@@ -461,7 +458,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           </div>
         </div>
 
-        <!-- STEP 3: Payment & Summary -->
         <div id="step3" class="hidden">
           <div class="modal-divider" style="margin-top:6px;"></div>
           <div id="freeDocSection" class="hidden">
@@ -537,9 +533,9 @@ const documents = [
     icon: "fa-solid fa-stamp", iconClass: "icon--blue",
     fee: 50, feeLabel: "50", category: ["clearance"], popular: true,
     requirements: [
-      { label: "Valid Government ID",    hint: "e.g. PhilSys, Driver's License, Passport, SSS, UMID" },
-      { label: "Proof of Residency",     hint: "e.g. Utility bill, lease contract, or barangay certification" },
-      { label: "Accomplished Request Form", hint: "Signed request form from the barangay" }
+      { label: "Valid Government ID",           hint: "e.g. PhilSys, Driver's License, Passport, SSS, UMID" },
+      { label: "Proof of Residency",            hint: "e.g. Utility bill, lease contract, or barangay certification" },
+      { label: "Accomplished Request Form",     hint: "Signed request form from the barangay" }
     ]
   },
   {
@@ -568,9 +564,9 @@ const documents = [
     icon: "fa-solid fa-briefcase", iconClass: "icon--yellow",
     fee: 200, feeLabel: "200", category: ["permit"], popular: false,
     requirements: [
-      { label: "DTI or SEC Registration", hint: "Business registration certificate" },
-      { label: "Valid ID of Owner",        hint: "Government-issued ID of the business owner" },
-      { label: "Sketch of Business Location", hint: "Hand-drawn or printed location map" }
+      { label: "DTI or SEC Registration",      hint: "Business registration certificate" },
+      { label: "Valid ID of Owner",             hint: "Government-issued ID of the business owner" },
+      { label: "Sketch of Business Location",   hint: "Hand-drawn or printed location map" }
     ]
   },
   {
@@ -633,8 +629,8 @@ const documents = [
     icon: "fa-solid fa-book-open", iconClass: "icon--teal",
     fee: 0, feeLabel: "Free", category: ["clearance"], popular: false,
     requirements: [
-      { label: "Valid Government ID",            hint: "Any government-issued ID" },
-      { label: "Written Incident Statement",     hint: "A brief written account of the incident" }
+      { label: "Valid Government ID",        hint: "Any government-issued ID" },
+      { label: "Written Incident Statement", hint: "A brief written account of the incident" }
     ]
   }
 ];
@@ -644,6 +640,10 @@ let currentStep      = 1;
 let selectedDelivery = null;
 let selectedPayment  = null;
 let activeFilter     = 'all';
+
+function formatPeso(amount) {
+  return '&#8369;' + amount;
+}
 
 function renderGrid(docs) {
   const grid      = document.getElementById('docGrid');
@@ -661,7 +661,7 @@ function renderGrid(docs) {
       <div class="doc-card-name">${doc.name}</div>
       <div class="doc-card-desc">${doc.desc}</div>
       <div class="doc-card-fee ${isFree ? 'fee--free' : 'fee--paid'}">
-        <i class="fa-solid ${isFree ? 'fa-circle-check' : 'fa-peso-sign'}"></i>
+        <i class="fa-solid ${isFree ? 'fa-circle-check' : 'fa-tag'}"></i>
         ${isFree ? 'Free' : '&#8369;' + doc.feeLabel}
       </div>
     `;
@@ -683,8 +683,8 @@ function filterDocs() {
     document.getElementById('noResultsQuery').textContent = query;
   }
   document.getElementById('docSectionTitle').textContent = query
-    ? `Results for "${query}" (${filtered.length})`
-    : `Available Documents (${filtered.length})`;
+    ? 'Results for "' + query + '" (' + filtered.length + ')'
+    : 'Available Documents (' + filtered.length + ')';
   renderGrid(filtered);
 }
 
@@ -699,16 +699,16 @@ document.querySelectorAll('.pill').forEach(pill => {
 });
 
 function openModal(doc) {
-  currentDoc = doc;
-  currentStep = 1;
+  currentDoc       = doc;
+  currentStep      = 1;
   selectedDelivery = null;
   selectedPayment  = null;
 
   document.getElementById('modalTitle').textContent    = doc.name;
   document.getElementById('modalSubtitle').textContent = doc.desc;
   const iconEl = document.getElementById('modalDocIcon');
-  iconEl.className = `modal-doc-icon ${doc.iconClass}`;
-  iconEl.innerHTML = `<i class="${doc.icon}"></i>`;
+  iconEl.className = 'modal-doc-icon ' + doc.iconClass;
+  iconEl.innerHTML = '<i class="' + doc.icon + '"></i>';
 
   const uploadList = document.getElementById('reqUploadList');
   uploadList.innerHTML = doc.requirements.map((r, i) => `
@@ -719,7 +719,7 @@ function openModal(doc) {
       </div>
       <input type="file" class="req-file-input" id="req_file_${i}"
         accept=".jpg,.jpeg,.png,.pdf,.heic,.webp"
-        data-label="${r.label.replace(/"/g,'&quot;')}"
+        data-label="${r.label.replace(/"/g, '&quot;')}"
         onchange="onFileSelected(this, ${i})" />
       <div class="req-file-hint">${r.hint}</div>
       <div class="req-file-preview" id="req_preview_${i}">
@@ -739,8 +739,8 @@ function openModal(doc) {
   document.getElementById('phoneError').classList.remove('visible');
   document.getElementById('contactNumber').classList.remove('input-error');
 
-  document.getElementById('summaryDocName').textContent = doc.name;
-  document.getElementById('summaryDocFee').textContent  = doc.fee === 0 ? 'Free' : '\u20b1' + doc.feeLabel;
+  document.getElementById('summaryDocName').textContent  = doc.name;
+  document.getElementById('summaryDocFee').innerHTML     = doc.fee === 0 ? 'Free' : '&#8369;' + doc.feeLabel;
   document.getElementById('successState').classList.remove('visible');
   document.getElementById('formScreen').style.display = '';
   showStep(1);
@@ -752,7 +752,7 @@ function onFileSelected(input, i) {
   const preview     = document.getElementById('req_preview_' + i);
   const previewName = document.getElementById('req_preview_name_' + i);
   if (input.files && input.files[0]) {
-    const file = input.files[0];
+    const file  = input.files[0];
     const maxMB = 5;
     if (file.size > maxMB * 1024 * 1024) {
       alert('File "' + file.name + '" exceeds the 5MB limit. Please choose a smaller file.');
@@ -780,12 +780,12 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 function showStep(n) {
   currentStep = n;
   [1, 2, 3].forEach(i => {
-    document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
-    const dot = document.getElementById(`step${i}dot`);
+    document.getElementById('step' + i).classList.toggle('hidden', i !== n);
+    const dot = document.getElementById('step' + i + 'dot');
     dot.classList.remove('active', 'done');
-    if (i < n)       { dot.classList.add('done'); dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
-    else if (i === n){ dot.classList.add('active'); dot.textContent = i; }
-    else             { dot.textContent = i; }
+    if (i < n)        { dot.classList.add('done');   dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
+    else if (i === n) { dot.classList.add('active'); dot.textContent = i; }
+    else              { dot.textContent = i; }
   });
   document.getElementById('line12').classList.toggle('done', n > 1);
   document.getElementById('line23').classList.toggle('done', n > 2);
@@ -805,7 +805,7 @@ function showStep(n) {
     const deliveryFee = selectedDelivery === 'delivery' ? 50 : 0;
     document.getElementById('deliveryFeeRow').style.display = deliveryFee ? '' : 'none';
     const total = currentDoc.fee + deliveryFee;
-    document.getElementById('summaryTotal').textContent = total === 0 ? 'Free' : '\u20b1' + total;
+    document.getElementById('summaryTotal').innerHTML = total === 0 ? 'Free' : '&#8369;' + total;
     document.getElementById('cashDeliveryNote').classList.add('hidden');
   }
 }
@@ -826,8 +826,8 @@ function validatePhone(input) {
 
 function nextStep() {
   if (currentStep === 1) {
-    const count = currentDoc.requirements.length;
-    let allUploaded = true;
+    const count       = currentDoc.requirements.length;
+    let allUploaded   = true;
     for (let i = 0; i < count; i++) {
       const fileInput = document.getElementById('req_file_' + i);
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -897,15 +897,18 @@ function selectPayment(type) {
 }
 
 function submitRequest() {
-  const nextBtn     = document.getElementById('nextBtn');
-  nextBtn.disabled  = true;
+  const nextBtn    = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
   nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting\u2026';
 
   const data = new FormData();
-  data.append('action',          'submit_request');
-  data.append('document_type',   currentDoc.name);
-  data.append('notes',           document.getElementById('notesInput').value);
-  data.append('delivery_method', selectedDelivery);
+  data.append('action',           'submit_request');
+  data.append('document_type',    currentDoc.name);
+  data.append('notes',            document.getElementById('notesInput').value);
+  data.append('delivery_method',  selectedDelivery);
+  data.append('delivery_address', selectedDelivery === 'delivery' ? document.getElementById('deliveryAddress').value : '');
+  data.append('contact_number',   selectedDelivery === 'delivery' ? document.getElementById('contactNumber').value : '');
+  data.append('payment_method',   selectedPayment || '');
 
   currentDoc.requirements.forEach((r, i) => {
     const fileInput = document.getElementById('req_file_' + i);
@@ -919,8 +922,8 @@ function submitRequest() {
     .then(res => res.json())
     .then(res => {
       if (res.success) {
-        document.getElementById('refTag').textContent = 'Reference No: ' + res.ref;
-        document.getElementById('formScreen').style.display = 'none';
+        document.getElementById('requestIdDisplay').textContent = res.request_id;
+        document.getElementById('formScreen').style.display    = 'none';
         document.getElementById('successState').classList.add('visible');
       } else {
         alert('Error: ' + res.error);
