@@ -44,6 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'read_notif' && isset($_POST['notif_id'])) {
         $notifId = (int)$_POST['notif_id'];
         sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        }
         $typeKey = trim($_POST['notif_type'] ?? '');
         $refId   = isset($_POST['ref_id']) ? (int)$_POST['ref_id'] : 0;
         if (in_array($typeKey, ['LIKE', 'COMMENT']) && $refId > 0) {
@@ -474,26 +479,21 @@ function statusIcon($status) {
               $notifId  = (int)$notif['NOTIFICATION_ID'];
               $refId    = $notif['REFERENCE_ID'] ? (int)$notif['REFERENCE_ID'] : 0;
               $typeKey  = rtrim($notif['TYPE']);
-              $iconMap  = ['LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment','ANNOUNCEMENT'=>'fa-bullhorn','REQUEST'=>'fa-file-lines'];
+              $iconMap  = ['LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment','ANNOUNCEMENT'=>'fa-bullhorn','REQUEST'=>'fa-file-lines','CONCERN'=>'fa-circle-exclamation'];
               $icon     = $iconMap[$typeKey] ?? 'fa-bell';
               $timeAgo  = $notif['CREATED_AT']->format('M d, g:i A');
             ?>
-            <form method="POST" action="residentrequest.php" style="display:block;margin:0;padding:0;">
-              <input type="hidden" name="action" value="read_notif">
-              <input type="hidden" name="notif_id" value="<?= $notifId ?>">
-              <input type="hidden" name="notif_type" value="<?= htmlspecialchars($typeKey) ?>">
-              <input type="hidden" name="ref_id" value="<?= $refId ?>">
-              <button type="submit" class="notif-item <?= $isUnread ? 'unread' : '' ?>">
-                <div class="notif-item-top">
-                  <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
-                  <div class="notif-item-text">
-                    <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
-                    <div class="notif-item-time"><?= $timeAgo ?></div>
-                  </div>
-                  <?php if ($isUnread): ?><div class="notif-unread-dot"></div><?php endif; ?>
+            <button type="button" class="notif-item <?= $isUnread ? 'unread' : '' ?>"
+              onclick="handleNotifClick(<?= $notifId ?>, <?= $refId ?>, '<?= $typeKey ?>', this)">
+              <div class="notif-item-top">
+                <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                <div class="notif-item-text">
+                  <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
+                  <div class="notif-item-time"><?= $timeAgo ?></div>
                 </div>
-              </button>
-            </form>
+                <?php if ($isUnread): ?><div class="notif-unread-dot" id="notif-dot-<?= $notifId ?>"></div><?php endif; ?>
+              </div>
+            </button>
             <?php endforeach; ?>
             <?php endif; ?>
           </div>
@@ -522,7 +522,7 @@ function statusIcon($status) {
 
     <div class="combined-panel">
       <div class="combined-panel-top">
-        <h2>Request History <span class="badge">Updated Today</span></h2>
+        <h2>Request History</h2>
         <form class="combined-panel-filters" method="GET" action="residentrequest.php">
           <input type="text" name="search" placeholder="Search request type..." value="<?= htmlspecialchars($searchQuery) ?>" />
           <select name="status" onchange="this.form.submit()">
@@ -553,7 +553,7 @@ function statusIcon($status) {
             <?php else: ?>
             <?php foreach ($requests as $req): ?>
             <tr>
-              <td style="font-family:'Space Mono',monospace;font-size:13px;">REQ-<?= str_pad($req['REQUEST_ID'], 4, '0', STR_PAD_LEFT) ?></td>
+              <td style="font-family:'Space Mono',monospace;font-size:13px;"><?= $req['REQUEST_ID'] ?></td>
               <td><?= htmlspecialchars(rtrim($req['DOCUMENT_TYPE'])) ?></td>
               <td><?= htmlspecialchars(rtrim($req['PURPOSE'])) ?></td>
               <td><?= $req['CREATED_AT']->format('M d, Y') ?></td>
@@ -657,6 +657,32 @@ function closeLogout() { document.getElementById('logoutModal').classList.remove
 document.getElementById('logoutModal').addEventListener('click', e => {
   if (e.target === document.getElementById('logoutModal')) closeLogout();
 });
+
+function handleNotifClick(notifId, refId, typeKey, btn) {
+  if (btn.classList.contains('unread')) {
+    btn.classList.remove('unread');
+    const dot = document.getElementById('notif-dot-' + notifId);
+    if (dot) dot.remove();
+    const countEl = document.querySelector('[style*="border:2px solid var(--bg)"]');
+    if (countEl) {
+      const cur = parseInt(countEl.textContent) - 1;
+      if (cur <= 0) countEl.remove(); else countEl.textContent = cur;
+    }
+    const fd = new FormData();
+    fd.append('action', 'read_notif');
+    fd.append('notif_id', notifId);
+    fd.append('ajax', '1');
+    fetch('residentrequest.php', { method: 'POST', body: fd }).catch(() => {});
+  }
+  document.getElementById('notifDropdown').classList.remove('open');
+  if ((typeKey === 'LIKE' || typeKey === 'COMMENT') && refId > 0) {
+    window.location.href = 'residentcommunity.php#post-' + refId;
+  } else if (typeKey === 'ANNOUNCEMENT') {
+    window.location.href = 'residentdashboard.php';
+  } else if (typeKey === 'CONCERN') {
+    window.location.href = 'residentconcern.php';
+  }
+}
 </script>
 </body>
 </html>

@@ -69,9 +69,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'read_notif' && isset($_POST['notif_id'])) {
         $notifId = (int)$_POST['notif_id'];
         sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        }
         $refId  = isset($_POST['ref_id']) ? (int)$_POST['ref_id'] : 0;
         $anchor = $refId > 0 ? '#post-' . $refId : '';
         header("Location: residentcommunity.php" . $anchor);
+        exit();
+    }
+
+    if ($action === 'get_post_modal' && isset($_POST['post_id'])) {
+        $pid = (int)$_POST['post_id'];
+        header('Content-Type: application/json');
+        $pRow = sqlsrv_fetch_array(
+            sqlsrv_query($conn,
+                "SELECT P.POST_ID, P.BODY, P.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE, P.USER_ID AS POSTER_ID
+                 FROM POSTS P JOIN REGISTRATION R ON P.USER_ID = R.USER_ID WHERE P.POST_ID = ?", [$pid]),
+            SQLSRV_FETCH_ASSOC
+        );
+        if (!$pRow) { echo json_encode(['ok'=>false]); exit(); }
+        $imgs = [];
+        $iStmt = sqlsrv_query($conn, "SELECT IMAGE_PATH FROM POST_IMAGES WHERE POST_ID = ? ORDER BY CREATED_AT ASC", [$pid]);
+        while ($ir = sqlsrv_fetch_array($iStmt, SQLSRV_FETCH_ASSOC)) $imgs[] = $ir['IMAGE_PATH'];
+        $coms = [];
+        $cStmt = sqlsrv_query($conn,
+            "SELECT C.BODY, C.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE
+             FROM COMMENTS C JOIN REGISTRATION R ON C.USER_ID = R.USER_ID
+             WHERE C.POST_ID = ? ORDER BY C.CREATED_AT ASC", [$pid]);
+        while ($cr = sqlsrv_fetch_array($cStmt, SQLSRV_FETCH_ASSOC)) {
+            $coms[] = [
+                'body'    => rtrim($cr['BODY']),
+                'time'    => $cr['CREATED_AT']->format('M d, Y g:i A'),
+                'name'    => htmlspecialchars(rtrim($cr['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($cr['LAST_NAME'])),
+                'avatar'  => !empty($cr['PROFILE_PICTURE']) ? $cr['PROFILE_PICTURE'] : ('default/' . (strtolower(trim($cr['GENDER'] ?? '')) === 'male' ? 'male' : (strtolower(trim($cr['GENDER'] ?? '')) === 'female' ? 'female' : 'neutral')) . '.png'),
+            ];
+        }
+        $reactSumStmt = sqlsrv_query($conn,
+            "SELECT REACTION_TYPE, COUNT(*) AS CNT FROM LIKES WHERE POST_ID = ? GROUP BY REACTION_TYPE ORDER BY CNT DESC", [$pid]);
+        $reactSum = [];
+        while ($rr = sqlsrv_fetch_array($reactSumStmt, SQLSRV_FETCH_ASSOC)) $reactSum[] = ['type'=>rtrim($rr['REACTION_TYPE']),'cnt'=>(int)$rr['CNT']];
+        $gender = strtolower(trim($pRow['GENDER'] ?? ''));
+        $avatar = !empty($pRow['PROFILE_PICTURE']) ? $pRow['PROFILE_PICTURE'] : ('default/' . ($gender === 'male' ? 'male' : ($gender === 'female' ? 'female' : 'neutral')) . '.png');
+        echo json_encode([
+            'ok'       => true,
+            'post_id'  => $pid,
+            'name'     => htmlspecialchars(rtrim($pRow['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($pRow['LAST_NAME'])),
+            'body'     => rtrim($pRow['BODY']),
+            'time'     => $pRow['CREATED_AT']->format('M d, Y \• g:i A'),
+            'avatar'   => $avatar,
+            'images'   => $imgs,
+            'comments' => $coms,
+            'reactions'=> $reactSum,
+        ]);
         exit();
     }
 
@@ -328,9 +379,32 @@ function resolveAvatar($profilePic, $gender) {
   <div class="post-modal-box" id="postModalBox">
     <div class="post-modal-header">
       <h3><i class="fa-solid fa-comment-dots" style="color:#ccff00;margin-right:8px;"></i>Post</h3>
-      <button class="post-modal-close" onclick="closePostModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a id="postModalGotoLink" href="#" onclick="goToPostInFeed(event)"
+          style="display:none;font-size:12px;font-weight:700;color:#051650;text-decoration:none;background:rgba(204,255,0,0.18);padding:5px 12px;border-radius:20px;white-space:nowrap;display:none;align-items:center;gap:6px;">
+          <i class="fa-solid fa-arrow-right"></i><span>Go to post in feed</span>
+        </a>
+        <button class="post-modal-close" onclick="closePostModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
     </div>
-    <div class="post-modal-body" id="postModalBody"></div>
+    <div class="post-modal-body" id="postModalBody">
+      <div id="postModalLoading" style="text-align:center;padding:40px 20px;color:#888;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>
+        Loading post...
+      </div>
+    </div>
+    <div id="postModalCommentForm" style="display:none;padding:12px 20px 16px;border-top:1px solid #eee;">
+      <div style="display:flex;gap:8px;align-items:center;" id="modalCommentWrap">
+        <div class="comment-avatar"><img src="<?= $profilePicture ?>" alt="<?= $fullName ?>" /></div>
+        <input type="text" id="modalCommentInput" placeholder="Write a comment..."
+          style="flex:1;border:1px solid #ddd;border-radius:20px;padding:8px 14px;font-size:13px;font-family:inherit;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();submitModalComment();}" />
+        <button type="button" onclick="submitModalComment()"
+          style="background:#051650;color:#ccff00;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"
+          id="modalCommentSendBtn">Send</button>
+      </div>
+      <div id="modalCommentError" style="display:none;font-size:12px;color:#e03030;margin-top:6px;padding-left:44px;"></div>
+    </div>
   </div>
 </div>
 
@@ -401,11 +475,8 @@ function resolveAvatar($profilePic, $gender) {
                 $timeAgo  = $notif['CREATED_AT']->format('M d, g:i A');
                 $preview  = $notif['POST_PREVIEW'];
               ?>
-              <form method="POST" action="residentcommunity.php" style="display:block;margin:0;padding:0;">
-                <input type="hidden" name="action" value="read_notif">
-                <input type="hidden" name="notif_id" value="<?= $notifId ?>">
-                <input type="hidden" name="ref_id" value="<?= $refId ?>">
-                <button type="submit" class="notif-item <?= $isUnread ? 'unread' : '' ?>">
+              <button type="button" class="notif-item <?= $isUnread ? 'unread' : '' ?>"
+                onclick="handleNotifClick(<?= $notifId ?>, <?= $refId ?>, '<?= $typeKey ?>', this)">
                   <div class="notif-item-top">
                     <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
                     <div class="notif-item-text">
@@ -430,7 +501,6 @@ function resolveAvatar($profilePic, $gender) {
                   </div>
                   <?php endif; ?>
                 </button>
-              </form>
               <?php endforeach; ?>
               <?php endif; ?>
             </div>
@@ -898,15 +968,219 @@ function updateReactionBar(bar, summary, total) {
 
 const hash = window.location.hash;
 if (hash && hash.startsWith('#post-')) {
-  const target = document.querySelector(hash);
+  const postId = parseInt(hash.replace('#post-', ''));
+  const target = document.getElementById('post-' + postId);
   if (target) {
+    const posts = document.querySelectorAll('#feedColumn .community-stream-card');
+    let revealedCount = 0;
+    posts.forEach((post, idx) => {
+      if (post === target || revealedCount > 0 || post.style.display !== 'none') {
+        revealedCount++;
+      }
+      if (post === target && post.style.display === 'none') {
+        let countNeeded = idx + 1;
+        posts.forEach((p2, i2) => {
+          if (i2 < countNeeded) p2.style.display = '';
+        });
+        visiblePostCount = Math.max(visiblePostCount, countNeeded);
+        const wrap = document.getElementById('loadMoreWrap');
+        if (wrap && visiblePostCount >= posts.length) wrap.style.display = 'none';
+      }
+    });
     setTimeout(() => {
-      const postId = parseInt(hash.replace('#post-', ''));
       toggleComments(postId);
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       target.classList.add('post-highlight');
     }, 150);
   }
+}
+
+let _currentModalPostId = null;
+
+function handleNotifClick(notifId, refId, typeKey, btn) {
+  if (btn.classList.contains('unread')) {
+    btn.classList.remove('unread');
+    const dot = document.getElementById('notif-dot-' + notifId);
+    if (dot) dot.remove();
+    const countEl = document.querySelector('.community-bell-count');
+    if (countEl) {
+      const cur = parseInt(countEl.textContent) - 1;
+      if (cur <= 0) countEl.remove();
+      else countEl.textContent = cur;
+    }
+    const fd = new FormData();
+    fd.append('action', 'read_notif');
+    fd.append('notif_id', notifId);
+    fd.append('ajax', '1');
+    fetch('residentcommunity.php', { method: 'POST', body: fd }).catch(() => {});
+  }
+  document.getElementById('notifDropdown').classList.remove('open');
+  if (refId > 0 && (typeKey === 'LIKE' || typeKey === 'COMMENT')) {
+    openPostModalFull(refId);
+  }
+}
+
+function openPostModalFull(postId) {
+  _currentModalPostId = postId;
+  const overlay = document.getElementById('postModalOverlay');
+  const body    = document.getElementById('postModalBody');
+  const loading = document.getElementById('postModalLoading');
+  const cfForm  = document.getElementById('postModalCommentForm');
+  const gotoLink= document.getElementById('postModalGotoLink');
+  body.innerHTML = '<div id="postModalLoading" style="text-align:center;padding:40px 20px;color:#888;"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>Loading post...</div>';
+  cfForm.style.display = 'none';
+  gotoLink.style.display = 'none';
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const fd = new FormData();
+  fd.append('action', 'get_post_modal');
+  fd.append('post_id', postId);
+  fetch('residentcommunity.php', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) { body.innerHTML = '<p style="padding:20px;color:#aaa;">Post not found.</p>'; return; }
+      const imageExtsLocal = ['jpg','jpeg','png','gif','webp','bmp'];
+      let html = '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">'
+        + '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;">'
+        + '<img src="' + data.avatar + '" style="width:100%;height:100%;object-fit:cover;" /></div>'
+        + '<div><strong style="font-size:15px;color:#051650;">' + escHtml(data.name) + '</strong>'
+        + '<p style="font-size:12px;color:#888;margin-top:2px;">' + escHtml(data.time) + '</p></div></div>';
+      if (data.body) {
+        html += '<div style="font-size:15px;line-height:1.7;color:#333;white-space:pre-wrap;border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">' + escHtml(data.body) + '</div>';
+      }
+      if (data.images && data.images.length > 0) {
+        html += '<div style="display:grid;gap:4px;border-radius:8px;overflow:hidden;margin-bottom:14px;grid-template-columns:' + (data.images.length === 1 ? '1fr' : '1fr 1fr') + ';">';
+        const imgPaths = data.images.filter(p => imageExtsLocal.includes(p.split('.').pop().toLowerCase()));
+        const imgPathsJson = JSON.stringify(imgPaths);
+        data.images.slice(0, 4).forEach((src, idx) => {
+          const ext = src.split('.').pop().toLowerCase();
+          const isImg = imageExtsLocal.includes(ext);
+          html += '<div style="position:relative;background:#f0f2fa;">';
+          if (isImg) {
+            html += '<img src="' + escHtml(src) + '" style="width:100%;height:180px;object-fit:cover;display:block;cursor:pointer;" onclick=\'openLightbox(' + imgPathsJson + ', ' + idx + ')\' />';
+          } else {
+            html += '<a href="' + escHtml(src) + '" target="_blank" style="display:flex;align-items:center;gap:10px;padding:14px;text-decoration:none;color:#051650;font-size:13px;font-weight:600;"><i class="fa-solid fa-file"></i>' + escHtml(src.split('/').pop()) + '</a>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      if (data.reactions && data.reactions.length > 0) {
+        html += '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:12px;">';
+        const reactionIconMap = { LIKE:'fa-solid fa-thumbs-up', LOVE:'fa-solid fa-heart', HAHA:'fa-solid fa-face-laugh', WOW:'fa-solid fa-face-surprise', SAD:'fa-solid fa-face-sad-tear', ANGRY:'fa-solid fa-face-angry' };
+        const reactionColorMap = { LIKE:'#1877f2', LOVE:'#f33e58', HAHA:'#f7b125', WOW:'#f7b125', SAD:'#f7b125', ANGRY:'#e9710f' };
+        data.reactions.forEach(r => {
+          const icon = reactionIconMap[r.type] || 'fa-solid fa-thumbs-up';
+          const color = reactionColorMap[r.type] || '#888';
+          html += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#555;"><i class="' + icon + '" style="color:' + color + ';font-size:15px;"></i>' + r.cnt + '</span>';
+        });
+        html += '</div>';
+      }
+      if (data.comments && data.comments.length > 0) {
+        html += '<div style="font-size:13px;font-weight:700;color:#051650;margin-bottom:10px;">'
+          + '<i class="fa-regular fa-comment" style="margin-right:6px;"></i>'
+          + data.comments.length + ' Comment' + (data.comments.length !== 1 ? 's' : '') + '</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+        data.comments.forEach(c => {
+          html += '<div style="display:flex;gap:10px;align-items:flex-start;">'
+            + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;">'
+            + '<img src="' + escHtml(c.avatar) + '" style="width:100%;height:100%;object-fit:cover;" /></div>'
+            + '<div style="background:#f5f6fa;border-radius:8px;padding:8px 12px;flex:1;">'
+            + '<strong style="font-size:13px;color:#051650;display:block;">' + escHtml(c.name) + '</strong>'
+            + '<p style="font-size:13px;color:#555;margin:2px 0 0;">' + escHtml(c.body).replace(/\n/g,'<br>') + '</p>'
+            + '<p style="font-size:11px;color:#aaa;margin:4px 0 0;">' + escHtml(c.time) + '</p>'
+            + '</div></div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<p style="font-size:13px;color:#aaa;text-align:center;padding:10px 0;">No comments yet. Be the first to comment!</p>';
+      }
+      body.innerHTML = html;
+      cfForm.style.display = 'block';
+      gotoLink.style.display = 'inline-flex';
+      gotoLink.href = 'javascript:void(0)';
+      document.getElementById('modalCommentInput').value = '';
+      document.getElementById('modalCommentError').style.display = 'none';
+    })
+    .catch(() => { body.innerHTML = '<p style="padding:20px;color:#aaa;">Could not load post.</p>'; });
+}
+
+function submitModalComment() {
+  const input = document.getElementById('modalCommentInput');
+  const errEl = document.getElementById('modalCommentError');
+  const btn   = document.getElementById('modalCommentSendBtn');
+  const body  = input.value.trim();
+  errEl.style.display = 'none';
+  if (!body) { errEl.textContent = 'Please write a comment first.'; errEl.style.display = 'block'; return; }
+  if (!_currentModalPostId) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  const fd = new FormData();
+  fd.append('action', 'comment');
+  fd.append('post_id', _currentModalPostId);
+  fd.append('comment_body', body);
+  fd.append('redirect', 'residentcommunity.php#post-' + _currentModalPostId);
+  fetch('react.php', { method: 'POST', body: fd })
+    .then(() => {
+      closePostModal();
+      const postId = _currentModalPostId;
+      const target = document.getElementById('post-' + postId);
+      if (target) {
+        const posts = document.querySelectorAll('#feedColumn .community-stream-card');
+        posts.forEach((p, idx) => {
+          if (p === target && p.style.display === 'none') {
+            let countNeeded = idx + 1;
+            posts.forEach((p2, i2) => { if (i2 < countNeeded) p2.style.display = ''; });
+            visiblePostCount = Math.max(visiblePostCount, countNeeded);
+            const wrap = document.getElementById('loadMoreWrap');
+            if (wrap && visiblePostCount >= posts.length) wrap.style.display = 'none';
+          }
+        });
+        setTimeout(() => {
+          toggleComments(postId);
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('post-highlight');
+        }, 120);
+        setTimeout(() => location.reload(), 800);
+      } else {
+        window.location.href = 'residentcommunity.php#post-' + postId;
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+      errEl.textContent = 'Failed to send comment. Please try again.';
+      errEl.style.display = 'block';
+    });
+}
+
+function goToPostInFeed(e) {
+  e.preventDefault();
+  closePostModal();
+  const postId = _currentModalPostId;
+  if (!postId) return;
+  const target = document.getElementById('post-' + postId);
+  if (!target) return;
+  const posts = document.querySelectorAll('#feedColumn .community-stream-card');
+  posts.forEach((p, idx) => {
+    if (p === target && p.style.display === 'none') {
+      let countNeeded = idx + 1;
+      posts.forEach((p2, i2) => { if (i2 < countNeeded) p2.style.display = ''; });
+      visiblePostCount = Math.max(visiblePostCount, countNeeded);
+      const wrap = document.getElementById('loadMoreWrap');
+      if (wrap && visiblePostCount >= posts.length) wrap.style.display = 'none';
+    }
+  });
+  setTimeout(() => {
+    toggleComments(postId);
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('post-highlight');
+  }, 100);
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 let selectedFiles = [];
@@ -1056,35 +1330,12 @@ document.addEventListener('keydown', function(e) {
 const postModalData = {};
 <?php foreach ($posts as $post):
   $pid = (int)$post['POST_ID'];
-  $pName = htmlspecialchars(rtrim($post['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($post['LAST_NAME']));
-  $pBody = addslashes(htmlspecialchars($post['BODY']));
-  $pTime = $post['CREATED_AT']->format('M d, Y \• g:i A');
-  $pAvatar = resolveAvatar($post['PROFILE_PICTURE'], $post['GENDER']);
 ?>
-postModalData[<?= $pid ?>] = {
-  name: <?= json_encode($pName) ?>,
-  body: <?= json_encode(htmlspecialchars($post['BODY'])) ?>,
-  time: <?= json_encode($pTime) ?>,
-  avatar: <?= json_encode($pAvatar) ?>,
-  posterId: <?= (int)$post['POSTER_ID'] ?>
-};
+postModalData[<?= $pid ?>] = true;
 <?php endforeach; ?>
 
 function openPostModal(postId) {
-  const d = postModalData[postId];
-  if (!d) return;
-  const body = document.getElementById('postModalBody');
-  body.innerHTML = '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">'
-    + '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;">'
-    + '<img src="' + d.avatar + '" style="width:100%;height:100%;object-fit:cover;" /></div>'
-    + '<div><strong style="font-size:15px;color:#051650;">' + d.name + '</strong>'
-    + '<p style="font-size:12px;color:#888;margin-top:2px;">' + d.time + '</p></div></div>'
-    + (d.body ? '<div style="font-size:15px;line-height:1.7;color:#333;white-space:pre-wrap;border-top:1px solid #eee;padding-top:14px;">' + d.body + '</div>' : '')
-    + '<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;">'
-    + '<a href="residentcommunity.php#post-' + postId + '" style="display:inline-flex;align-items:center;gap:8px;background:#051650;color:#ccff00;padding:9px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">'
-    + '<i class="fa-solid fa-arrow-right-to-bracket"></i> Go to post & comments</a></div>';
-  document.getElementById('postModalOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  openPostModalFull(postId);
 }
 function closePostModal() {
   document.getElementById('postModalOverlay').classList.remove('open');

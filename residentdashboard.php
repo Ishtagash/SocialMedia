@@ -48,12 +48,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'read_notif' && isset($_POST['notif_id'])) {
         $notifId = (int)$_POST['notif_id'];
         sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        }
         $typeKey = trim($_POST['notif_type'] ?? '');
         $refId   = isset($_POST['ref_id']) ? (int)$_POST['ref_id'] : 0;
         if (in_array($typeKey, ['LIKE', 'COMMENT']) && $refId > 0) {
             header("Location: residentcommunity.php#post-" . $refId);
         } elseif ($typeKey === 'ANNOUNCEMENT') {
             header("Location: residentdashboard.php");
+        } elseif ($typeKey === 'REQUEST') {
+            header("Location: residentrequest.php");
+        } elseif ($typeKey === 'CONCERN') {
+            header("Location: residentconcern.php");
         } else {
             header("Location: residentdashboard.php");
         }
@@ -222,22 +231,17 @@ $dotColors = ['dot--yellow', 'dot--blue', 'dot--green'];
                 $icon     = $iconMap[$typeKey] ?? 'fa-bell';
                 $timeAgo  = $notif['CREATED_AT']->format('M d, g:i A');
               ?>
-              <form method="POST" action="residentdashboard.php" style="display:block;margin:0;padding:0;">
-                <input type="hidden" name="action" value="read_notif">
-                <input type="hidden" name="notif_id" value="<?= $notifId ?>">
-                <input type="hidden" name="notif_type" value="<?= htmlspecialchars($typeKey) ?>">
-                <input type="hidden" name="ref_id" value="<?= $refId ?>">
-                <button type="submit" class="notif-item <?= $isUnread ? 'unread' : '' ?>">
-                  <div class="notif-item-top">
-                    <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
-                    <div class="notif-item-text">
-                      <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
-                      <div class="notif-item-time"><?= $timeAgo ?></div>
-                    </div>
-                    <?php if ($isUnread): ?><div class="notif-unread-dot"></div><?php endif; ?>
+              <button type="button" class="notif-item <?= $isUnread ? 'unread' : '' ?>"
+                onclick="handleNotifClick(<?= $notifId ?>, <?= $refId ?>, '<?= $typeKey ?>', this)">
+                <div class="notif-item-top">
+                  <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                  <div class="notif-item-text">
+                    <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
+                    <div class="notif-item-time"><?= $timeAgo ?></div>
                   </div>
-                </button>
-              </form>
+                  <?php if ($isUnread): ?><div class="notif-unread-dot" id="notif-dot-<?= $notifId ?>"></div><?php endif; ?>
+                </div>
+              </button>
               <?php endforeach; ?>
               <?php endif; ?>
             </div>
@@ -348,6 +352,36 @@ function closeLogout() { document.getElementById('logoutModal').classList.remove
 document.getElementById('logoutModal').addEventListener('click', e => {
   if (e.target === document.getElementById('logoutModal')) closeLogout();
 });
+
+function handleNotifClick(notifId, refId, typeKey, btn) {
+  if (btn.classList.contains('unread')) {
+    btn.classList.remove('unread');
+    const dot = document.getElementById('notif-dot-' + notifId);
+    if (dot) dot.remove();
+    const countEl = document.querySelector('[style*="border:2px solid var(--bg)"]');
+    if (countEl) {
+      const cur = parseInt(countEl.textContent) - 1;
+      if (cur <= 0) countEl.remove(); else countEl.textContent = cur;
+    }
+    const fd = new FormData();
+    fd.append('action', 'read_notif');
+    fd.append('notif_id', notifId);
+    fd.append('notif_type', typeKey);
+    fd.append('ref_id', refId);
+    fd.append('ajax', '1');
+    fetch('residentdashboard.php', { method: 'POST', body: fd }).catch(() => {});
+  }
+  document.getElementById('notifDropdown').classList.remove('open');
+  if ((typeKey === 'LIKE' || typeKey === 'COMMENT') && refId > 0) {
+    window.location.href = 'residentcommunity.php#post-' + refId;
+  } else if (typeKey === 'ANNOUNCEMENT') {
+    window.location.href = 'residentdashboard.php';
+  } else if (typeKey === 'REQUEST') {
+    window.location.href = 'residentrequest.php';
+  } else if (typeKey === 'CONCERN') {
+    window.location.href = 'residentconcern.php';
+  }
+}
 </script>
 </body>
 </html>

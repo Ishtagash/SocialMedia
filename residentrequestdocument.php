@@ -57,7 +57,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'read_notif' && isset($_POST['notif_id'])) {
         $notifId = (int)$_POST['notif_id'];
         sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
-        header("Location: residentrequestdocument.php");
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit();
+        }
+        $typeKey = trim($_POST['notif_type'] ?? '');
+        $refId   = isset($_POST['ref_id']) ? (int)$_POST['ref_id'] : 0;
+        if (in_array($typeKey, ['LIKE', 'COMMENT']) && $refId > 0) {
+            header("Location: residentcommunity.php#post-" . $refId);
+        } elseif ($typeKey === 'ANNOUNCEMENT') {
+            header("Location: residentdashboard.php");
+        } elseif ($typeKey === 'REQUEST') {
+            header("Location: residentrequest.php");
+        } elseif ($typeKey === 'CONCERN') {
+            header("Location: residentconcern.php");
+        } else {
+            header("Location: residentrequestdocument.php");
+        }
         exit();
     }
     if ($_POST['action'] === 'mark_all_read') {
@@ -65,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         header("Location: residentrequestdocument.php");
         exit();
     }
+
     if ($_POST['action'] === 'submit_request') {
         header('Content-Type: application/json');
 
@@ -85,13 +103,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt   = sqlsrv_query($conn, $sql, $params);
 
         if ($stmt === false) {
-            echo json_encode(['success' => false, 'error' => 'Failed to submit request. Please try again.']);
+            $errors = sqlsrv_errors();
+            echo json_encode(['success' => false, 'error' => 'Failed to submit request. ' . ($errors[0]['message'] ?? '')]);
             exit();
         }
 
-        $idStmt = sqlsrv_query($conn, "SELECT TOP 1 REQUEST_ID FROM DOCUMENT_REQUESTS WHERE USER_ID = ? ORDER BY CREATED_AT DESC", [$userId]);
+        $idStmt = sqlsrv_query($conn, "SELECT SCOPE_IDENTITY() AS NEW_ID");
         $idRow  = sqlsrv_fetch_array($idStmt, SQLSRV_FETCH_ASSOC);
-        $newId  = $idRow ? (int)$idRow['REQUEST_ID'] : 0;
+        $newId  = $idRow ? (int)$idRow['NEW_ID'] : 0;
+
+        if ($newId === 0) {
+            $idStmt2 = sqlsrv_query($conn,
+                "SELECT TOP 1 REQUEST_ID FROM DOCUMENT_REQUESTS WHERE USER_ID = ? ORDER BY REQUEST_ID DESC",
+                [$userId]
+            );
+            $idRow2 = sqlsrv_fetch_array($idStmt2, SQLSRV_FETCH_ASSOC);
+            $newId  = $idRow2 ? (int)$idRow2['REQUEST_ID'] : 0;
+        }
 
         if ($newId > 0) {
             $uploadDir = 'uploads/request_files/';
@@ -100,28 +128,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             $allowed = ['jpg', 'jpeg', 'png', 'pdf', 'heic', 'webp'];
 
-            $i = 0;
-            while (isset($_FILES['req_file_' . $i])) {
-                $fileSlot = $_FILES['req_file_' . $i];
-                $label    = trim($_POST['req_label_' . $i] ?? ('Requirement ' . ($i + 1)));
+            $fileCount = 0;
+            $fileErrors = [];
+
+            foreach ($_FILES as $key => $fileSlot) {
+                if (strpos($key, 'req_file_') !== 0) continue;
+                $index = (int)str_replace('req_file_', '', $key);
+                $label = trim($_POST['req_label_' . $index] ?? ('Requirement ' . ($index + 1)));
+
                 if ($fileSlot['error'] === UPLOAD_ERR_OK) {
                     $origName = basename($fileSlot['name']);
                     $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                    if (in_array($ext, $allowed) && $fileSlot['size'] <= 5 * 1024 * 1024) {
-                        $safeName = $newId . '_' . $i . '_' . time() . '.' . $ext;
-                        $destPath = $uploadDir . $safeName;
-                        if (move_uploaded_file($fileSlot['tmp_name'], $destPath)) {
-                            $fileSql = "INSERT INTO DOCUMENT_REQUEST_FILES (REQUEST_ID, FILE_NAME, FILE_PATH, UPLOADED_AT)
-                                        VALUES (?, ?, ?, GETDATE())";
-                            sqlsrv_query($conn, $fileSql, [$newId, $label . ' — ' . $origName, $destPath]);
-                        }
+
+                    if (!in_array($ext, $allowed)) {
+                        $fileErrors[] = 'File type not allowed: ' . $origName;
+                        continue;
                     }
+                    if ($fileSlot['size'] > 5 * 1024 * 1024) {
+                        $fileErrors[] = 'File too large: ' . $origName;
+                        continue;
+                    }
+
+                    $safeName = $newId . '_' . $index . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+                    $destPath = $uploadDir . $safeName;
+
+                    if (move_uploaded_file($fileSlot['tmp_name'], $destPath)) {
+                        $fileSql    = "INSERT INTO DOCUMENT_REQUEST_FILES (REQUEST_ID, FILE_LABEL, FILE_NAME, FILE_PATH, UPLOADED_AT)
+                                       VALUES (?, ?, ?, ?, GETDATE())";
+                        $fileParams = [$newId, $label, $origName, $destPath];
+                        $fileStmt   = sqlsrv_query($conn, $fileSql, $fileParams);
+                        if ($fileStmt === false) {
+                            $fileErrors[] = 'DB insert failed for: ' . $origName . ' — ' . print_r(sqlsrv_errors(), true);
+                        } else {
+                            $fileCount++;
+                        }
+                    } else {
+                        $fileErrors[] = 'Could not move file: ' . $origName;
+                    }
+                } elseif ($fileSlot['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $fileErrors[] = 'Upload error code ' . $fileSlot['error'] . ' for key ' . $key;
                 }
-                $i++;
             }
         }
 
-        echo json_encode(['success' => true, 'request_id' => $newId]);
+        echo json_encode([
+            'success'     => true,
+            'request_id'  => $newId,
+            'files_saved' => $fileCount ?? 0,
+            'file_errors' => $fileErrors ?? [],
+        ]);
         exit();
     }
 }
@@ -309,26 +364,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $notifId  = (int)$notif['NOTIFICATION_ID'];
                 $refId    = $notif['REFERENCE_ID'] ? (int)$notif['REFERENCE_ID'] : 0;
                 $typeKey  = rtrim($notif['TYPE']);
-                $iconMap  = ['LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment','ANNOUNCEMENT'=>'fa-bullhorn','REQUEST'=>'fa-file-lines'];
+                $iconMap  = ['LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment','ANNOUNCEMENT'=>'fa-bullhorn','REQUEST'=>'fa-file-lines','CONCERN'=>'fa-circle-exclamation'];
                 $icon     = $iconMap[$typeKey] ?? 'fa-bell';
                 $timeAgo  = $notif['CREATED_AT']->format('M d, g:i A');
               ?>
-              <form method="POST" action="residentrequestdocument.php" style="display:block;margin:0;padding:0;">
-                <input type="hidden" name="action" value="read_notif">
-                <input type="hidden" name="notif_id" value="<?= $notifId ?>">
-                <input type="hidden" name="notif_type" value="<?= htmlspecialchars($typeKey) ?>">
-                <input type="hidden" name="ref_id" value="<?= $refId ?>">
-                <button type="submit" class="notif-item <?= $isUnread ? 'unread' : '' ?>">
-                  <div class="notif-item-top">
-                    <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
-                    <div class="notif-item-text">
-                      <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
-                      <div class="notif-item-time"><?= $timeAgo ?></div>
-                    </div>
-                    <?php if ($isUnread): ?><div class="notif-unread-dot"></div><?php endif; ?>
+              <button type="button" class="notif-item <?= $isUnread ? 'unread' : '' ?>"
+                onclick="handleNotifClick(<?= $notifId ?>, <?= $refId ?>, '<?= $typeKey ?>', this)">
+                <div class="notif-item-top">
+                  <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                  <div class="notif-item-text">
+                    <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
+                    <div class="notif-item-time"><?= $timeAgo ?></div>
                   </div>
-                </button>
-              </form>
+                  <?php if ($isUnread): ?><div class="notif-unread-dot" id="notif-dot-<?= $notifId ?>"></div><?php endif; ?>
+                </div>
+              </button>
               <?php endforeach; ?>
               <?php endif; ?>
             </div>
@@ -598,94 +648,62 @@ const documents = [
     requirements: [
       { label: "Birth Certificate of Child/Children", hint: "PSA-issued birth certificate" },
       { label: "Valid ID",                            hint: "Any government-issued ID" },
-      { label: "DSWD Solo Parent Card (if existing)", hint: "If you already have one, attach a copy" }
+      { label: "Proof of being a solo parent",        hint: "Death certificate, annulment papers, or affidavit" }
     ]
   },
   {
-    id: 8, name: "Death Certificate Request",
-    desc: "Barangay certification related to a deceased resident.",
-    icon: "fa-solid fa-file-circle-xmark", iconClass: "icon--red",
+    id: 8, name: "Senior Citizen Certificate",
+    desc: "Certificate for senior citizens (60 years old and above).",
+    icon: "fa-solid fa-user-clock", iconClass: "icon--green",
     fee: 0, feeLabel: "Free", category: ["certificate"], popular: false,
     requirements: [
-      { label: "PSA Death Certificate",     hint: "Official PSA-issued death certificate" },
-      { label: "Valid ID of Requester",     hint: "Government-issued ID of the person filing the request" },
-      { label: "Proof of Relation",         hint: "Birth certificate, marriage certificate, or affidavit" }
-    ]
-  },
-  {
-    id: 9, name: "Fencing Permit",
-    desc: "Required before constructing or renovating a fence.",
-    icon: "fa-solid fa-border-all", iconClass: "icon--yellow",
-    fee: 150, feeLabel: "150", category: ["permit"], popular: false,
-    requirements: [
-      { label: "Lot Title or Tax Declaration", hint: "Proof of property ownership" },
-      { label: "Property Sketch / Plan",       hint: "Drawing or blueprint of proposed fence" },
-      { label: "Valid ID of Owner",            hint: "Government-issued ID of the property owner" }
-    ]
-  },
-  {
-    id: 10, name: "Barangay Blotter Request",
-    desc: "Official record for incidents or complaints filed in the barangay.",
-    icon: "fa-solid fa-book-open", iconClass: "icon--teal",
-    fee: 0, feeLabel: "Free", category: ["clearance"], popular: false,
-    requirements: [
-      { label: "Valid Government ID",        hint: "Any government-issued ID" },
-      { label: "Written Incident Statement", hint: "A brief written account of the incident" }
+      { label: "Valid ID with birthdate",  hint: "Any ID showing date of birth" },
+      { label: "Proof of Residency",       hint: "Utility bill or barangay record" }
     ]
   }
 ];
 
-let currentDoc       = null;
-let currentStep      = 1;
-let selectedDelivery = null;
-let selectedPayment  = null;
+let currentDoc      = null;
+let currentStep     = 1;
+let selectedDelivery = '';
+let selectedPayment  = '';
 let activeFilter     = 'all';
 
-function formatPeso(amount) {
-  return '&#8369;' + amount;
-}
-
-function renderGrid(docs) {
-  const grid      = document.getElementById('docGrid');
-  const noResults = document.getElementById('noResults');
-  grid.innerHTML  = '';
-  if (docs.length === 0) { noResults.classList.add('visible'); return; }
-  noResults.classList.remove('visible');
-  docs.forEach(doc => {
-    const isFree = doc.fee === 0;
-    const card   = document.createElement('div');
-    card.className = 'doc-card';
-    card.innerHTML = `
-      ${doc.popular ? '<div class="doc-card-badge badge--popular">Popular</div>' : ''}
-      <div class="doc-card-icon ${doc.iconClass}"><i class="${doc.icon}"></i></div>
-      <div class="doc-card-name">${doc.name}</div>
-      <div class="doc-card-desc">${doc.desc}</div>
-      <div class="doc-card-fee ${isFree ? 'fee--free' : 'fee--paid'}">
-        <i class="fa-solid ${isFree ? 'fa-circle-check' : 'fa-tag'}"></i>
-        ${isFree ? 'Free' : '&#8369;' + doc.feeLabel}
-      </div>
-    `;
-    card.addEventListener('click', () => openModal(doc));
-    grid.appendChild(card);
+function renderGrid(list) {
+  const grid    = document.getElementById('docGrid');
+  const noRes   = document.getElementById('noResults');
+  const query   = document.getElementById('searchInput').value.trim();
+  grid.innerHTML = '';
+  if (!list.length) {
+    noRes.classList.add('visible');
+    document.getElementById('noResultsQuery').textContent = query;
+    return;
+  }
+  noRes.classList.remove('visible');
+  list.forEach(doc => {
+    const feeHtml = doc.fee === 0
+      ? '<span class="doc-card-fee fee--free"><i class="fa-solid fa-circle-check"></i> Free</span>'
+      : '<span class="doc-card-fee fee--paid">&#8369;' + doc.fee + '</span>';
+    const badgeHtml = doc.popular ? '<span class="doc-card-badge badge--popular">Popular</span>' : '';
+    grid.innerHTML += `
+      <div class="doc-card" onclick="openModal(${doc.id})">
+        ${badgeHtml}
+        <div class="doc-card-icon ${doc.iconClass}"><i class="${doc.icon}"></i></div>
+        <div class="doc-card-name">${doc.name}</div>
+        <div class="doc-card-desc">${doc.desc}</div>
+        ${feeHtml}
+      </div>`;
   });
 }
 
 function filterDocs() {
-  const query  = document.getElementById('searchInput').value.toLowerCase().trim();
-  let filtered = documents;
-  if (activeFilter !== 'all') {
-    if (activeFilter === 'free')      filtered = filtered.filter(d => d.fee === 0);
-    else if (activeFilter === 'paid') filtered = filtered.filter(d => d.fee > 0);
-    else                              filtered = filtered.filter(d => d.category.includes(activeFilter));
-  }
-  if (query) {
-    filtered = filtered.filter(d => d.name.toLowerCase().includes(query) || d.desc.toLowerCase().includes(query));
-    document.getElementById('noResultsQuery').textContent = query;
-  }
-  document.getElementById('docSectionTitle').textContent = query
-    ? 'Results for "' + query + '" (' + filtered.length + ')'
-    : 'Available Documents (' + filtered.length + ')';
-  renderGrid(filtered);
+  const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+  let   list = documents;
+  if (activeFilter === 'free')        list = list.filter(d => d.fee === 0);
+  else if (activeFilter === 'paid')   list = list.filter(d => d.fee > 0);
+  else if (activeFilter !== 'all')    list = list.filter(d => d.category.includes(activeFilter));
+  if (q) list = list.filter(d => d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q));
+  renderGrid(list);
 }
 
 document.getElementById('searchInput').addEventListener('input', filterDocs);
@@ -698,74 +716,50 @@ document.querySelectorAll('.pill').forEach(pill => {
   });
 });
 
-function openModal(doc) {
-  currentDoc       = doc;
-  currentStep      = 1;
-  selectedDelivery = null;
-  selectedPayment  = null;
+function openModal(docId) {
+  currentDoc      = documents.find(d => d.id === docId);
+  selectedDelivery = '';
+  selectedPayment  = '';
+  if (!currentDoc) return;
 
-  document.getElementById('modalTitle').textContent    = doc.name;
-  document.getElementById('modalSubtitle').textContent = doc.desc;
-  const iconEl = document.getElementById('modalDocIcon');
-  iconEl.className = 'modal-doc-icon ' + doc.iconClass;
-  iconEl.innerHTML = '<i class="' + doc.icon + '"></i>';
+  document.getElementById('modalTitle').textContent    = currentDoc.name;
+  document.getElementById('modalSubtitle').textContent = currentDoc.requirements.length + ' requirement(s) needed';
+  document.getElementById('modalDocIcon').className    = 'modal-doc-icon ' + currentDoc.iconClass;
+  document.getElementById('modalDocIcon').innerHTML    = '<i class="' + currentDoc.icon + '"></i>';
+  document.getElementById('summaryDocName').textContent = currentDoc.name;
+  document.getElementById('summaryDocFee').innerHTML   = currentDoc.fee === 0 ? 'Free' : '&#8369;' + currentDoc.fee;
+  document.getElementById('notesInput').value          = '';
 
-  const uploadList = document.getElementById('reqUploadList');
-  uploadList.innerHTML = doc.requirements.map((r, i) => `
-    <div class="req-upload-item" id="upload_item_${i}">
-      <div class="req-upload-label">
-        <i class="fa-solid fa-paperclip" style="color:#3b82f6;font-size:11px;"></i>
-        ${r.label} <span class="req-required">*</span>
-      </div>
-      <input type="file" class="req-file-input" id="req_file_${i}"
-        accept=".jpg,.jpeg,.png,.pdf,.heic,.webp"
-        data-label="${r.label.replace(/"/g, '&quot;')}"
-        onchange="onFileSelected(this, ${i})" />
-      <div class="req-file-hint">${r.hint}</div>
-      <div class="req-file-preview" id="req_preview_${i}">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="req_preview_name_${i}"></span>
-      </div>
-    </div>
-  `).join('');
+  const list = document.getElementById('reqUploadList');
+  list.innerHTML = '';
+  currentDoc.requirements.forEach((req, i) => {
+    list.innerHTML += `
+      <div class="req-upload-item">
+        <div class="req-upload-label">
+          <i class="fa-solid fa-file-arrow-up" style="color:#2563eb;font-size:12px;"></i>
+          ${req.label} <span class="req-required">*</span>
+        </div>
+        <input type="file" class="req-file-input" id="req_file_${i}"
+          name="req_file_${i}" accept=".jpg,.jpeg,.png,.pdf,.heic,.webp"
+          onchange="onFileChange(this, ${i})" />
+        <div class="req-file-hint">${req.hint}</div>
+        <div class="req-file-preview" id="req_preview_${i}">
+          <i class="fa-solid fa-circle-check" style="color:#15803d;"></i>
+          <span id="req_preview_name_${i}"></span>
+        </div>
+      </div>`;
+  });
 
-  document.getElementById('notesInput').value = '';
   document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
   document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
   document.getElementById('deliveryAddressSection').classList.add('hidden');
   document.getElementById('pickupInfoBox').classList.add('hidden');
-  document.getElementById('contactNumber').value   = '';
-  document.getElementById('deliveryAddress').value = '';
-  document.getElementById('phoneError').classList.remove('visible');
-  document.getElementById('contactNumber').classList.remove('input-error');
-
-  document.getElementById('summaryDocName').textContent  = doc.name;
-  document.getElementById('summaryDocFee').innerHTML     = doc.fee === 0 ? 'Free' : '&#8369;' + doc.feeLabel;
   document.getElementById('successState').classList.remove('visible');
   document.getElementById('formScreen').style.display = '';
+
   showStep(1);
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-}
-
-function onFileSelected(input, i) {
-  const preview     = document.getElementById('req_preview_' + i);
-  const previewName = document.getElementById('req_preview_name_' + i);
-  if (input.files && input.files[0]) {
-    const file  = input.files[0];
-    const maxMB = 5;
-    if (file.size > maxMB * 1024 * 1024) {
-      alert('File "' + file.name + '" exceeds the 5MB limit. Please choose a smaller file.');
-      input.value = '';
-      preview.classList.remove('visible');
-      return;
-    }
-    previewName.textContent = file.name;
-    preview.classList.add('visible');
-    input.classList.remove('input-error');
-  } else {
-    preview.classList.remove('visible');
-  }
 }
 
 function closeModal() {
@@ -773,19 +767,33 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
 });
+
+function onFileChange(input, i) {
+  const preview     = document.getElementById('req_preview_' + i);
+  const previewName = document.getElementById('req_preview_name_' + i);
+  if (input.files && input.files[0]) {
+    previewName.textContent = input.files[0].name;
+    preview.classList.add('visible');
+    input.classList.remove('input-error');
+  } else {
+    preview.classList.remove('visible');
+  }
+}
 
 function showStep(n) {
   currentStep = n;
-  [1, 2, 3].forEach(i => {
-    document.getElementById('step' + i).classList.toggle('hidden', i !== n);
-    const dot = document.getElementById('step' + i + 'dot');
-    dot.classList.remove('active', 'done');
-    if (i < n)        { dot.classList.add('done');   dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
-    else if (i === n) { dot.classList.add('active'); dot.textContent = i; }
-    else              { dot.textContent = i; }
+  ['step1','step2','step3'].forEach((id, idx) => {
+    document.getElementById(id).classList.toggle('hidden', idx + 1 !== n);
+  });
+  ['step1dot','step2dot','step3dot'].forEach((id, i) => {
+    const dot = document.getElementById(id);
+    dot.classList.remove('active','done');
+    if (i < n - 1)      { dot.classList.add('done');   dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:0.65rem"></i>'; }
+    else if (i === n - 1){ dot.classList.add('active'); dot.textContent = i + 1; }
+    else                 { dot.textContent = i + 1; }
   });
   document.getElementById('line12').classList.toggle('done', n > 1);
   document.getElementById('line23').classList.toggle('done', n > 2);
@@ -897,9 +905,9 @@ function selectPayment(type) {
 }
 
 function submitRequest() {
-  const nextBtn    = document.getElementById('nextBtn');
-  nextBtn.disabled = true;
-  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting\u2026';
+  const nextBtn     = document.getElementById('nextBtn');
+  nextBtn.disabled  = true;
+  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
 
   const data = new FormData();
   data.append('action',           'submit_request');
@@ -907,10 +915,10 @@ function submitRequest() {
   data.append('notes',            document.getElementById('notesInput').value);
   data.append('delivery_method',  selectedDelivery);
   data.append('delivery_address', selectedDelivery === 'delivery' ? document.getElementById('deliveryAddress').value : '');
-  data.append('contact_number',   selectedDelivery === 'delivery' ? document.getElementById('contactNumber').value : '');
+  data.append('contact_number',   selectedDelivery === 'delivery' ? document.getElementById('contactNumber').value  : '');
   data.append('payment_method',   selectedPayment || '');
 
-  currentDoc.requirements.forEach((r, i) => {
+  currentDoc.requirements.forEach(function(r, i) {
     const fileInput = document.getElementById('req_file_' + i);
     if (fileInput && fileInput.files && fileInput.files[0]) {
       data.append('req_file_' + i,  fileInput.files[0]);
@@ -919,8 +927,8 @@ function submitRequest() {
   });
 
   fetch('residentrequestdocument.php', { method: 'POST', body: data })
-    .then(res => res.json())
-    .then(res => {
+    .then(function(res) { return res.json(); })
+    .then(function(res) {
       if (res.success) {
         document.getElementById('requestIdDisplay').textContent = res.request_id;
         document.getElementById('formScreen').style.display    = 'none';
@@ -931,7 +939,7 @@ function submitRequest() {
         nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
       }
     })
-    .catch(() => {
+    .catch(function() {
       alert('A network error occurred. Please try again.');
       nextBtn.disabled  = false;
       nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
@@ -947,9 +955,37 @@ document.addEventListener('click', function(e) {
 
 function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
 function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
-document.getElementById('logoutModal').addEventListener('click', e => {
+document.getElementById('logoutModal').addEventListener('click', function(e) {
   if (e.target === document.getElementById('logoutModal')) closeLogout();
 });
+
+function handleNotifClick(notifId, refId, typeKey, btn) {
+  if (btn.classList.contains('unread')) {
+    btn.classList.remove('unread');
+    const dot = document.getElementById('notif-dot-' + notifId);
+    if (dot) dot.remove();
+    const countEl = document.querySelector('[style*="border:2px solid var(--bg)"]');
+    if (countEl) {
+      const cur = parseInt(countEl.textContent) - 1;
+      if (cur <= 0) countEl.remove(); else countEl.textContent = cur;
+    }
+    const fd = new FormData();
+    fd.append('action', 'read_notif');
+    fd.append('notif_id', notifId);
+    fd.append('ajax', '1');
+    fetch('residentrequestdocument.php', { method: 'POST', body: fd }).catch(() => {});
+  }
+  document.getElementById('notifDropdown').classList.remove('open');
+  if ((typeKey === 'LIKE' || typeKey === 'COMMENT') && refId > 0) {
+    window.location.href = 'residentcommunity.php#post-' + refId;
+  } else if (typeKey === 'ANNOUNCEMENT') {
+    window.location.href = 'residentdashboard.php';
+  } else if (typeKey === 'CONCERN') {
+    window.location.href = 'residentconcern.php';
+  } else if (typeKey === 'REQUEST') {
+    window.location.href = 'residentrequest.php';
+  }
+}
 
 renderGrid(documents);
 </script>
