@@ -62,28 +62,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($dupMsg) {
             $message = $dupMsg; $messageType = 'error';
         } else {
-            $resetQ = sqlsrv_query($conn,
+
+            $nameCache = [];
+            $nameForId = function($uid) use ($conn, &$nameCache) {
+                if (isset($nameCache[$uid])) return $nameCache[$uid];
+                $nr = sqlsrv_fetch_array(
+                    sqlsrv_query($conn,
+                        "SELECT R.FIRST_NAME, R.LAST_NAME, U.USERNAME
+                         FROM USERS U
+                         LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
+                         WHERE U.USER_ID = ?", [$uid]),
+                    SQLSRV_FETCH_ASSOC
+                );
+                $fn   = rtrim($nr['FIRST_NAME'] ?? '');
+                $ln   = rtrim($nr['LAST_NAME']  ?? '');
+                $name = trim("$fn $ln") ?: rtrim($nr['USERNAME'] ?? "User #$uid");
+                $nameCache[$uid] = $name;
+                return $name;
+            };
+
+            /* ── SNAPSHOT: who currently holds what BEFORE we change anything ── */
+            $before = [];
+            $snapQ  = sqlsrv_query($conn,
+                "SELECT USER_ID, POSITION FROM USERS WHERE ROLE = 'staff' AND POSITION IS NOT NULL AND USER_ID != ?",
+                [$userId]);
+            if ($snapQ) {
+                while ($sr = sqlsrv_fetch_array($snapQ, SQLSRV_FETCH_ASSOC)) {
+                    $before[(int)$sr['USER_ID']] = rtrim($sr['POSITION'] ?? '');
+                }
+            }
+
+            /* ── Build NEW state: uid => position ── */
+            $after = [];
+            foreach ($singlePositions as $pos) {
+                $uid = $submitted[$pos];
+                if ($uid) $after[$uid] = $pos;
+            }
+            foreach (array_unique($kagawadIds) as $uid) {
+                if ($uid) $after[$uid] = 'Kagawad';
+            }
+
+            /* ── Apply: reset everyone then set new assignments ── */
+            sqlsrv_query($conn,
                 "UPDATE USERS SET ROLE = 'resident', POSITION = NULL WHERE ROLE = 'staff' AND USER_ID != ?",
                 [$userId]);
 
-            foreach ($singlePositions as $pos) {
-                $uid = $submitted[$pos];
-                if (!$uid) continue;
+            foreach ($after as $uid => $pos) {
                 sqlsrv_query($conn,
                     "UPDATE USERS SET ROLE = 'staff', STATUS = 'active', POSITION = ? WHERE USER_ID = ?",
                     [$pos, $uid]);
-                sqlsrv_query($conn,
-                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
-                    [$userId, "Assigned USER_ID $uid as $pos", $now]);
             }
 
-            foreach (array_unique($kagawadIds) as $uid) {
-                sqlsrv_query($conn,
-                    "UPDATE USERS SET ROLE = 'staff', STATUS = 'active', POSITION = 'Kagawad' WHERE USER_ID = ?",
-                    [$uid]);
-                sqlsrv_query($conn,
-                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
-                    [$userId, "Assigned USER_ID $uid as Kagawad", $now]);
+            /* ── Write audit entries based on what actually changed ── */
+
+            /* 1. People who had a position before and still have one (same or different) */
+            foreach ($before as $uid => $oldPos) {
+                $name   = $nameForId($uid);
+                $newPos = $after[$uid] ?? null;
+                if ($newPos === null) {
+                    /* Was staff, now removed → Revert to Resident */
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Revert to Resident', ?, ?)",
+                        [$userId, "$name was removed from $oldPos and reverted to resident", $now]);
+                } elseif ($newPos !== $oldPos) {
+                    /* Position changed → Change Position */
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Change Position', ?, ?)",
+                        [$userId, "$name moved from $oldPos to $newPos", $now]);
+                }
+                /* Same position — no log entry needed */
+            }
+
+            /* 2. People who are newly assigned (weren't staff before) → Assign Position */
+            foreach ($after as $uid => $pos) {
+                if (!isset($before[$uid])) {
+                    $name = $nameForId($uid);
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
+                        [$userId, "$name assigned as $pos", $now]);
+                }
             }
 
             header("Location: superadminstaffaccount.php?saved=1");
