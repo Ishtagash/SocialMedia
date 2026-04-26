@@ -1,0 +1,2283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ongoing Transactions — BarangayKonek</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+
+    <style>
+      :root {
+        --navy: #051650;
+        --navy-mid: #0a2160;
+        --lime: #ccff00;
+        --surface: #ffffff;
+        --soft-bg: #f8fafc;
+        --border: #e3e7f0;
+        --text: #1a2240;
+        --text-muted: #7a869a;
+        --sidebar-w: 228px;
+        --sidebar-mini: 64px;
+        --topbar-h: 62px;
+        --soft-navy-bg: #edf2ff;
+        --amber-bg: #fffbeb;
+        --amber-text: #92400e;
+        --blue-bg: #eff6ff;
+        --blue-text: #1e40af;
+        --gray-bg: #f1f5f9;
+        --gray-text: #475569;
+        --green-bg: #ecfdf5;
+        --green-text: #166534;
+        --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --shadow-hover: 0 14px 30px rgba(5, 22, 80, 0.13);
+        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "DM Sans", sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      @keyframes treasurertransactionFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes treasurertransactionBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(14deg);
+        }
+
+        40% {
+          transform: rotate(-12deg);
+        }
+
+        60% {
+          transform: rotate(8deg);
+        }
+
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      .treasurertransaction-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .treasurertransaction-sidebar {
+        width: var(--sidebar-w);
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--shadow-sidebar);
+        transition: width 0.25s ease;
+      }
+
+      .treasurertransaction-sidebar.mini {
+        width: var(--sidebar-mini);
+      }
+
+      .treasurertransaction-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--sidebar-w);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .treasurertransaction-toggle-wrap.mini {
+        left: var(--sidebar-mini);
+      }
+
+      .treasurertransaction-toggle-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .treasurertransaction-toggle-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+        transform: scale(1.05);
+      }
+
+      .treasurertransaction-toggle-btn i {
+        font-size: 10px;
+        color: var(--navy);
+        transition: transform 0.25s ease;
+      }
+
+      .treasurertransaction-toggle-wrap.mini
+        .treasurertransaction-toggle-btn
+        i {
+        transform: rotate(180deg);
+      }
+
+      .treasurertransaction-identity {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .treasurertransaction-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .treasurertransaction-identity-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .treasurertransaction-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+
+      .treasurertransaction-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .treasurertransaction-sidebar.mini .treasurertransaction-identity-name,
+      .treasurertransaction-sidebar.mini .treasurertransaction-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .treasurertransaction-sidebar.mini .treasurertransaction-identity-logo {
+        margin: 0 auto;
+      }
+
+      .treasurertransaction-menu {
+        flex: 1;
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .treasurertransaction-menu-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
+      }
+
+      .treasurertransaction-menu-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .treasurertransaction-menu-link:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        transform: translateX(3px);
+      }
+
+      .treasurertransaction-menu-link.active {
+        background: var(--lime);
+        color: var(--navy);
+      }
+
+      .treasurertransaction-menu-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .treasurertransaction-menu-left i {
+        width: 18px;
+        text-align: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .treasurertransaction-menu-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .treasurertransaction-sidebar.mini .treasurertransaction-menu-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .treasurertransaction-menu-count {
+        font-size: 10px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .treasurertransaction-menu-link.active .treasurertransaction-menu-count {
+        background: rgba(5, 22, 80, 0.18);
+        color: var(--navy);
+      }
+
+      .treasurertransaction-sidebar.mini .treasurertransaction-menu-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .treasurertransaction-sidebar-footer {
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .treasurertransaction-logout {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .treasurertransaction-logout:hover {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fca5a5;
+        transform: translateX(3px);
+      }
+
+      .treasurertransaction-main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        min-height: 100vh;
+        min-width: 0;
+        transition: margin-left 0.25s ease;
+      }
+
+      .treasurertransaction-main.shifted {
+        margin-left: var(--sidebar-mini);
+      }
+
+      .treasurertransaction-topbar {
+        height: var(--topbar-h);
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+
+      .treasurertransaction-topbar-search {
+        flex: 1;
+        max-width: 390px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-topbar-search:focus-within {
+        border-color: var(--navy);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurertransaction-topbar-search i {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .treasurertransaction-topbar-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .treasurertransaction-topbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .treasurertransaction-topbar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-topbar-icon:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurertransaction-topbar-icon:hover i {
+        animation: treasurertransactionBellShake 0.55s ease;
+      }
+
+      .treasurertransaction-notification-count {
+        position: absolute;
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .treasurertransaction-profile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 13px 5px 5px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        cursor: pointer;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-profile:hover {
+        border-color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurertransaction-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--lime);
+        flex-shrink: 0;
+      }
+
+      .treasurertransaction-profile-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+        white-space: nowrap;
+      }
+
+      .treasurertransaction-profile-role {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1;
+      }
+
+      .treasurertransaction-body {
+        padding: 24px 26px 44px;
+      }
+
+      .treasurertransaction-hero {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(5, 22, 80, 0.98),
+            rgba(10, 33, 96, 0.95)
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.24),
+            transparent 35%
+          );
+        border-radius: 28px;
+        padding: 26px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        box-shadow: var(--shadow-light);
+        position: relative;
+        overflow: hidden;
+        animation: treasurertransactionFadeUp 0.28s ease both;
+        margin-bottom: 20px;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .treasurertransaction-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .treasurertransaction-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -90px;
+        top: -110px;
+        background: rgba(204, 255, 0, 0.12);
+        border-radius: 50%;
+      }
+
+      .treasurertransaction-hero::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: 90px;
+        bottom: -90px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .treasurertransaction-hero-text,
+      .treasurertransaction-hero-actions {
+        position: relative;
+        z-index: 1;
+      }
+
+      .treasurertransaction-hero-text h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.25;
+        margin-bottom: 0;
+      }
+
+      .treasurertransaction-hero-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 7px;
+        max-width: 560px;
+        margin-bottom: 0;
+      }
+
+      .treasurertransaction-hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .treasurertransaction-btn {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .treasurertransaction-btn-primary {
+        background: var(--navy);
+        color: #ffffff;
+      }
+
+      .treasurertransaction-btn-primary:hover {
+        background: var(--lime);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .treasurertransaction-btn-lime {
+        background: var(--lime);
+        color: var(--navy);
+      }
+
+      .treasurertransaction-btn-lime:hover {
+        background: #b7e900;
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .treasurertransaction-btn-light {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .treasurertransaction-btn-light:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+      }
+
+      .treasurertransaction-panel,
+      .treasurertransaction-side-panel,
+      .treasurertransaction-summary-card,
+      .treasurertransaction-item {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow-light);
+        animation: treasurertransactionFadeUp 0.28s ease both;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .treasurertransaction-panel:hover,
+      .treasurertransaction-side-panel:hover,
+      .treasurertransaction-summary-card:hover,
+      .treasurertransaction-item:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+        border-color: #d7deea;
+      }
+
+      .treasurertransaction-panel {
+        overflow: hidden;
+      }
+
+      .treasurertransaction-filter-panel {
+        padding: 18px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+      }
+
+      .treasurertransaction-filter-top {
+        display: grid;
+        grid-template-columns: minmax(250px, 1fr) 180px 180px auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .treasurertransaction-search-box,
+      .treasurertransaction-filter-select {
+        height: 44px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        padding: 0 15px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-search-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .treasurertransaction-search-box:focus-within,
+      .treasurertransaction-filter-select:focus {
+        background: #ffffff;
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurertransaction-search-box i {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .treasurertransaction-search-box input {
+        border: none;
+        outline: none;
+        background: transparent;
+        flex: 1;
+        font-size: 13px;
+        color: var(--text);
+        min-width: 0;
+      }
+
+      .treasurertransaction-filter-select {
+        width: 100%;
+        outline: none;
+        font-size: 13px;
+        color: var(--text);
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .treasurertransaction-chip-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 13px;
+        margin-top: 13px;
+        border-top: 1px solid var(--border);
+      }
+
+      .treasurertransaction-chip {
+        min-height: 36px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-chip:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .treasurertransaction-chip.on {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: var(--lime);
+      }
+
+      .treasurertransaction-panel-head {
+        padding: 22px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .treasurertransaction-panel-title h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .treasurertransaction-panel-title p {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 0;
+      }
+
+      .treasurertransaction-panel-link {
+        min-height: 38px;
+        padding: 0 15px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        color: var(--navy);
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-panel-link:hover {
+        background: #ffffff;
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .treasurertransaction-list {
+        padding: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+
+      .treasurertransaction-list-head {
+        display: grid;
+        grid-template-columns: 0.9fr 1.28fr 0.7fr 0.55fr 0.75fr 0.88fr;
+        gap: 10px;
+        padding: 10px 29px;
+        background: #fafbfd;
+        border-bottom: 1px solid var(--border);
+        font-size: 10.4px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        align-items: center;
+      }
+
+      .treasurertransaction-list-head span:last-child {
+        text-align: right;
+      }
+      .treasurertransaction-list-head span:first-child {
+        text-align: left;
+      }
+      .treasurertransaction-list-head span:nth-child(4),
+      .treasurertransaction-list-head span:nth-child(5) {
+        text-align: center;
+      }
+
+      .treasurertransaction-item > div:nth-child(4),
+      .treasurertransaction-item > div:nth-child(5) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .treasurertransaction-item {
+        display: grid;
+        grid-template-columns: 0.9fr 1.28fr 0.7fr 0.5fr 0.68fr 0.88fr;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 16px;
+        border-radius: 21px;
+        box-shadow: none;
+      }
+
+      .treasurertransaction-person-name {
+        font-size: 12.8px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 3px;
+      }
+
+      .treasurertransaction-code {
+        font-size: 10.8px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .treasurertransaction-document-name {
+        font-size: 12.4px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 3px;
+      }
+
+      .treasurertransaction-document-note {
+        font-size: 11.2px;
+        color: var(--text-muted);
+        line-height: 1.35;
+        margin: 0;
+      }
+
+      .treasurertransaction-date-text {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .treasurertransaction-time-text {
+        font-size: 10.8px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .treasurertransaction-amount-text {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+        white-space: nowrap;
+        text-align: center;
+      }
+
+      .treasurertransaction-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 28px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 10.5px;
+        font-weight: 800;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        width: fit-content;
+      }
+
+      .treasurertransaction-status.pending {
+        background: var(--amber-bg);
+        color: var(--amber-text);
+        border-color: rgba(146, 64, 14, 0.12);
+      }
+
+      .treasurertransaction-status.processing {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: rgba(30, 64, 175, 0.12);
+      }
+
+      .treasurertransaction-status.partial {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border-color: rgba(71, 85, 105, 0.12);
+      }
+
+      .treasurertransaction-status.paid {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border-color: rgba(22, 101, 52, 0.12);
+      }
+
+      .treasurertransaction-list-head span:last-child {
+        text-align: center;
+      }
+
+      .treasurertransaction-item > div:last-child {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .treasurertransaction-action-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+
+      .treasurertransaction-row-btn {
+        min-height: 33px;
+        min-width: 64px;
+        padding: 0 11px;
+        border-radius: 999px;
+        background: var(--navy);
+        color: #ffffff;
+        border: 1px solid var(--navy);
+        font-size: 10.8px;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-row-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .treasurertransaction-row-btn.light {
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        border-color: var(--border);
+      }
+
+      .treasurertransaction-row-btn.light:hover {
+        background: #ffffff;
+        border-color: var(--navy);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .treasurertransaction-list-foot {
+        padding: 14px 20px 16px;
+        border-top: 1px solid var(--border);
+        background: #fafbfd;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .treasurertransaction-list-info {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .treasurertransaction-pager {
+        display: flex;
+        gap: 5px;
+      }
+
+      .treasurertransaction-pager-btn {
+        width: 31px;
+        height: 31px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .treasurertransaction-pager-btn:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+      }
+
+      .treasurertransaction-pager-btn.on {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: var(--lime);
+      }
+
+      .treasurertransaction-side-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: sticky;
+        top: calc(var(--topbar-h) + 18px);
+      }
+
+      .treasurertransaction-side-panel {
+        padding: 20px;
+      }
+
+      .treasurertransaction-side-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+
+      .treasurertransaction-side-head h3 {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0;
+      }
+
+      .treasurertransaction-side-head span {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .treasurertransaction-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .treasurertransaction-summary-card {
+        border-radius: 22px;
+        padding: 14px;
+        box-shadow: none;
+      }
+
+      .treasurertransaction-summary-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
+        margin-bottom: 9px;
+        line-height: 1.35;
+      }
+
+      .treasurertransaction-summary-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .treasurertransaction-summary-note {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .treasurertransaction-source-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .treasurertransaction-source-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: transform 0.18s ease;
+      }
+
+      .treasurertransaction-source-row:hover {
+        transform: translateX(3px);
+      }
+
+      .treasurertransaction-source-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .treasurertransaction-source-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .treasurertransaction-source-amount {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .treasurertransaction-bar-track {
+        height: 8px;
+        background: #eaf0f7;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .treasurertransaction-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--navy), #254ca8);
+        transition: filter 0.18s ease;
+      }
+
+      .treasurertransaction-source-row:hover .treasurertransaction-bar-fill {
+        filter: brightness(1.15);
+      }
+
+      .treasurertransaction-note-box {
+        padding: 14px;
+        border-radius: 20px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-note-box:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurertransaction-note-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .treasurertransaction-note-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 0;
+      }
+
+      .treasurertransaction-modal-content {
+        border: none;
+        border-radius: 28px;
+        overflow: hidden;
+      }
+
+      .treasurertransaction-modal-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+      }
+
+      .treasurertransaction-modal-box {
+        padding: 13px;
+        border-radius: 18px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .treasurertransaction-form-control {
+        height: 44px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        width: 100%;
+        outline: none;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurertransaction-form-control:focus {
+        background: #ffffff;
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      @media (max-width: 1180px) {
+        .treasurertransaction-filter-top {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .treasurertransaction-side-stack {
+          position: static;
+          margin-top: 16px;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .treasurertransaction-list-head {
+          display: none;
+        }
+
+        .treasurertransaction-item {
+          grid-template-columns: 1fr;
+          align-items: start;
+        }
+
+        .treasurertransaction-action-row {
+          justify-content: flex-start;
+        }
+
+        .treasurertransaction-hero,
+        .treasurertransaction-panel-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .treasurertransaction-sidebar {
+          width: var(--sidebar-mini);
+        }
+
+        .treasurertransaction-main {
+          margin-left: var(--sidebar-mini);
+        }
+
+        .treasurertransaction-toggle-wrap {
+          left: var(--sidebar-mini);
+        }
+
+        .treasurertransaction-identity-name,
+        .treasurertransaction-identity-chip,
+        .treasurertransaction-menu-label,
+        .treasurertransaction-menu-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .treasurertransaction-body {
+          padding: 18px 14px 36px;
+        }
+
+        .treasurertransaction-topbar {
+          padding: 0 14px;
+        }
+
+        .treasurertransaction-profile-name,
+        .treasurertransaction-profile-role {
+          display: none;
+        }
+
+        .treasurertransaction-topbar-search {
+          max-width: none;
+        }
+
+        .treasurertransaction-filter-top {
+          grid-template-columns: 1fr;
+        }
+
+        .treasurertransaction-hero-actions,
+        .treasurertransaction-hero-actions .treasurertransaction-btn {
+          width: 100%;
+        }
+
+        .treasurertransaction-action-row {
+          width: 100%;
+          flex-wrap: wrap;
+        }
+
+        .treasurertransaction-row-btn {
+          flex: 1;
+        }
+
+        .treasurertransaction-summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div
+      class="treasurertransaction-toggle-wrap"
+      id="treasurertransaction-toggle-wrap"
+    >
+      <button
+        class="treasurertransaction-toggle-btn"
+        id="treasurertransaction-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="treasurertransaction-container">
+      <aside
+        class="treasurertransaction-sidebar"
+        id="treasurertransaction-sidebar"
+      >
+        <div class="treasurertransaction-identity">
+          <div class="treasurertransaction-identity-logo">
+            <img src="alapan.png" alt="Alapan logo" />
+          </div>
+
+          <div>
+            <div class="treasurertransaction-identity-name">BarangayKonek</div>
+            <span class="treasurertransaction-identity-chip">
+              Treasurer Portal
+            </span>
+          </div>
+        </div>
+
+        <nav class="treasurertransaction-menu">
+          <a
+            href="treasurerdashboard.html"
+            class="treasurertransaction-menu-link"
+          >
+            <div class="treasurertransaction-menu-left">
+              <i class="fa-solid fa-house"></i>
+              <span class="treasurertransaction-menu-label">Dashboard</span>
+            </div>
+          </a>
+
+          <a
+            href="treasurertransaction.html"
+            class="treasurertransaction-menu-link active"
+          >
+            <div class="treasurertransaction-menu-left">
+              <i class="fa-solid fa-coins"></i>
+              <span class="treasurertransaction-menu-label">Transactions</span>
+            </div>
+
+            <span class="treasurertransaction-menu-count">8</span>
+          </a>
+
+          <a
+            href="treasurerhistory.html"
+            class="treasurertransaction-menu-link"
+          >
+            <div class="treasurertransaction-menu-left">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span class="treasurertransaction-menu-label">
+                Transaction History
+              </span>
+            </div>
+          </a>
+
+          <a
+            href="treasurercommunity.html"
+            class="treasurertransaction-menu-link"
+          >
+            <div class="treasurertransaction-menu-left">
+              <i class="fa-solid fa-people-group"></i>
+              <span class="treasurertransaction-menu-label">Community</span>
+            </div>
+          </a>
+
+          <div class="treasurertransaction-menu-divider"></div>
+
+          <a
+            href="treasurersettings.html"
+            class="treasurertransaction-menu-link"
+          >
+            <div class="treasurertransaction-menu-left">
+              <i class="fa-solid fa-gear"></i>
+              <span class="treasurertransaction-menu-label">Settings</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="treasurertransaction-sidebar-footer">
+          <button class="treasurertransaction-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="treasurertransaction-menu-label">Log Out</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="treasurertransaction-main" id="treasurertransaction-main">
+        <header class="treasurertransaction-topbar">
+          <div class="treasurertransaction-topbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              placeholder="Search ongoing transactions, residents..."
+            />
+          </div>
+
+          <div class="treasurertransaction-topbar-right">
+            <div class="treasurertransaction-topbar-icon">
+              <i class="fa-solid fa-bell"></i>
+              <span class="treasurertransaction-notification-count">2</span>
+            </div>
+
+            <div class="treasurertransaction-profile">
+              <div class="treasurertransaction-avatar">LR</div>
+
+              <div>
+                <div class="treasurertransaction-profile-name">Luz Reyes</div>
+                <div class="treasurertransaction-profile-role">Treasurer</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="treasurertransaction-body">
+          <section class="treasurertransaction-hero">
+            <div class="treasurertransaction-hero-text">
+              <h2>Ongoing Transactions</h2>
+              <p>
+                Review pending payments, record document fees, and complete
+                active transactions before sending them to history.
+              </p>
+            </div>
+
+            <div class="treasurertransaction-hero-actions">
+              <button
+                class="treasurertransaction-btn treasurertransaction-btn-lime"
+                data-bs-toggle="modal"
+                data-bs-target="#treasurertransactionNewModal"
+              >
+                <i class="fa-solid fa-plus"></i>
+                New Transaction
+              </button>
+
+              <button
+                class="treasurertransaction-btn treasurertransaction-btn-light"
+              >
+                <i class="fa-solid fa-file-export"></i>
+                Export
+              </button>
+            </div>
+          </section>
+
+          <div class="row g-3">
+            <div class="col-lg-8 col-xl-9">
+              <section class="treasurertransaction-panel">
+                <div class="treasurertransaction-filter-panel">
+                  <div class="treasurertransaction-filter-top">
+                    <div class="treasurertransaction-search-box">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <input
+                        type="text"
+                        placeholder="Search name, transaction ID, or document..."
+                      />
+                    </div>
+
+                    <select class="treasurertransaction-filter-select">
+                      <option>All Documents</option>
+                      <option>Barangay Clearance</option>
+                      <option>Certificate of Residency</option>
+                      <option>Business Permit</option>
+                      <option>Certificate of Good Moral</option>
+                    </select>
+
+                    <select class="treasurertransaction-filter-select">
+                      <option>Newest First</option>
+                      <option>Oldest First</option>
+                      <option>Highest Amount</option>
+                      <option>Lowest Amount</option>
+                    </select>
+
+                    <button
+                      class="treasurertransaction-btn treasurertransaction-btn-primary"
+                    >
+                      Apply Filter
+                    </button>
+                  </div>
+
+                  <div class="treasurertransaction-chip-row">
+                    <button class="treasurertransaction-chip on">All</button>
+                    <button class="treasurertransaction-chip">Pending</button>
+                    <button class="treasurertransaction-chip">
+                      Processing
+                    </button>
+                    <button class="treasurertransaction-chip">Partial</button>
+                    <button class="treasurertransaction-chip">
+                      Ready Receipt
+                    </button>
+                  </div>
+                </div>
+
+                <div class="treasurertransaction-panel-head">
+                  <div class="treasurertransaction-panel-title">
+                    <h3>Transaction Queue</h3>
+                    <p>
+                      Active payment records that still need checking or
+                      completion.
+                    </p>
+                  </div>
+
+                  <a
+                    href="treasurerhistory.html"
+                    class="treasurertransaction-panel-link"
+                  >
+                    View History
+                  </a>
+                </div>
+
+                <div class="treasurertransaction-list-head">
+                  <span>Resident</span>
+                  <span>Document / Purpose</span>
+                  <span>Date</span>
+                  <span>Amount</span>
+                  <span>Status</span>
+                  <span>Action</span>
+                </div>
+
+                <div class="treasurertransaction-list">
+                  <article class="treasurertransaction-item">
+                    <div>
+                      <div class="treasurertransaction-person-name">
+                        Ana Lopez
+                      </div>
+                      <div class="treasurertransaction-code">TRN-2026-041</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-document-name">
+                        Barangay Clearance
+                      </div>
+                      <p class="treasurertransaction-document-note">
+                        Employment requirement. Waiting for payment
+                        confirmation.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-date-text">
+                        Apr 21, 2026
+                      </div>
+                      <div class="treasurertransaction-time-text">9:30 AM</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-amount-text">₱100</div>
+                    </div>
+
+                    <div>
+                      <span class="treasurertransaction-status pending">
+                        Pending
+                      </span>
+                    </div>
+
+                    <div class="treasurertransaction-action-row">
+                      <button
+                        class="treasurertransaction-row-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionRecordModal"
+                      >
+                        Record
+                      </button>
+
+                      <button
+                        class="treasurertransaction-row-btn light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionViewModal"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+
+                  <article class="treasurertransaction-item">
+                    <div>
+                      <div class="treasurertransaction-person-name">
+                        Ryan Gomez
+                      </div>
+                      <div class="treasurertransaction-code">TRN-2026-040</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-document-name">
+                        Certificate of Residency
+                      </div>
+                      <p class="treasurertransaction-document-note">
+                        School enrollment requirement. Payment is being checked.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-date-text">
+                        Apr 21, 2026
+                      </div>
+                      <div class="treasurertransaction-time-text">10:10 AM</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-amount-text">₱50</div>
+                    </div>
+
+                    <div>
+                      <span class="treasurertransaction-status processing">
+                        Processing
+                      </span>
+                    </div>
+
+                    <div class="treasurertransaction-action-row">
+                      <button
+                        class="treasurertransaction-row-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionRecordModal"
+                      >
+                        Update
+                      </button>
+
+                      <button
+                        class="treasurertransaction-row-btn light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionViewModal"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+
+                  <article class="treasurertransaction-item">
+                    <div>
+                      <div class="treasurertransaction-person-name">
+                        Mark Rivera
+                      </div>
+                      <div class="treasurertransaction-code">TRN-2026-039</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-document-name">
+                        Business Permit
+                      </div>
+                      <p class="treasurertransaction-document-note">
+                        Small store renewal. Partial payment has been received.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-date-text">
+                        Apr 20, 2026
+                      </div>
+                      <div class="treasurertransaction-time-text">2:20 PM</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-amount-text">₱200</div>
+                    </div>
+
+                    <div>
+                      <span class="treasurertransaction-status partial">
+                        Partial
+                      </span>
+                    </div>
+
+                    <div class="treasurertransaction-action-row">
+                      <button
+                        class="treasurertransaction-row-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionRecordModal"
+                      >
+                        Complete
+                      </button>
+
+                      <button
+                        class="treasurertransaction-row-btn light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionViewModal"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+
+                  <article class="treasurertransaction-item">
+                    <div>
+                      <div class="treasurertransaction-person-name">
+                        Carla Santos
+                      </div>
+                      <div class="treasurertransaction-code">TRN-2026-038</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-document-name">
+                        Certificate of Good Moral
+                      </div>
+                      <p class="treasurertransaction-document-note">
+                        Scholarship requirement. Receipt is ready for printing.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-date-text">
+                        Apr 20, 2026
+                      </div>
+                      <div class="treasurertransaction-time-text">4:15 PM</div>
+                    </div>
+
+                    <div>
+                      <div class="treasurertransaction-amount-text">₱100</div>
+                    </div>
+
+                    <div>
+                      <span class="treasurertransaction-status paid">
+                        Ready Receipt
+                      </span>
+                    </div>
+
+                    <div class="treasurertransaction-action-row">
+                      <button class="treasurertransaction-row-btn">
+                        Print
+                      </button>
+
+                      <button
+                        class="treasurertransaction-row-btn light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#treasurertransactionViewModal"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+                </div>
+
+                <div class="treasurertransaction-list-foot">
+                  <span class="treasurertransaction-list-info">
+                    Showing 4 of 12 ongoing transactions
+                  </span>
+
+                  <div class="treasurertransaction-pager">
+                    <button class="treasurertransaction-pager-btn">
+                      <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button class="treasurertransaction-pager-btn on">1</button>
+                    <button class="treasurertransaction-pager-btn">2</button>
+                    <button class="treasurertransaction-pager-btn">3</button>
+                    <button class="treasurertransaction-pager-btn">
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="col-lg-4 col-xl-3">
+              <aside class="treasurertransaction-side-stack">
+                <section class="treasurertransaction-side-panel">
+                  <div class="treasurertransaction-side-head">
+                    <h3>Quick Summary</h3>
+                    <span>Today</span>
+                  </div>
+
+                  <div class="treasurertransaction-summary-grid">
+                    <div class="treasurertransaction-summary-card">
+                      <div class="treasurertransaction-summary-label">
+                        Pending
+                      </div>
+                      <div class="treasurertransaction-summary-value">8</div>
+                      <div class="treasurertransaction-summary-note">
+                        Needs payment
+                      </div>
+                    </div>
+
+                    <div class="treasurertransaction-summary-card">
+                      <div class="treasurertransaction-summary-label">
+                        Processing
+                      </div>
+                      <div class="treasurertransaction-summary-value">4</div>
+                      <div class="treasurertransaction-summary-note">
+                        Being checked
+                      </div>
+                    </div>
+
+                    <div class="treasurertransaction-summary-card">
+                      <div class="treasurertransaction-summary-label">
+                        Partial
+                      </div>
+                      <div class="treasurertransaction-summary-value">2</div>
+                      <div class="treasurertransaction-summary-note">
+                        Not yet full
+                      </div>
+                    </div>
+
+                    <div class="treasurertransaction-summary-card">
+                      <div class="treasurertransaction-summary-label">
+                        Amount Due
+                      </div>
+                      <div class="treasurertransaction-summary-value">₱850</div>
+                      <div class="treasurertransaction-summary-note">
+                        Active queue
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="treasurertransaction-side-panel">
+                  <div class="treasurertransaction-side-head">
+                    <h3>Document Sources</h3>
+                    <span>This week</span>
+                  </div>
+
+                  <div class="treasurertransaction-source-list">
+                    <div class="treasurertransaction-source-row">
+                      <div class="treasurertransaction-source-top">
+                        <span class="treasurertransaction-source-name">
+                          Barangay Clearance
+                        </span>
+                        <span class="treasurertransaction-source-amount"
+                          >₱500</span
+                        >
+                      </div>
+                      <div class="treasurertransaction-bar-track">
+                        <div
+                          class="treasurertransaction-bar-fill"
+                          style="width: 75%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div class="treasurertransaction-source-row">
+                      <div class="treasurertransaction-source-top">
+                        <span class="treasurertransaction-source-name">
+                          Business Permit
+                        </span>
+                        <span class="treasurertransaction-source-amount"
+                          >₱200</span
+                        >
+                      </div>
+                      <div class="treasurertransaction-bar-track">
+                        <div
+                          class="treasurertransaction-bar-fill"
+                          style="width: 55%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div class="treasurertransaction-source-row">
+                      <div class="treasurertransaction-source-top">
+                        <span class="treasurertransaction-source-name">
+                          Residency
+                        </span>
+                        <span class="treasurertransaction-source-amount"
+                          >₱150</span
+                        >
+                      </div>
+                      <div class="treasurertransaction-bar-track">
+                        <div
+                          class="treasurertransaction-bar-fill"
+                          style="width: 40%"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="treasurertransaction-side-panel">
+                  <div class="treasurertransaction-side-head">
+                    <h3>Reminder</h3>
+                    <span>Before closing</span>
+                  </div>
+
+                  <div class="treasurertransaction-note-box">
+                    <div class="treasurertransaction-note-title">
+                      Check pending payments
+                    </div>
+
+                    <p class="treasurertransaction-note-text">
+                      Make sure all payments are recorded before marking a
+                      document as paid or moving the transaction to history.
+                    </p>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="treasurertransactionRecordModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content treasurertransaction-modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Record Transaction Payment
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Resident</div>
+                <div class="treasurertransaction-modal-box">Ana Lopez</div>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">
+                  Transaction ID
+                </div>
+                <div class="treasurertransaction-modal-box">TRN-2026-041</div>
+              </div>
+
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">Document</div>
+                <div class="treasurertransaction-modal-box">
+                  Barangay Clearance
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Amount</div>
+                <input
+                  class="treasurertransaction-form-control"
+                  type="text"
+                  value="₱100"
+                />
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">
+                  Payment Method
+                </div>
+                <select class="treasurertransaction-form-control">
+                  <option>Cash</option>
+                  <option>Online Payment</option>
+                  <option>Waived</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">Status</div>
+                <select class="treasurertransaction-form-control">
+                  <option>Pending</option>
+                  <option>Processing</option>
+                  <option>Paid</option>
+                  <option>Waived</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              class="treasurertransaction-btn treasurertransaction-btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Save Transaction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="treasurertransactionViewModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content treasurertransaction-modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Transaction Details
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Resident</div>
+                <div class="treasurertransaction-modal-box">Ana Lopez</div>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">
+                  Transaction ID
+                </div>
+                <div class="treasurertransaction-modal-box">TRN-2026-041</div>
+              </div>
+
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">Document</div>
+                <div class="treasurertransaction-modal-box">
+                  Barangay Clearance
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Amount</div>
+                <div class="treasurertransaction-modal-box">₱100</div>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Status</div>
+                <div class="treasurertransaction-modal-box">
+                  Pending Payment
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">Purpose</div>
+                <div class="treasurertransaction-modal-box">
+                  Requested for employment requirement.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              class="treasurertransaction-btn treasurertransaction-btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="treasurertransactionNewModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content treasurertransaction-modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              New Transaction
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">
+                  Resident Name
+                </div>
+                <input
+                  class="treasurertransaction-form-control"
+                  type="text"
+                  placeholder="Enter resident name"
+                />
+              </div>
+
+              <div class="col-12">
+                <div class="treasurertransaction-modal-label">
+                  Document Type
+                </div>
+                <select class="treasurertransaction-form-control">
+                  <option>Barangay Clearance</option>
+                  <option>Certificate of Residency</option>
+                  <option>Business Permit</option>
+                  <option>Certificate of Good Moral</option>
+                </select>
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Amount</div>
+                <input
+                  class="treasurertransaction-form-control"
+                  type="text"
+                  placeholder="₱0"
+                />
+              </div>
+
+              <div class="col-6">
+                <div class="treasurertransaction-modal-label">Status</div>
+                <select class="treasurertransaction-form-control">
+                  <option>Pending</option>
+                  <option>Processing</option>
+                  <option>Paid</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              class="treasurertransaction-btn treasurertransaction-btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Add Transaction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      var treasurertransactionSidebar = document.getElementById(
+        "treasurertransaction-sidebar",
+      );
+
+      var treasurertransactionMainArea = document.getElementById(
+        "treasurertransaction-main",
+      );
+
+      var treasurertransactionToggleWrap = document.getElementById(
+        "treasurertransaction-toggle-wrap",
+      );
+
+      var treasurertransactionToggleButton = document.getElementById(
+        "treasurertransaction-toggle-button",
+      );
+
+      treasurertransactionToggleButton.addEventListener("click", function () {
+        var treasurertransactionIsSidebarMini =
+          treasurertransactionSidebar.classList.toggle("mini");
+
+        treasurertransactionMainArea.classList.toggle(
+          "shifted",
+          treasurertransactionIsSidebarMini,
+        );
+
+        treasurertransactionToggleWrap.classList.toggle(
+          "mini",
+          treasurertransactionIsSidebarMini,
+        );
+      });
+
+      var treasurertransactionFilterButtons = document.querySelectorAll(
+        ".treasurertransaction-chip",
+      );
+
+      treasurertransactionFilterButtons.forEach(
+        function (treasurertransactionButton) {
+          treasurertransactionButton.addEventListener("click", function () {
+            treasurertransactionFilterButtons.forEach(
+              function (treasurertransactionOtherButton) {
+                treasurertransactionOtherButton.classList.remove("on");
+              },
+            );
+
+            treasurertransactionButton.classList.add("on");
+          });
+        },
+      );
+    </script>
+  </body>
+</html>
