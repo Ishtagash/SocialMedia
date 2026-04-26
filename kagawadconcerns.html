@@ -1,0 +1,2047 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Concerns — Kagawad | BarangayKonek</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+
+    <style>
+      :root {
+        --navy: #051650;
+        --navy-mid: #0a2160;
+        --lime: #ccff00;
+
+        --surface: #ffffff;
+        --soft-bg: #f8fafc;
+        --border: #e3e7f0;
+
+        --text: #1a2240;
+        --text-muted: #7a869a;
+
+        --sidebar-w: 228px;
+        --sidebar-mini: 64px;
+        --topbar-h: 62px;
+
+        --amber-bg: #fffbeb;
+        --amber-text: #92400e;
+
+        --blue-bg: #eff6ff;
+        --blue-text: #1e40af;
+
+        --green-bg: #f0fdf4;
+        --green-text: #166534;
+
+        --gray-bg: #f1f5f9;
+        --gray-text: #475569;
+
+        --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --shadow-hover: 0 16px 34px rgba(5, 22, 80, 0.14);
+        --shadow-soft: 0 10px 24px rgba(5, 22, 80, 0.09);
+        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "DM Sans", sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      @keyframes kagawadconcernFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes kagawadconcernBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(14deg);
+        }
+
+        40% {
+          transform: rotate(-12deg);
+        }
+
+        60% {
+          transform: rotate(8deg);
+        }
+
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      .kagawadconcern-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .kagawadconcern-sidebar {
+        width: var(--sidebar-w);
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--shadow-sidebar);
+        transition: width 0.25s ease;
+      }
+
+      .kagawadconcern-sidebar.mini {
+        width: var(--sidebar-mini);
+      }
+
+      .kagawadconcern-identity {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .kagawadconcern-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .kagawadconcern-identity-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .kagawadconcern-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+
+      .kagawadconcern-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .kagawadconcern-sidebar.mini .kagawadconcern-identity-name,
+      .kagawadconcern-sidebar.mini .kagawadconcern-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .kagawadconcern-sidebar.mini .kagawadconcern-identity-logo {
+        margin: 0 auto;
+      }
+
+      .kagawadconcern-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--sidebar-w);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .kagawadconcern-toggle-wrap.mini {
+        left: var(--sidebar-mini);
+      }
+
+      .kagawadconcern-toggle-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .kagawadconcern-toggle-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+        transform: scale(1.04);
+      }
+
+      .kagawadconcern-toggle-btn i {
+        font-size: 10px;
+        color: var(--navy);
+        transition: transform 0.25s ease;
+      }
+
+      .kagawadconcern-toggle-wrap.mini .kagawadconcern-toggle-btn i {
+        transform: rotate(180deg);
+      }
+
+      .kagawadconcern-menu {
+        flex: 1;
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .kagawadconcern-menu-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-menu-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .kagawadconcern-menu-link:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        transform: translateX(3px);
+      }
+
+      .kagawadconcern-menu-link.active {
+        background: var(--lime);
+        color: var(--navy);
+      }
+
+      .kagawadconcern-menu-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .kagawadconcern-menu-left i {
+        width: 18px;
+        text-align: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-menu-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .kagawadconcern-sidebar.mini .kagawadconcern-menu-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .kagawadconcern-menu-count {
+        font-size: 10px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-menu-link.active .kagawadconcern-menu-count {
+        background: rgba(5, 22, 80, 0.18);
+        color: var(--navy);
+      }
+
+      .kagawadconcern-sidebar.mini .kagawadconcern-menu-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .kagawadconcern-sidebar-footer {
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .kagawadconcern-logout {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .kagawadconcern-logout:hover {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fca5a5;
+        transform: translateX(3px);
+      }
+
+      .kagawadconcern-main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        min-height: 100vh;
+        min-width: 0;
+        transition: margin-left 0.25s ease;
+      }
+
+      .kagawadconcern-main.shifted {
+        margin-left: var(--sidebar-mini);
+      }
+
+      .kagawadconcern-topbar {
+        height: var(--topbar-h);
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+
+      .kagawadconcern-topbar-search {
+        flex: 1;
+        max-width: 390px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-topbar-search:focus-within {
+        border-color: var(--navy);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawadconcern-topbar-search i {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .kagawadconcern-topbar-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .kagawadconcern-topbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .kagawadconcern-topbar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-topbar-icon:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawadconcern-topbar-icon:hover i {
+        animation: kagawadconcernBellShake 0.55s ease;
+      }
+
+      .kagawadconcern-notification-count {
+        position: absolute;
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 12px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .kagawadconcern-profile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 13px 5px 5px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        cursor: pointer;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-profile:hover {
+        border-color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawadconcern-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--lime);
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-profile-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+        white-space: nowrap;
+      }
+
+      .kagawadconcern-profile-role {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1;
+      }
+
+      .kagawadconcern-body {
+        padding: 24px 26px 44px;
+      }
+
+      .kagawadconcern-hero {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(5, 22, 80, 0.98),
+            rgba(10, 33, 96, 0.95)
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.28),
+            transparent 35%
+          );
+        border-radius: 28px;
+        padding: 26px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        box-shadow: var(--shadow-light);
+        position: relative;
+        overflow: hidden;
+        animation: kagawadconcernFadeUp 0.28s ease both;
+        margin-bottom: 20px;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .kagawadconcern-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .kagawadconcern-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -90px;
+        top: -110px;
+        background: rgba(204, 255, 0, 0.14);
+        border-radius: 50%;
+      }
+
+      .kagawadconcern-hero::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: 90px;
+        bottom: -90px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .kagawadconcern-hero-text,
+      .kagawadconcern-hero-counts {
+        position: relative;
+        z-index: 1;
+      }
+
+      .kagawadconcern-hero-text h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.25;
+        margin-bottom: 0;
+      }
+
+      .kagawadconcern-hero-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 7px;
+        max-width: 500px;
+        margin-bottom: 0;
+      }
+
+      .kagawadconcern-hero-counts {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-hero-badge {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 18px;
+        padding: 13px 20px;
+        text-align: center;
+        min-width: 86px;
+        transition:
+          transform 0.18s ease,
+          background 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-hero-badge:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.16);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .kagawadconcern-hero-badge-number {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--lime);
+        line-height: 1;
+      }
+
+      .kagawadconcern-hero-badge-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 5px;
+        white-space: nowrap;
+      }
+
+      .kagawadconcern-content-row {
+        align-items: flex-start;
+      }
+
+      .kagawadconcern-right-area {
+        position: sticky;
+        top: calc(var(--topbar-h) + 18px);
+        align-self: flex-start;
+        max-height: calc(100vh - var(--topbar-h) - 34px);
+        overflow-y: auto;
+        padding-bottom: 4px;
+      }
+
+      .kagawadconcern-right-area::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .kagawadconcern-right-area::-webkit-scrollbar-thumb {
+        background: rgba(5, 22, 80, 0.2);
+        border-radius: 999px;
+      }
+
+      .kagawadconcern-panel,
+      .kagawadconcern-progress-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow-light);
+        overflow: hidden;
+        animation: kagawadconcernFadeUp 0.28s ease both;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .kagawadconcern-panel:hover,
+      .kagawadconcern-progress-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+        border-color: #d7deea;
+      }
+
+      .kagawadconcern-progress-card {
+        padding: 24px;
+        overflow: visible;
+      }
+
+      .kagawadconcern-progress-head {
+        margin-bottom: 22px;
+      }
+
+      .kagawadconcern-progress-head h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin: 0 0 6px;
+      }
+
+      .kagawadconcern-progress-head p {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .kagawadconcern-progress-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .kagawadconcern-progress-item {
+        transition: transform 0.18s ease;
+      }
+
+      .kagawadconcern-progress-item:hover {
+        transform: translateX(3px);
+      }
+
+      .kagawadconcern-progress-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .kagawadconcern-progress-name {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .kagawadconcern-progress-count {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .kagawadconcern-progress-track {
+        height: 9px;
+        border-radius: 999px;
+        background: #eaf0f7;
+        overflow: hidden;
+      }
+
+      .kagawadconcern-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--navy), #254ca8);
+        transition:
+          width 0.25s ease,
+          filter 0.18s ease;
+      }
+
+      .kagawadconcern-progress-item:hover .kagawadconcern-progress-fill {
+        filter: brightness(1.15);
+      }
+
+      .kagawadconcern-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 26px 14px;
+      }
+
+      .kagawadconcern-panel-head h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0;
+      }
+
+      .kagawadconcern-panel-meta {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .kagawadconcern-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 26px 20px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kagawadconcern-search-box {
+        height: 42px;
+        width: 360px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0 15px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-search-box:focus-within {
+        border-color: var(--navy);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawadconcern-search-box i {
+        color: var(--text-muted);
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--text);
+        min-width: 0;
+      }
+
+      .kagawadconcern-category-select {
+        height: 42px;
+        min-width: 205px;
+        padding: 0 15px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        outline: none;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-category-select:focus {
+        border-color: var(--navy);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawadconcern-chip-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        flex-wrap: wrap;
+        border-bottom: none;
+      }
+
+      .kagawadconcern-chip {
+        height: 42px;
+        padding: 0 17px;
+        border-radius: 14px;
+        font-size: 13px;
+        font-weight: 800;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-chip:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .kagawadconcern-chip.on {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: var(--lime);
+      }
+
+      .kagawadconcern-table-wrap {
+        overflow-x: auto;
+      }
+
+      .kagawadconcern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .kagawadconcern-table thead th {
+        background: #fafbfd;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        text-align: left;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kagawadconcern-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-table tbody tr:hover {
+        background: #fbfdff;
+        box-shadow: inset 4px 0 0 var(--lime);
+      }
+
+      .kagawadconcern-table td {
+        padding: 13px 16px;
+        vertical-align: middle;
+        color: var(--text);
+      }
+
+      .kagawadconcern-resident-cell {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .kagawadconcern-resident-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: var(--navy);
+        color: var(--lime);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .kagawadconcern-resident-name {
+        font-weight: 700;
+        color: var(--text);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .kagawadconcern-desc-text {
+        max-width: 280px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-muted);
+        font-size: 12.5px;
+        display: block;
+      }
+
+      .kagawadconcern-status-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-size: 11.5px;
+        font-weight: 800;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+
+      .kagawadconcern-status-chip.open {
+        background: var(--amber-bg);
+        color: var(--amber-text);
+        border-color: rgba(146, 64, 14, 0.12);
+      }
+
+      .kagawadconcern-status-chip.inprogress {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: rgba(30, 64, 175, 0.12);
+      }
+
+      .kagawadconcern-status-chip.resolved {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border-color: rgba(22, 101, 52, 0.12);
+      }
+
+      .kagawadconcern-action-cell {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .kagawadconcern-btn {
+        padding: 7px 15px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .kagawadconcern-btn-navy {
+        background: var(--navy);
+        color: #ffffff;
+      }
+
+      .kagawadconcern-btn-navy:hover {
+        background: var(--lime);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .kagawadconcern-btn-ghost {
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+      }
+
+      .kagawadconcern-btn-ghost:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .kagawadconcern-table-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 22px 18px;
+        border-top: 1px solid var(--border);
+        background: #fafbfd;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .kagawadconcern-foot-info {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .kagawadconcern-pager {
+        display: flex;
+        gap: 5px;
+      }
+
+      .kagawadconcern-pager-btn {
+        width: 31px;
+        height: 31px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .kagawadconcern-pager-btn:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+      }
+
+      .kagawadconcern-pager-btn.on {
+        background: var(--navy);
+        color: var(--lime);
+        border-color: var(--navy);
+      }
+
+      .kagawadconcern-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .kagawadconcern-detail-box {
+        padding: 14px;
+        border-radius: 18px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawadconcern-detail-box:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .kagawadconcern-detail-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.35px;
+        margin-bottom: 5px;
+      }
+
+      .kagawadconcern-detail-value {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .kagawadconcern-detail-note {
+        padding: 15px;
+        border-radius: 20px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text);
+      }
+
+      @media (max-width: 1180px) {
+        .kagawadconcern-search-box {
+          width: 100%;
+        }
+
+        .kagawadconcern-category-select {
+          flex: 1;
+        }
+
+        .kagawadconcern-chip-row {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .kagawadconcern-right-area {
+          position: static;
+          max-height: none;
+          overflow: visible;
+          margin-top: 16px;
+        }
+
+        .kagawadconcern-hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .kagawadconcern-hero-counts {
+          width: 100%;
+          flex-wrap: wrap;
+        }
+
+        .kagawadconcern-hero-badge {
+          flex: 1;
+        }
+      }
+
+      @media (max-width: 850px) {
+        .kagawadconcern-panel-head {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .kagawadconcern-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .kagawadconcern-search-box,
+        .kagawadconcern-category-select {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .kagawadconcern-chip-row {
+          width: 100%;
+          gap: 7px;
+        }
+
+        .kagawadconcern-chip {
+          flex: 1;
+          min-width: 110px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .kagawadconcern-sidebar {
+          width: var(--sidebar-mini);
+        }
+
+        .kagawadconcern-main {
+          margin-left: var(--sidebar-mini);
+        }
+
+        .kagawadconcern-toggle-wrap {
+          left: var(--sidebar-mini);
+        }
+
+        .kagawadconcern-identity-name,
+        .kagawadconcern-identity-chip,
+        .kagawadconcern-menu-label,
+        .kagawadconcern-menu-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .kagawadconcern-body {
+          padding: 18px 14px 36px;
+        }
+
+        .kagawadconcern-topbar {
+          padding: 0 14px;
+        }
+
+        .kagawadconcern-profile-name,
+        .kagawadconcern-profile-role {
+          display: none;
+        }
+
+        .kagawadconcern-topbar-search {
+          max-width: none;
+        }
+
+        .kagawadconcern-detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .kagawadconcern-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+        overflow: visible;
+        overflow-x: visible;
+        padding: 6px 26px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kagawadconcern-toolbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .kagawadconcern-search-box {
+        width: auto;
+        min-width: 280px;
+        flex: 1 1 340px;
+      }
+
+      .kagawadconcern-category-select {
+        width: 240px;
+        min-width: 220px;
+        flex: 0 0 240px;
+      }
+
+      .kagawadconcern-chip-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+        width: auto;
+        flex: 0 0 auto;
+      }
+
+      .kagawadconcern-chip {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 1050px) {
+        .kagawadconcern-toolbar {
+          flex-wrap: wrap;
+          overflow: visible;
+        }
+
+        .kagawadconcern-search-box,
+        .kagawadconcern-category-select {
+          width: 100%;
+          min-width: 0;
+          flex: 1 1 100%;
+        }
+
+        .kagawadconcern-chip-row {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="kagawadconcern-toggle-wrap" id="kagawadconcern-toggle-wrap">
+      <button
+        class="kagawadconcern-toggle-btn"
+        id="kagawadconcern-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="kagawadconcern-container">
+      <aside class="kagawadconcern-sidebar" id="kagawadconcern-sidebar">
+        <div class="kagawadconcern-identity">
+          <div class="kagawadconcern-identity-logo">
+            <img src="alapan.png" alt="Alapan logo" />
+          </div>
+
+          <div>
+            <div class="kagawadconcern-identity-name">BarangayKonek</div>
+            <span class="kagawadconcern-identity-chip">Kagawad Portal</span>
+          </div>
+        </div>
+
+        <nav class="kagawadconcern-menu">
+          <a href="kagawaddashboard.html" class="kagawadconcern-menu-link">
+            <div class="kagawadconcern-menu-left">
+              <i class="fa-solid fa-house"></i>
+              <span class="kagawadconcern-menu-label">Dashboard</span>
+            </div>
+          </a>
+
+          <a
+            href="kagawadconcerns.html"
+            class="kagawadconcern-menu-link active"
+          >
+            <div class="kagawadconcern-menu-left">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span class="kagawadconcern-menu-label">Concerns</span>
+            </div>
+
+            <span class="kagawadconcern-menu-count">14</span>
+          </a>
+
+          <a href="kagawadhistory.html" class="kagawadconcern-menu-link">
+            <div class="kagawadconcern-menu-left">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span class="kagawadconcern-menu-label">Concern History</span>
+            </div>
+          </a>
+
+          <a href="kagawadcommunity.html" class="kagawadconcern-menu-link">
+            <div class="kagawadconcern-menu-left">
+              <i class="fa-solid fa-people-group"></i>
+              <span class="kagawadconcern-menu-label">Community Feed</span>
+            </div>
+
+            <span class="kagawadconcern-menu-count">3</span>
+          </a>
+
+          <div class="kagawadconcern-menu-divider"></div>
+
+          <a href="kagawadsettings.html" class="kagawadconcern-menu-link">
+            <div class="kagawadconcern-menu-left">
+              <i class="fa-solid fa-gear"></i>
+              <span class="kagawadconcern-menu-label">Settings</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="kagawadconcern-sidebar-footer">
+          <button class="kagawadconcern-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="kagawadconcern-menu-label">Log Out</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="kagawadconcern-main" id="kagawadconcern-main">
+        <header class="kagawadconcern-topbar">
+          <div class="kagawadconcern-topbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search concerns, residents..." />
+          </div>
+
+          <div class="kagawadconcern-topbar-right">
+            <div class="kagawadconcern-topbar-icon">
+              <i class="fa-solid fa-bell"></i>
+              <span class="kagawadconcern-notification-count">2</span>
+            </div>
+
+            <div class="kagawadconcern-profile">
+              <div class="kagawadconcern-avatar">RD</div>
+
+              <div>
+                <div class="kagawadconcern-profile-name">Ricardo Dela Cruz</div>
+                <div class="kagawadconcern-profile-role">Kagawad</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="kagawadconcern-body">
+          <section class="kagawadconcern-hero">
+            <div class="kagawadconcern-hero-text">
+              <h2>Resident Concerns</h2>
+              <p>
+                Review, update, and resolve all incoming concerns filed by
+                residents of Barangay Alapan I-B.
+              </p>
+            </div>
+
+            <div class="kagawadconcern-hero-counts">
+              <div class="kagawadconcern-hero-badge">
+                <div class="kagawadconcern-hero-badge-number">14</div>
+                <div class="kagawadconcern-hero-badge-label">Open</div>
+              </div>
+
+              <div class="kagawadconcern-hero-badge">
+                <div class="kagawadconcern-hero-badge-number">7</div>
+                <div class="kagawadconcern-hero-badge-label">In Progress</div>
+              </div>
+
+              <div class="kagawadconcern-hero-badge">
+                <div class="kagawadconcern-hero-badge-number">29</div>
+                <div class="kagawadconcern-hero-badge-label">Total</div>
+              </div>
+            </div>
+          </section>
+
+          <div class="row g-3 kagawadconcern-content-row">
+            <div class="col-lg-8 col-xl-9 kagawadconcern-left-area">
+              <section class="kagawadconcern-panel">
+                <div class="kagawadconcern-panel-head">
+                  <h3>All Concerns</h3>
+                  <span class="kagawadconcern-panel-meta">
+                    Showing 11 of 29
+                  </span>
+                </div>
+
+                <div class="kagawadconcern-toolbar">
+                  <div class="kagawadconcern-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                      type="text"
+                      placeholder="Search resident or description..."
+                    />
+                  </div>
+
+                  <select class="kagawadconcern-category-select">
+                    <option value="all">All Categories</option>
+                    <option value="flooding">Flooding / Drainage</option>
+                    <option value="road">Road Damage</option>
+                    <option value="noise">Noise Complaint</option>
+                    <option value="garbage">Garbage / Sanitation</option>
+                    <option value="streetlight">Street Light Issue</option>
+                    <option value="stray">Stray Animals</option>
+                    <option value="neighbor">Neighbor Dispute</option>
+                    <option value="health">Health and Sanitation</option>
+                    <option value="peace">Peace and Order</option>
+                    <option value="other">Other</option>
+                  </select>
+
+                  <div class="kagawadconcern-chip-row">
+                    <button class="kagawadconcern-chip on">All</button>
+                    <button class="kagawadconcern-chip">Open</button>
+                    <button class="kagawadconcern-chip">In Progress</button>
+                    <button class="kagawadconcern-chip">Resolved</button>
+                  </div>
+                </div>
+
+                <div class="kagawadconcern-table-wrap">
+                  <table class="kagawadconcern-table">
+                    <thead>
+                      <tr>
+                        <th>Resident</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Filed</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div class="kagawadconcern-resident-cell">
+                            <div class="kagawadconcern-resident-avatar">ML</div>
+                            <span class="kagawadconcern-resident-name">
+                              Maria Lopez
+                            </span>
+                          </div>
+                        </td>
+                        <td>Flooding / Drainage</td>
+                        <td>
+                          <span class="kagawadconcern-desc-text">
+                            Drainage near Sitio B clogged for 3 days.
+                          </span>
+                        </td>
+                        <td>Apr 23, 2026</td>
+                        <td>
+                          <span class="kagawadconcern-status-chip open">
+                            Open
+                          </span>
+                        </td>
+                        <td>
+                          <div class="kagawadconcern-action-cell">
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-navy"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              Review
+                            </button>
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <div class="kagawadconcern-resident-cell">
+                            <div class="kagawadconcern-resident-avatar">JR</div>
+                            <span class="kagawadconcern-resident-name">
+                              Joel Reyes
+                            </span>
+                          </div>
+                        </td>
+                        <td>Street Light Issue</td>
+                        <td>
+                          <span class="kagawadconcern-desc-text">
+                            Three street lights on Purok 4 main road are broken.
+                          </span>
+                        </td>
+                        <td>Apr 22, 2026</td>
+                        <td>
+                          <span class="kagawadconcern-status-chip open">
+                            Open
+                          </span>
+                        </td>
+                        <td>
+                          <div class="kagawadconcern-action-cell">
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-navy"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              Review
+                            </button>
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <div class="kagawadconcern-resident-cell">
+                            <div class="kagawadconcern-resident-avatar">AC</div>
+                            <span class="kagawadconcern-resident-name">
+                              Ana Castillo
+                            </span>
+                          </div>
+                        </td>
+                        <td>Noise Complaint</td>
+                        <td>
+                          <span class="kagawadconcern-desc-text">
+                            Loud music past midnight near Sitio A every weekend.
+                          </span>
+                        </td>
+                        <td>Apr 21, 2026</td>
+                        <td>
+                          <span class="kagawadconcern-status-chip inprogress">
+                            In Progress
+                          </span>
+                        </td>
+                        <td>
+                          <div class="kagawadconcern-action-cell">
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-navy"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              Update
+                            </button>
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <div class="kagawadconcern-resident-cell">
+                            <div class="kagawadconcern-resident-avatar">BT</div>
+                            <span class="kagawadconcern-resident-name">
+                              Ben Torres
+                            </span>
+                          </div>
+                        </td>
+                        <td>Garbage / Sanitation</td>
+                        <td>
+                          <span class="kagawadconcern-desc-text">
+                            Garbage collection missed two weeks in a row.
+                          </span>
+                        </td>
+                        <td>Apr 21, 2026</td>
+                        <td>
+                          <span class="kagawadconcern-status-chip open">
+                            Open
+                          </span>
+                        </td>
+                        <td>
+                          <div class="kagawadconcern-action-cell">
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-navy"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              Review
+                            </button>
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <div class="kagawadconcern-resident-cell">
+                            <div class="kagawadconcern-resident-avatar">LS</div>
+                            <span class="kagawadconcern-resident-name">
+                              Lorna Santos
+                            </span>
+                          </div>
+                        </td>
+                        <td>Road Damage</td>
+                        <td>
+                          <span class="kagawadconcern-desc-text">
+                            Large pothole near the market causing accidents.
+                          </span>
+                        </td>
+                        <td>Apr 20, 2026</td>
+                        <td>
+                          <span class="kagawadconcern-status-chip inprogress">
+                            In Progress
+                          </span>
+                        </td>
+                        <td>
+                          <div class="kagawadconcern-action-cell">
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-navy"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              Update
+                            </button>
+                            <button
+                              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawadconcern-detail-modal"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="kagawadconcern-table-foot">
+                  <span class="kagawadconcern-foot-info">
+                    Showing 5 of 29 concerns
+                  </span>
+
+                  <div class="kagawadconcern-pager">
+                    <button class="kagawadconcern-pager-btn">
+                      <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button class="kagawadconcern-pager-btn on">1</button>
+                    <button class="kagawadconcern-pager-btn">2</button>
+                    <button class="kagawadconcern-pager-btn">3</button>
+                    <button class="kagawadconcern-pager-btn">
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="col-lg-4 col-xl-3 kagawadconcern-right-area">
+              <section class="kagawadconcern-progress-card">
+                <div class="kagawadconcern-progress-head">
+                  <h3>Concerns Each Day</h3>
+                  <p>Concerns filed this week.</p>
+                </div>
+
+                <div class="kagawadconcern-progress-list">
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Monday</span>
+                      <span class="kagawadconcern-progress-count">4</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 45%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Tuesday</span>
+                      <span class="kagawadconcern-progress-count">6</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 65%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">
+                        Wednesday
+                      </span>
+                      <span class="kagawadconcern-progress-count">3</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 35%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Thursday</span>
+                      <span class="kagawadconcern-progress-count">8</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 90%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Friday</span>
+                      <span class="kagawadconcern-progress-count">5</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 55%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Saturday</span>
+                      <span class="kagawadconcern-progress-count">2</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 25%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="kagawadconcern-progress-item">
+                    <div class="kagawadconcern-progress-info">
+                      <span class="kagawadconcern-progress-name">Sunday</span>
+                      <span class="kagawadconcern-progress-count">1</span>
+                    </div>
+                    <div class="kagawadconcern-progress-track">
+                      <div
+                        class="kagawadconcern-progress-fill"
+                        style="width: 15%"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="kagawadconcern-detail-modal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Complete Concern Information
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="kagawadconcern-detail-grid">
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Concern ID</span>
+                <p class="kagawadconcern-detail-value">CON-2026-014</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Status</span>
+                <p class="kagawadconcern-detail-value">Open</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Resident</span>
+                <p class="kagawadconcern-detail-value">Maria Lopez</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Contact Number</span>
+                <p class="kagawadconcern-detail-value">0912 345 6789</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Category</span>
+                <p class="kagawadconcern-detail-value">Flooding / Drainage</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Location</span>
+                <p class="kagawadconcern-detail-value">Sitio B</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Date Filed</span>
+                <p class="kagawadconcern-detail-value">Apr 23, 2026</p>
+              </div>
+
+              <div class="kagawadconcern-detail-box">
+                <span class="kagawadconcern-detail-label">Assigned Staff</span>
+                <p class="kagawadconcern-detail-value">Ricardo Dela Cruz</p>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <span class="kagawadconcern-detail-label">Full Description</span>
+              <div class="kagawadconcern-detail-note">
+                Drainage near Sitio B has been clogged for 3 days. The resident
+                reported that water rises along the roadside after rainfall and
+                may affect nearby houses if not checked immediately.
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <span class="kagawadconcern-detail-label">Initial Action</span>
+              <div class="kagawadconcern-detail-note">
+                Concern was received and forwarded to the assigned Kagawad for
+                inspection. The drainage area needs verification before
+                coordination with the maintenance team.
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <span class="kagawadconcern-detail-label">Update Status</span>
+              <select class="form-select rounded-4 mt-1">
+                <option>Open</option>
+                <option>In Progress</option>
+                <option>Resolved</option>
+              </select>
+            </div>
+
+            <div class="mt-3">
+              <span class="kagawadconcern-detail-label">Remarks</span>
+              <textarea
+                class="form-control rounded-4 mt-1"
+                rows="3"
+                placeholder="Add remarks or action taken..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="kagawadconcern-btn kagawadconcern-btn-ghost"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="kagawadconcern-btn kagawadconcern-btn-navy"
+            >
+              Save Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      var kagawadconcernSidebar = document.getElementById(
+        "kagawadconcern-sidebar",
+      );
+
+      var kagawadconcernMainArea = document.getElementById(
+        "kagawadconcern-main",
+      );
+
+      var kagawadconcernToggleWrap = document.getElementById(
+        "kagawadconcern-toggle-wrap",
+      );
+
+      var kagawadconcernToggleButton = document.getElementById(
+        "kagawadconcern-toggle-button",
+      );
+
+      kagawadconcernToggleButton.addEventListener("click", function () {
+        var kagawadconcernIsSidebarMini =
+          kagawadconcernSidebar.classList.toggle("mini");
+
+        kagawadconcernMainArea.classList.toggle(
+          "shifted",
+          kagawadconcernIsSidebarMini,
+        );
+
+        kagawadconcernToggleWrap.classList.toggle(
+          "mini",
+          kagawadconcernIsSidebarMini,
+        );
+      });
+
+      var kagawadconcernFilterButtons = document.querySelectorAll(
+        ".kagawadconcern-chip",
+      );
+
+      kagawadconcernFilterButtons.forEach(function (kagawadconcernButton) {
+        kagawadconcernButton.addEventListener("click", function () {
+          kagawadconcernFilterButtons.forEach(
+            function (kagawadconcernOtherButton) {
+              kagawadconcernOtherButton.classList.remove("on");
+            },
+          );
+
+          kagawadconcernButton.classList.add("on");
+        });
+      });
+    </script>
+  </body>
+</html>

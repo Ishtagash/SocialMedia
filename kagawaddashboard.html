@@ -3,15 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kagawad — BarangayKonek</title>
+    <title>Kagawad Dashboard</title>
 
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     />
 
     <style>
@@ -19,171 +25,276 @@
         --navy: #051650;
         --navy-mid: #0a2160;
         --lime: #ccff00;
-        --lime-dim: #aadd00;
+
         --surface: #ffffff;
-        --bg: #f2f4f8;
+        --bg: #f4f7fb;
+        --soft-bg: #f8fafc;
         --border: #e3e7f0;
+
         --text: #1a2240;
         --text-muted: #7a869a;
-        --radius: 14px;
-        --shadow: 0 1px 4px rgba(5, 22, 80, 0.07);
-        --shadow-md: 0 6px 20px rgba(5, 22, 80, 0.12);
+
         --sidebar-w: 228px;
+        --sidebar-mini: 64px;
         --topbar-h: 62px;
 
-        --amber: #f59e0b;
         --amber-bg: #fffbeb;
         --amber-text: #92400e;
-        --blue: #3b82f6;
+
         --blue-bg: #eff6ff;
         --blue-text: #1e40af;
-        --green: #22c55e;
+
         --green-bg: #f0fdf4;
         --green-text: #166534;
-        --red: #ef4444;
+
         --red-bg: #fef2f2;
         --red-text: #991b1b;
+
+        --gray-bg: #f1f5f9;
+        --gray-text: #475569;
+
+        --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --shadow-hover: 0 16px 34px rgba(5, 22, 80, 0.14);
+        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
       }
 
-      *,
-      *::before,
-      *::after {
+      * {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
       }
 
       body {
+        margin: 0;
         font-family: "DM Sans", sans-serif;
-        background: var(--bg);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
         color: var(--text);
         min-height: 100vh;
         overflow-x: hidden;
       }
 
-      @keyframes slideInLeft {
-        from {
-          opacity: 0;
-          transform: translateX(-22px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
+      a {
+        text-decoration: none;
       }
-      @keyframes fadeDown {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
       }
-      @keyframes fadeUp {
+
+      @keyframes kagawaddashboardFadeUp {
         from {
           opacity: 0;
-          transform: translateY(16px);
+          transform: translateY(10px);
         }
+
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
 
-      /* ═══ SHELL ═══ */
-      .kagawaddashboard-shell {
+      @keyframes kagawaddashboardBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(14deg);
+        }
+
+        40% {
+          transform: rotate(-12deg);
+        }
+
+        60% {
+          transform: rotate(8deg);
+        }
+
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      .kagawaddashboard-container {
         display: flex;
         min-height: 100vh;
       }
 
-      /* ═══════════════════════════
-         SIDEBAR
-      ═══════════════════════════ */
       .kagawaddashboard-sidebar {
         width: var(--sidebar-w);
-        background: var(--navy);
-        display: flex;
-        flex-direction: column;
+        height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
-        height: 100vh;
         z-index: 40;
-        animation: slideInLeft 0.4s cubic-bezier(0.22, 0.68, 0, 1.1) both;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--shadow-sidebar);
+        transition: width 0.25s ease;
+      }
+
+      .kagawaddashboard-sidebar.mini {
+        width: var(--sidebar-mini);
       }
 
       .kagawaddashboard-brand {
         height: var(--topbar-h);
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 0 18px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
       }
 
       .kagawaddashboard-brand-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        background: var(--lime);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
         flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
       }
 
-      .kagawaddashboard-brand-logo i {
-        font-size: 13px;
-        color: var(--navy);
+      .kagawaddashboard-brand-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
       .kagawaddashboard-brand-name {
-        font-size: 13px;
-        font-weight: 700;
-        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
         line-height: 1.2;
       }
 
-      .kagawaddashboard-brand-sub {
+      .kagawaddashboard-brand-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: var(--lime);
+        color: var(--navy);
         font-size: 11px;
-        color: rgba(255, 255, 255, 0.42);
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .kagawaddashboard-sidebar.mini .kagawaddashboard-brand-name,
+      .kagawaddashboard-sidebar.mini .kagawaddashboard-brand-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .kagawaddashboard-sidebar.mini .kagawaddashboard-brand-logo {
+        margin: 0 auto;
+      }
+
+      .kagawaddashboard-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--sidebar-w);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .kagawaddashboard-toggle-wrap.mini {
+        left: var(--sidebar-mini);
+      }
+
+      .kagawaddashboard-toggle-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .kagawaddashboard-toggle-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+      }
+
+      .kagawaddashboard-toggle-btn i {
+        font-size: 10px;
+        color: var(--navy);
+        transition: transform 0.25s ease;
+      }
+
+      .kagawaddashboard-toggle-wrap.mini .kagawaddashboard-toggle-btn i {
+        transform: rotate(180deg);
       }
 
       .kagawaddashboard-nav {
         flex: 1;
-        padding: 14px 10px;
+        padding: 16px 10px;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 5px;
         overflow-y: auto;
+        overflow-x: hidden;
       }
 
       .kagawaddashboard-nav-divider {
         height: 1px;
-        background: rgba(255, 255, 255, 0.07);
-        margin: 7px 8px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
       }
 
       .kagawaddashboard-nav-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 9px 13px;
-        border-radius: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
         font-size: 13px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.58);
-        text-decoration: none;
-        transition: all 0.15s ease;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
         cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
       }
 
       .kagawaddashboard-nav-link:hover {
-        background: rgba(255, 255, 255, 0.07);
-        color: #fff;
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        transform: translateX(3px);
       }
 
       .kagawaddashboard-nav-link.active {
@@ -194,26 +305,37 @@
       .kagawaddashboard-nav-left {
         display: flex;
         align-items: center;
-        gap: 9px;
-        flex: 1;
+        gap: 10px;
+        min-width: 0;
       }
 
       .kagawaddashboard-nav-left i {
-        width: 16px;
+        width: 18px;
         text-align: center;
         font-size: 13px;
         flex-shrink: 0;
       }
 
+      .kagawaddashboard-nav-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .kagawaddashboard-sidebar.mini .kagawaddashboard-nav-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
       .kagawaddashboard-nav-count {
         font-size: 10px;
         font-weight: 800;
-        background: rgba(255, 255, 255, 0.14);
-        color: rgba(255, 255, 255, 0.8);
-        min-width: 20px;
-        height: 20px;
-        padding: 0 5px;
-        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -225,56 +347,58 @@
         color: var(--navy);
       }
 
+      .kagawaddashboard-sidebar.mini .kagawaddashboard-nav-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
       .kagawaddashboard-sidebar-footer {
-        padding: 12px 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .kagawaddashboard-logout {
         display: flex;
         align-items: center;
-        gap: 9px;
-        padding: 9px 13px;
-        border-radius: 10px;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
         font-size: 13px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.4);
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
         background: transparent;
         border: none;
         cursor: pointer;
         width: 100%;
-        font-family: inherit;
         text-align: left;
-        transition: all 0.15s;
-      }
-
-      .kagawaddashboard-logout i {
-        font-size: 12px;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
       }
 
       .kagawaddashboard-logout:hover {
-        background: rgba(220, 38, 38, 0.12);
+        background: rgba(239, 68, 68, 0.14);
         color: #fca5a5;
+        transform: translateX(3px);
       }
 
-      /* ═══════════════════════════
-         MAIN
-      ═══════════════════════════ */
       .kagawaddashboard-main {
         margin-left: var(--sidebar-w);
         flex: 1;
-        display: flex;
-        flex-direction: column;
         min-height: 100vh;
         min-width: 0;
+        transition: margin-left 0.25s ease;
       }
 
-      /* ═══════════════════════════
-         TOPBAR
-      ═══════════════════════════ */
+      .kagawaddashboard-main.shifted {
+        margin-left: var(--sidebar-mini);
+      }
+
       .kagawaddashboard-topbar {
         height: var(--topbar-h);
-        background: var(--surface);
+        background: #ffffff;
         border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
@@ -283,48 +407,32 @@
         position: sticky;
         top: 0;
         z-index: 30;
-        animation: fadeDown 0.36s ease both;
-      }
-
-      .kagawaddashboard-topbar-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        background: var(--navy);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .kagawaddashboard-topbar-logo i {
-        font-size: 12px;
-        color: var(--lime);
       }
 
       .kagawaddashboard-topbar-search {
         flex: 1;
-        max-width: 360px;
-        height: 36px;
+        max-width: 390px;
+        height: 38px;
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 0 12px;
-        background: var(--bg);
+        padding: 0 14px;
+        background: var(--soft-bg);
         border: 1px solid var(--border);
-        border-radius: 10px;
-        transition: border-color 0.18s;
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
       }
 
       .kagawaddashboard-topbar-search:focus-within {
         border-color: var(--navy);
-        background: var(--surface);
+        background: #ffffff;
       }
 
       .kagawaddashboard-topbar-search i {
         color: var(--text-muted);
         font-size: 12px;
-        flex-shrink: 0;
       }
 
       .kagawaddashboard-topbar-search input {
@@ -332,13 +440,8 @@
         border: none;
         outline: none;
         background: transparent;
-        font-family: inherit;
         font-size: 13px;
         color: var(--text);
-      }
-
-      .kagawaddashboard-topbar-search input::placeholder {
-        color: var(--text-muted);
       }
 
       .kagawaddashboard-topbar-right {
@@ -349,10 +452,10 @@
       }
 
       .kagawaddashboard-topbar-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        background: var(--bg);
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--soft-bg);
         border: 1px solid var(--border);
         display: flex;
         align-items: center;
@@ -361,8 +464,9 @@
         font-size: 13px;
         cursor: pointer;
         position: relative;
-        text-decoration: none;
-        transition: all 0.15s;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease;
       }
 
       .kagawaddashboard-topbar-icon:hover {
@@ -370,297 +474,285 @@
         color: var(--navy);
       }
 
-      .kagawaddashboard-topbar-dot {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 7px;
-        height: 7px;
-        background: var(--green);
-        border-radius: 50%;
-        border: 1.5px solid var(--surface);
+      .kagawaddashboard-topbar-icon:hover i {
+        animation: kagawaddashboardBellShake 0.55s ease;
       }
 
-      .kagawaddashboard-topbar-profile {
+      .kagawaddashboard-notif-count {
+        position: absolute;
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 12px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .kagawaddashboard-profile {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 4px 10px 4px 5px;
+        padding: 5px 13px 5px 5px;
         border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--bg);
+        border-radius: 999px;
+        background: var(--soft-bg);
         cursor: pointer;
-        transition: border-color 0.15s;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .kagawaddashboard-topbar-profile:hover {
+      .kagawaddashboard-profile:hover {
         border-color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
       }
 
-      .kagawaddashboard-topbar-avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
+      .kagawaddashboard-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
         background: var(--navy);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--lime);
         flex-shrink: 0;
       }
 
-      .kagawaddashboard-topbar-info-name {
+      .kagawaddashboard-profile-name {
         font-size: 13px;
         font-weight: 700;
         color: var(--navy);
         white-space: nowrap;
       }
 
-      .kagawaddashboard-topbar-info-role {
+      .kagawaddashboard-profile-role {
         font-size: 11px;
         color: var(--text-muted);
         line-height: 1;
       }
 
-      /* ═══════════════════════════
-         BODY
-      ═══════════════════════════ */
       .kagawaddashboard-body {
-        padding: 22px 24px 44px;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
+        padding: 24px 26px 44px;
       }
 
-      /* greeting */
-      .kagawaddashboard-greeting {
-        background: var(--navy);
-        border-radius: var(--radius);
-        padding: 20px 24px;
+      .kagawaddashboard-hero {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(5, 22, 80, 0.98),
+            rgba(10, 33, 96, 0.95)
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.28),
+            transparent 35%
+          );
+        border-radius: 28px;
+        padding: 26px 30px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        animation: fadeUp 0.4s 0.1s ease both;
-      }
-
-      .kagawaddashboard-greeting-text h2 {
-        font-size: 18px;
-        font-weight: 700;
-        color: #fff;
-        line-height: 1.25;
-      }
-
-      .kagawaddashboard-greeting-text p {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.55);
-        margin-top: 4px;
-      }
-
-      .kagawaddashboard-greeting-badge {
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 11px;
-        font-weight: 800;
-        padding: 4px 12px;
-        border-radius: 20px;
-        flex-shrink: 0;
-        letter-spacing: 0.3px;
-      }
-
-      /* two-column layout */
-      .kagawaddashboard-columns {
-        display: grid;
-        grid-template-columns: 1fr 300px;
-        gap: 18px;
-        align-items: start;
-        animation: fadeUp 0.4s 0.2s ease both;
-      }
-
-      .kagawaddashboard-left {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      .kagawaddashboard-right {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      /* ═══════════════════════════
-         STAT CARDS
-      ═══════════════════════════ */
-      .kagawaddashboard-stats {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .kagawaddashboard-stat-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 16px 18px;
-        box-shadow: var(--shadow);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        border-left: 4px solid transparent;
+        gap: 20px;
+        box-shadow: var(--shadow-light);
+        position: relative;
+        overflow: hidden;
+        animation: kagawaddashboardFadeUp 0.28s ease both;
+        margin-bottom: 20px;
         transition:
-          box-shadow 0.2s,
-          transform 0.2s;
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
-      .kagawaddashboard-stat-card:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
+      .kagawaddashboard-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
       }
 
-      .kagawaddashboard-stat-card.open-color {
-        border-left-color: var(--amber);
+      .kagawaddashboard-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -90px;
+        top: -110px;
+        background: rgba(204, 255, 0, 0.14);
+        border-radius: 50%;
       }
 
-      .kagawaddashboard-stat-card.inprogress-color {
-        border-left-color: var(--blue);
+      .kagawaddashboard-hero::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: 90px;
+        bottom: -90px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
       }
 
-      .kagawaddashboard-stat-card.resolved-color {
-        border-left-color: var(--green);
+      .kagawaddashboard-hero-text,
+      .kagawaddashboard-hero-action {
+        position: relative;
+        z-index: 1;
       }
 
-      .kagawaddashboard-stat-card.closed-color {
-        border-left-color: var(--text-muted);
-      }
-
-      .kagawaddashboard-stat-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        flex-shrink: 0;
-      }
-
-      .kagawaddashboard-stat-icon.open-icon {
-        background: var(--amber-bg);
-        color: var(--amber);
-      }
-
-      .kagawaddashboard-stat-icon.inprogress-icon {
-        background: var(--blue-bg);
-        color: var(--blue);
-      }
-
-      .kagawaddashboard-stat-icon.resolved-icon {
-        background: var(--green-bg);
-        color: var(--green);
-      }
-
-      .kagawaddashboard-stat-icon.closed-icon {
-        background: #f1f5f9;
-        color: var(--text-muted);
-      }
-
-      .kagawaddashboard-stat-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .kagawaddashboard-stat-number {
+      .kagawaddashboard-hero-text h2 {
         font-size: 22px;
         font-weight: 800;
-        color: var(--navy);
-        line-height: 1.1;
+        color: #ffffff;
+        line-height: 1.25;
+        margin-bottom: 0;
       }
 
-      .kagawaddashboard-stat-label {
-        font-size: 12px;
-        color: var(--text-muted);
-        font-weight: 500;
-        margin-top: 2px;
+      .kagawaddashboard-hero-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 7px;
+        max-width: 560px;
+        margin-bottom: 0;
       }
 
-      /* ═══════════════════════════
-         PANELS
-      ═══════════════════════════ */
-      .kagawaddashboard-panel {
-        background: var(--surface);
+      .kagawaddashboard-hero-action {
+        min-height: 42px;
+        padding: 0 18px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--lime);
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .kagawaddashboard-content-row {
+        align-items: start;
+      }
+
+      .kagawaddashboard-panel,
+      .kagawaddashboard-side-panel {
+        background: #ffffff;
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
+        border-radius: 28px;
+        box-shadow: var(--shadow-light);
+        animation: kagawaddashboardFadeUp 0.28s ease both;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .kagawaddashboard-panel:hover,
+      .kagawaddashboard-side-panel:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+        border-color: #d7deea;
+      }
+
+      .kagawaddashboard-panel {
         overflow: hidden;
       }
 
       .kagawaddashboard-panel-head {
+        padding: 22px 24px 16px;
+        border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 18px 20px 0;
-        margin-bottom: 16px;
+        gap: 14px;
       }
 
-      .kagawaddashboard-panel-head h3 {
-        font-size: 15px;
-        font-weight: 700;
+      .kagawaddashboard-panel-title h3 {
+        font-size: 18px;
+        font-weight: 800;
         color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .kagawaddashboard-panel-title p {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 0;
       }
 
       .kagawaddashboard-panel-link {
-        font-size: 12px;
-        font-weight: 600;
+        min-height: 38px;
+        padding: 0 15px;
+        border-radius: 14px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
         color: var(--navy);
-        text-decoration: none;
-        opacity: 0.55;
-        transition: opacity 0.15s;
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
       }
 
       .kagawaddashboard-panel-link:hover {
-        opacity: 1;
+        background: #ffffff;
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
       }
 
-      /* ═══════════════════════════
-         FILTER CHIPS
-      ═══════════════════════════ */
       .kagawaddashboard-filter-bar {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 0 20px 16px;
+        gap: 8px;
         flex-wrap: wrap;
       }
 
       .kagawaddashboard-chip {
-        padding: 5px 13px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 14px;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--soft-bg);
         color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 800;
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
       }
 
       .kagawaddashboard-chip:hover {
         border-color: var(--navy);
         color: var(--navy);
+        transform: translateY(-1px);
       }
 
-      .kagawaddashboard-chip.active {
+      .kagawaddashboard-chip.on {
         background: var(--navy);
-        color: #fff;
         border-color: var(--navy);
+        color: var(--lime);
       }
 
-      /* ═══════════════════════════
-         TABLE
-      ═══════════════════════════ */
       .kagawaddashboard-table-wrap {
         overflow-x: auto;
       }
@@ -668,34 +760,40 @@
       .kagawaddashboard-table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 13px;
       }
 
-      .kagawaddashboard-table th {
+      .kagawaddashboard-table thead th {
+        background: #fafbfd;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.4px;
         color: var(--text-muted);
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--border);
-        background: #fafbfd;
+        padding: 12px 16px;
         text-align: left;
         white-space: nowrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .kagawaddashboard-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawaddashboard-table tbody tr:hover {
+        background: #fbfdff;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.04);
       }
 
       .kagawaddashboard-table td {
-        font-size: 13px;
-        padding: 13px 14px;
-        border-bottom: 1px solid var(--border);
+        padding: 13px 16px;
         vertical-align: middle;
-      }
-
-      .kagawaddashboard-table tr:last-child td {
-        border-bottom: none;
-      }
-
-      .kagawaddashboard-table tbody tr:hover td {
-        background: #f8fbff;
+        color: var(--text);
       }
 
       .kagawaddashboard-resident-cell {
@@ -705,9 +803,9 @@
       }
 
       .kagawaddashboard-resident-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
         background: var(--navy);
         color: var(--lime);
         font-size: 10px;
@@ -719,13 +817,14 @@
       }
 
       .kagawaddashboard-resident-name {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text);
         font-size: 13px;
+        white-space: nowrap;
       }
 
       .kagawaddashboard-concern-text {
-        max-width: 200px;
+        max-width: 230px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -733,39 +832,43 @@
         font-size: 12.5px;
       }
 
-      /* status pills */
-      .kagawaddashboard-pill {
+      .kagawaddashboard-status-chip {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 4px 10px;
-        border-radius: 20px;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 12px;
         font-size: 11.5px;
-        font-weight: 700;
+        font-weight: 800;
         white-space: nowrap;
+        border: 1px solid transparent;
       }
 
-      .kagawaddashboard-pill.open {
+      .kagawaddashboard-status-chip.open {
         background: var(--amber-bg);
         color: var(--amber-text);
+        border-color: rgba(146, 64, 14, 0.12);
       }
 
-      .kagawaddashboard-pill.inprogress {
+      .kagawaddashboard-status-chip.inprogress {
         background: var(--blue-bg);
         color: var(--blue-text);
+        border-color: rgba(30, 64, 175, 0.12);
       }
 
-      .kagawaddashboard-pill.resolved {
+      .kagawaddashboard-status-chip.resolved {
         background: var(--green-bg);
         color: var(--green-text);
+        border-color: rgba(22, 101, 52, 0.12);
       }
 
-      .kagawaddashboard-pill.closed {
-        background: #f1f5f9;
-        color: #475569;
+      .kagawaddashboard-status-chip.closed {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border-color: rgba(71, 85, 105, 0.12);
       }
 
-      /* action buttons */
       .kagawaddashboard-action-cell {
         display: flex;
         gap: 6px;
@@ -773,27 +876,37 @@
       }
 
       .kagawaddashboard-btn {
-        padding: 6px 13px;
-        border-radius: 8px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 14px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
         border: none;
         cursor: pointer;
-        font-family: inherit;
-        transition: all 0.15s;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
       }
 
-      .kagawaddashboard-btn-navy {
+      .kagawaddashboard-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .kagawaddashboard-btn-primary {
         background: var(--navy);
-        color: #fff;
+        color: #ffffff;
       }
 
-      .kagawaddashboard-btn-navy:hover {
-        background: var(--navy-mid);
+      .kagawaddashboard-btn-primary:hover {
+        background: var(--lime);
+        color: var(--navy);
       }
 
       .kagawaddashboard-btn-ghost {
-        background: var(--bg);
+        background: var(--soft-bg);
         color: var(--text-muted);
         border: 1px solid var(--border);
       }
@@ -803,55 +916,52 @@
         color: var(--navy);
       }
 
-      .kagawaddashboard-btn-lime {
-        background: var(--lime);
-        color: var(--navy);
-      }
-
-      .kagawaddashboard-btn-lime:hover {
-        background: var(--lime-dim);
-      }
-
-      /* table footer */
       .kagawaddashboard-table-foot {
+        padding: 15px 22px 18px;
+        border-top: 1px solid var(--border);
+        background: #fafbfd;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 20px;
-        border-top: 1px solid var(--border);
-        background: #fafbfd;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       .kagawaddashboard-foot-info {
         font-size: 12px;
         color: var(--text-muted);
+        font-weight: 600;
       }
 
       .kagawaddashboard-pager {
         display: flex;
-        gap: 4px;
+        gap: 5px;
       }
 
       .kagawaddashboard-pager-btn {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
+        width: 31px;
+        height: 31px;
+        border-radius: 12px;
         border: 1px solid var(--border);
-        background: var(--surface);
+        background: #ffffff;
         color: var(--text-muted);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: inherit;
-        transition: all 0.15s;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
       }
 
       .kagawaddashboard-pager-btn:hover {
         border-color: var(--navy);
         color: var(--navy);
+        transform: translateY(-1px);
       }
 
       .kagawaddashboard-pager-btn.on {
@@ -860,93 +970,200 @@
         border-color: var(--navy);
       }
 
-      /* ═══════════════════════════
-         CATEGORY BREAKDOWN
-      ═══════════════════════════ */
-      .kagawaddashboard-category-list {
-        padding: 0 20px 18px;
+      .kagawaddashboard-side-stack {
         display: flex;
         flex-direction: column;
+        gap: 16px;
+      }
+
+      .kagawaddashboard-side-panel {
+        padding: 20px;
+      }
+
+      .kagawaddashboard-side-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+
+      .kagawaddashboard-side-head h3 {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0;
+      }
+
+      .kagawaddashboard-side-head span {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .kagawaddashboard-summary-list {
+        display: grid;
         gap: 10px;
+      }
+
+      .kagawaddashboard-summary-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 20px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawaddashboard-summary-item:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawaddashboard-summary-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .kagawaddashboard-summary-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: #ffffff;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+      }
+
+      .kagawaddashboard-summary-label {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .kagawaddashboard-summary-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .kagawaddashboard-summary-number {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .kagawaddashboard-category-list,
+      .kagawaddashboard-reminder-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
 
       .kagawaddashboard-category-row {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
+        transition: transform 0.18s ease;
+      }
+
+      .kagawaddashboard-category-row:hover {
+        transform: translateX(3px);
       }
 
       .kagawaddashboard-category-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
       }
 
       .kagawaddashboard-category-name {
         font-size: 12.5px;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text);
       }
 
       .kagawaddashboard-category-count {
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--navy);
       }
 
       .kagawaddashboard-bar-track {
-        height: 5px;
-        background: var(--border);
-        border-radius: 99px;
+        height: 8px;
+        background: #eaf0f7;
+        border-radius: 999px;
         overflow: hidden;
       }
 
       .kagawaddashboard-bar-fill {
         height: 100%;
-        border-radius: 99px;
-        background: var(--navy);
-        transition: width 0.6s ease;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--navy), #254ca8);
+        transition: filter 0.18s ease;
       }
 
-      /* ═══════════════════════════
-         REMINDERS
-      ═══════════════════════════ */
-      .kagawaddashboard-reminder-list {
-        padding: 0 20px 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 0;
+      .kagawaddashboard-category-row:hover .kagawaddashboard-bar-fill {
+        filter: brightness(1.15);
       }
 
       .kagawaddashboard-reminder-row {
         display: flex;
         align-items: flex-start;
         gap: 11px;
-        padding: 11px 0;
-        border-bottom: 1px solid var(--border);
+        padding: 13px 14px;
+        border-radius: 18px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .kagawaddashboard-reminder-row:last-child {
-        border-bottom: none;
+      .kagawaddashboard-reminder-row:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
       }
 
-      .kagawaddashboard-reminder-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--border);
-        margin-top: 5px;
+      .kagawaddashboard-reminder-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 14px;
+        background: #ffffff;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
         flex-shrink: 0;
       }
 
-      .kagawaddashboard-reminder-dot.urgent {
-        background: var(--red);
+      .kagawaddashboard-reminder-icon.urgent {
+        color: var(--red-text);
+        background: var(--red-bg);
       }
 
       .kagawaddashboard-reminder-title {
         display: block;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 800;
         color: var(--text);
         margin-bottom: 2px;
       }
@@ -958,187 +1175,164 @@
         line-height: 1.45;
       }
 
-      /* ═══════════════════════════
-         RECENT ACTIVITY
-      ═══════════════════════════ */
-      .kagawaddashboard-activity-list {
-        padding: 0 20px 18px;
+      .kagawaddashboard-history-list {
         display: flex;
         flex-direction: column;
-        gap: 0;
+        gap: 10px;
+        padding: 18px;
       }
 
-      .kagawaddashboard-activity-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .kagawaddashboard-activity-row:last-child {
-        border-bottom: none;
-      }
-
-      .kagawaddashboard-activity-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        flex-shrink: 0;
-        margin-top: 1px;
-      }
-
-      .kagawaddashboard-activity-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .kagawaddashboard-activity-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text);
-        line-height: 1.3;
-      }
-
-      .kagawaddashboard-activity-meta {
-        font-size: 11.5px;
-        color: var(--text-muted);
-        margin-top: 2px;
-      }
-
-      /* ═══════════════════════════
-         MODAL
-      ═══════════════════════════ */
-      .kagawaddashboard-modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 500;
-        background: rgba(5, 22, 80, 0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-
-      .kagawaddashboard-modal-overlay.open {
-        display: flex;
-      }
-
-      .kagawaddashboard-modal-box {
-        background: var(--surface);
-        border-radius: var(--radius);
-        width: 100%;
-        max-width: 520px;
-        box-shadow: 0 20px 60px rgba(5, 22, 80, 0.28);
-        overflow: hidden;
-      }
-
-      .kagawaddashboard-modal-head {
+      .kagawaddashboard-history-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 20px 24px 16px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .kagawaddashboard-modal-head h3 {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--navy);
-      }
-
-      .kagawaddashboard-modal-close {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 20px;
+        background: var(--soft-bg);
         border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--text-muted);
-        font-size: 13px;
-        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .kagawaddashboard-history-item:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .kagawaddashboard-history-left {
         display: flex;
         align-items: center;
-        justify-content: center;
-        transition: all 0.15s;
+        gap: 10px;
+        min-width: 0;
       }
 
-      .kagawaddashboard-modal-close:hover {
-        border-color: var(--navy);
-        color: var(--navy);
+      .kagawaddashboard-history-info {
+        min-width: 0;
       }
 
-      .kagawaddashboard-modal-body {
-        padding: 22px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-
-      .kagawaddashboard-modal-field {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .kagawaddashboard-modal-field label {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        color: var(--text-muted);
-      }
-
-      .kagawaddashboard-modal-field p {
-        font-size: 13.5px;
-        color: var(--text);
-        line-height: 1.5;
-      }
-
-      .kagawaddashboard-modal-field select,
-      .kagawaddashboard-modal-field textarea {
-        font-family: inherit;
+      .kagawaddashboard-history-name {
         font-size: 13px;
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 9px;
-        padding: 9px 12px;
-        background: var(--bg);
-        outline: none;
-        resize: vertical;
-        transition: border-color 0.15s;
+        font-weight: 800;
+        color: var(--navy);
+        white-space: nowrap;
       }
 
-      .kagawaddashboard-modal-field select:focus,
-      .kagawaddashboard-modal-field textarea:focus {
-        border-color: var(--navy);
-        background: var(--surface);
+      .kagawaddashboard-history-sub {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .kagawaddashboard-modal-foot {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-        padding: 16px 24px 20px;
-        border-top: 1px solid var(--border);
+      @media (max-width: 992px) {
+        .kagawaddashboard-side-stack {
+          margin-top: 16px;
+        }
+
+        .kagawaddashboard-panel-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .kagawaddashboard-sidebar {
+          width: var(--sidebar-mini);
+        }
+
+        .kagawaddashboard-main {
+          margin-left: var(--sidebar-mini);
+        }
+
+        .kagawaddashboard-toggle-wrap {
+          left: var(--sidebar-mini);
+        }
+
+        .kagawaddashboard-brand-name,
+        .kagawaddashboard-brand-chip,
+        .kagawaddashboard-nav-label,
+        .kagawaddashboard-nav-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .kagawaddashboard-body {
+          padding: 18px 14px 36px;
+        }
+
+        .kagawaddashboard-topbar {
+          padding: 0 14px;
+        }
+
+        .kagawaddashboard-profile-name,
+        .kagawaddashboard-profile-role {
+          display: none;
+        }
+
+        .kagawaddashboard-topbar-search {
+          max-width: none;
+        }
+
+        .kagawaddashboard-hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .kagawaddashboard-hero-action {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .kagawaddashboard-filter-bar {
+          align-items: stretch;
+        }
+
+        .kagawaddashboard-chip {
+          flex: 1;
+        }
+
+        .kagawaddashboard-action-cell {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .kagawaddashboard-action-cell .kagawaddashboard-btn {
+          width: 100%;
+        }
       }
     </style>
   </head>
 
   <body>
-    <div class="kagawaddashboard-shell">
-      <!-- SIDEBAR -->
-      <aside class="kagawaddashboard-sidebar">
+    <div class="kagawaddashboard-toggle-wrap" id="kagawaddashboard-toggle-wrap">
+      <button
+        class="kagawaddashboard-toggle-btn"
+        id="kagawaddashboard-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="kagawaddashboard-container">
+      <aside class="kagawaddashboard-sidebar" id="kagawaddashboard-sidebar">
         <div class="kagawaddashboard-brand">
           <div class="kagawaddashboard-brand-logo">
-            <i class="fa-solid fa-city"></i>
+            <img src="alapan.png" alt="Alapan logo" />
           </div>
+
           <div>
             <div class="kagawaddashboard-brand-name">BarangayKonek</div>
-            <div class="kagawaddashboard-brand-sub">Kagawad Portal</div>
+            <span class="kagawaddashboard-brand-chip">Kagawad Portal</span>
           </div>
         </div>
 
@@ -1148,43 +1342,42 @@
             class="kagawaddashboard-nav-link active"
           >
             <div class="kagawaddashboard-nav-left">
-              <i class="fa-solid fa-gauge-high"></i>
-              <span>Dashboard</span>
+              <i class="fa-solid fa-house"></i>
+              <span class="kagawaddashboard-nav-label">Dashboard</span>
             </div>
           </a>
 
           <a href="kagawadconcerns.html" class="kagawaddashboard-nav-link">
             <div class="kagawaddashboard-nav-left">
               <i class="fa-solid fa-triangle-exclamation"></i>
-              <span>Concerns</span>
+              <span class="kagawaddashboard-nav-label">Concerns</span>
             </div>
+
             <span class="kagawaddashboard-nav-count">14</span>
           </a>
 
-          <a
-            href="kagawadconcernhistory.html"
-            class="kagawaddashboard-nav-link"
-          >
+          <a href="kagawadhistory.html" class="kagawaddashboard-nav-link">
             <div class="kagawaddashboard-nav-left">
               <i class="fa-solid fa-clock-rotate-left"></i>
-              <span>Concern History</span>
+              <span class="kagawaddashboard-nav-label">Concern History</span>
             </div>
           </a>
-
-          <div class="kagawaddashboard-nav-divider"></div>
 
           <a href="kagawadcommunity.html" class="kagawaddashboard-nav-link">
             <div class="kagawaddashboard-nav-left">
               <i class="fa-solid fa-people-group"></i>
-              <span>Community Feed</span>
+              <span class="kagawaddashboard-nav-label">Community Feed</span>
             </div>
+
             <span class="kagawaddashboard-nav-count">3</span>
           </a>
 
-          <a href="kagawadannouncements.html" class="kagawaddashboard-nav-link">
+          <div class="kagawaddashboard-nav-divider"></div>
+
+          <a href="kagawadsettings.html" class="kagawaddashboard-nav-link">
             <div class="kagawaddashboard-nav-left">
-              <i class="fa-solid fa-bullhorn"></i>
-              <span>Announcements</span>
+              <i class="fa-solid fa-gear"></i>
+              <span class="kagawaddashboard-nav-label">Settings</span>
             </div>
           </a>
         </nav>
@@ -1192,19 +1385,13 @@
         <div class="kagawaddashboard-sidebar-footer">
           <button class="kagawaddashboard-logout">
             <i class="fa-solid fa-right-from-bracket"></i>
-            Log Out
+            <span class="kagawaddashboard-nav-label">Log Out</span>
           </button>
         </div>
       </aside>
 
-      <!-- MAIN -->
-      <div class="kagawaddashboard-main">
-        <!-- TOPBAR -->
+      <main class="kagawaddashboard-main" id="kagawaddashboard-main">
         <header class="kagawaddashboard-topbar">
-          <div class="kagawaddashboard-topbar-logo">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-
           <div class="kagawaddashboard-topbar-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" placeholder="Search concerns, residents..." />
@@ -1213,75 +1400,53 @@
           <div class="kagawaddashboard-topbar-right">
             <div class="kagawaddashboard-topbar-icon">
               <i class="fa-solid fa-bell"></i>
-              <span class="kagawaddashboard-topbar-dot"></span>
+              <span class="kagawaddashboard-notif-count">2</span>
             </div>
 
-            <div class="kagawaddashboard-topbar-profile">
-              <div class="kagawaddashboard-topbar-avatar">RD</div>
+            <div class="kagawaddashboard-profile">
+              <div class="kagawaddashboard-avatar">RD</div>
+
               <div>
-                <div class="kagawaddashboard-topbar-info-name">
+                <div class="kagawaddashboard-profile-name">
                   Ricardo Dela Cruz
                 </div>
-                <div class="kagawaddashboard-topbar-info-role">Kagawad</div>
+                <div class="kagawaddashboard-profile-role">Kagawad</div>
               </div>
             </div>
           </div>
         </header>
 
-        <!-- BODY -->
         <div class="kagawaddashboard-body">
-          <!-- Greeting Banner -->
-          <div class="kagawaddashboard-greeting">
-            <div class="kagawaddashboard-greeting-text">
+          <section class="kagawaddashboard-hero">
+            <div class="kagawaddashboard-hero-text">
               <h2>Good morning, Kagawad Dela Cruz</h2>
               <p>
-                You have 14 open concerns that need attention — Tuesday, April
-                21, 2026.
+                Monitor incoming concerns, follow up pending cases, and review
+                recent community reports in one dashboard.
               </p>
             </div>
-            <div class="kagawaddashboard-greeting-badge">Kagawad</div>
-          </div>
 
-          <!-- Two-column layout -->
-          <div class="kagawaddashboard-columns">
-            <!-- LEFT -->
-            <div class="kagawaddashboard-left">
-              <!-- Concerns Table -->
-              <div class="kagawaddashboard-panel">
+            <div class="kagawaddashboard-hero-action">
+              <i class="fa-solid fa-calendar-day"></i>
+              <span>Tuesday, April 21, 2026</span>
+            </div>
+          </section>
+
+          <div class="row g-3 kagawaddashboard-content-row">
+            <div class="col-lg-8 col-xl-9">
+              <section class="kagawaddashboard-panel">
                 <div class="kagawaddashboard-panel-head">
-                  <h3>Incoming Concerns</h3>
+                  <div class="kagawaddashboard-panel-title">
+                    <h3>Incoming Concerns</h3>
+                    <p>Review urgent and newly submitted resident concerns</p>
+                  </div>
+
                   <a
                     href="kagawadconcerns.html"
                     class="kagawaddashboard-panel-link"
-                    >View All</a
                   >
-                </div>
-
-                <div class="kagawaddashboard-filter-bar">
-                  <button
-                    class="kagawaddashboard-chip active"
-                    onclick="filterConcerns(this, 'all')"
-                  >
-                    All
-                  </button>
-                  <button
-                    class="kagawaddashboard-chip"
-                    onclick="filterConcerns(this, 'open')"
-                  >
-                    Open
-                  </button>
-                  <button
-                    class="kagawaddashboard-chip"
-                    onclick="filterConcerns(this, 'inprogress')"
-                  >
-                    In Progress
-                  </button>
-                  <button
-                    class="kagawaddashboard-chip"
-                    onclick="filterConcerns(this, 'resolved')"
-                  >
-                    Resolved
-                  </button>
+                    View All
+                  </a>
                 </div>
 
                 <div class="kagawaddashboard-table-wrap">
@@ -1296,6 +1461,7 @@
                         <th>Action</th>
                       </tr>
                     </thead>
+
                     <tbody id="kagawaddashboard-concern-rows">
                       <tr data-status="open">
                         <td>
@@ -1303,9 +1469,9 @@
                             <div class="kagawaddashboard-resident-avatar">
                               ML
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Maria Lopez</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Maria Lopez
+                            </span>
                           </div>
                         </td>
                         <td>Flooding / Drainage</td>
@@ -1316,22 +1482,16 @@
                         </td>
                         <td>Apr 21, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill open"
-                            > Open</span
-                          >
+                          <span class="kagawaddashboard-status-chip open">
+                            Open
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
                             <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-navy"
-                              onclick="
-                                openModal(
-                                  'Maria Lopez',
-                                  'Flooding / Drainage',
-                                  'Drainage near Sitio B has been clogged for 3 days.',
-                                  'open',
-                                )
-                              "
+                              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawaddashboardReviewModal"
                             >
                               Review
                             </button>
@@ -1350,9 +1510,9 @@
                             <div class="kagawaddashboard-resident-avatar">
                               JR
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Joel Reyes</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Joel Reyes
+                            </span>
                           </div>
                         </td>
                         <td>Street Light Issue</td>
@@ -1363,22 +1523,16 @@
                         </td>
                         <td>Apr 20, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill open"
-                            ></i> Open</span
-                          >
+                          <span class="kagawaddashboard-status-chip open">
+                            Open
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
                             <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-navy"
-                              onclick="
-                                openModal(
-                                  'Joel Reyes',
-                                  'Street Light Issue',
-                                  'Three street lights on Purok 4 main road are broken.',
-                                  'open',
-                                )
-                              "
+                              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawaddashboardReviewModal"
                             >
                               Review
                             </button>
@@ -1397,9 +1551,9 @@
                             <div class="kagawaddashboard-resident-avatar">
                               AC
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Ana Castillo</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Ana Castillo
+                            </span>
                           </div>
                         </td>
                         <td>Noise Complaint</td>
@@ -1410,22 +1564,16 @@
                         </td>
                         <td>Apr 19, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill inprogress">
-                            Progress</span
-                          >
+                          <span class="kagawaddashboard-status-chip inprogress">
+                            In Progress
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
                             <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-lime"
-                              onclick="
-                                openModal(
-                                  'Ana Castillo',
-                                  'Noise Complaint',
-                                  'Loud music past midnight near Sitio A every weekend.',
-                                  'inprogress',
-                                )
-                              "
+                              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawaddashboardReviewModal"
                             >
                               Update
                             </button>
@@ -1444,36 +1592,29 @@
                             <div class="kagawaddashboard-resident-avatar">
                               BT
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Ben Torres</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Ben Torres
+                            </span>
                           </div>
                         </td>
                         <td>Garbage / Sanitation</td>
                         <td>
                           <div class="kagawaddashboard-concern-text">
-                            Garbage collection missed two weeks in a row on
-                            Purok 3.
+                            Garbage collection missed two weeks in a row.
                           </div>
                         </td>
                         <td>Apr 19, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill open"
-                            > Open</span
-                          >
+                          <span class="kagawaddashboard-status-chip open">
+                            Open
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
                             <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-navy"
-                              onclick="
-                                openModal(
-                                  'Ben Torres',
-                                  'Garbage / Sanitation',
-                                  'Garbage collection missed two weeks in a row on Purok 3.',
-                                  'open',
-                                )
-                              "
+                              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawaddashboardReviewModal"
                             >
                               Review
                             </button>
@@ -1492,37 +1633,29 @@
                             <div class="kagawaddashboard-resident-avatar">
                               LS
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Lorna Santos</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Lorna Santos
+                            </span>
                           </div>
                         </td>
                         <td>Road Damage</td>
                         <td>
                           <div class="kagawaddashboard-concern-text">
-                            Large pothole on main road near the market causing
-                            accidents.
+                            Large pothole near the market causing accidents.
                           </div>
                         </td>
                         <td>Apr 18, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill inprogress"
-                            > In
-                            Progress</span
-                          >
+                          <span class="kagawaddashboard-status-chip inprogress">
+                            In Progress
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
                             <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-lime"
-                              onclick="
-                                openModal(
-                                  'Lorna Santos',
-                                  'Road Damage',
-                                  'Large pothole on main road near the market causing accidents.',
-                                  'inprogress',
-                                )
-                              "
+                              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+                              data-bs-toggle="modal"
+                              data-bs-target="#kagawaddashboardReviewModal"
                             >
                               Update
                             </button>
@@ -1541,108 +1674,22 @@
                             <div class="kagawaddashboard-resident-avatar">
                               RV
                             </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Remy Villanueva</span
-                            >
+                            <span class="kagawaddashboard-resident-name">
+                              Remy Villanueva
+                            </span>
                           </div>
                         </td>
                         <td>Stray Animals</td>
                         <td>
                           <div class="kagawaddashboard-concern-text">
-                            Stray dogs near the school gate are a danger to
-                            children.
+                            Stray dogs near the school gate are a danger.
                           </div>
                         </td>
                         <td>Apr 16, 2026</td>
                         <td>
-                          <span class="kagawaddashboard-pill resolved"
-                            >
-                            Resolved</span
-                          >
-                        </td>
-                        <td>
-                          <div class="kagawaddashboard-action-cell">
-                            <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-ghost"
-                            >
-                              View
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr data-status="open">
-                        <td>
-                          <div class="kagawaddashboard-resident-cell">
-                            <div class="kagawaddashboard-resident-avatar">
-                              PG
-                            </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Pedro Garcia</span
-                            >
-                          </div>
-                        </td>
-                        <td>Peace and Order</td>
-                        <td>
-                          <div class="kagawaddashboard-concern-text">
-                            Suspicious individuals loitering near the covered
-                            court at night.
-                          </div>
-                        </td>
-                        <td>Apr 16, 2026</td>
-                        <td>
-                          <span class="kagawaddashboard-pill open"
-                            > Open</span
-                          >
-                        </td>
-                        <td>
-                          <div class="kagawaddashboard-action-cell">
-                            <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-navy"
-                              onclick="
-                                openModal(
-                                  'Pedro Garcia',
-                                  'Peace and Order',
-                                  'Suspicious individuals loitering near the covered court at night.',
-                                  'open',
-                                )
-                              "
-                            >
-                              Review
-                            </button>
-                            <button
-                              class="kagawaddashboard-btn kagawaddashboard-btn-ghost"
-                            >
-                              View
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr data-status="resolved">
-                        <td>
-                          <div class="kagawaddashboard-resident-cell">
-                            <div class="kagawaddashboard-resident-avatar">
-                              NC
-                            </div>
-                            <span class="kagawaddashboard-resident-name"
-                              >Nena Cruz</span
-                            >
-                          </div>
-                        </td>
-                        <td>Health and Sanitation</td>
-                        <td>
-                          <div class="kagawaddashboard-concern-text">
-                            Standing water behind the chapel is breeding
-                            mosquitoes.
-                          </div>
-                        </td>
-                        <td>Apr 14, 2026</td>
-                        <td>
-                          <span class="kagawaddashboard-pill resolved"
-                            ></i>
-                            Resolved</span
-                          >
+                          <span class="kagawaddashboard-status-chip resolved">
+                            Resolved
+                          </span>
                         </td>
                         <td>
                           <div class="kagawaddashboard-action-cell">
@@ -1659,425 +1706,421 @@
                 </div>
 
                 <div class="kagawaddashboard-table-foot">
-                  <span class="kagawaddashboard-foot-info"
-                    >Showing 8 of 29 concerns</span
-                  >
+                  <span class="kagawaddashboard-foot-info">
+                    Showing 6 of 29 concerns
+                  </span>
+
                   <div class="kagawaddashboard-pager">
                     <button class="kagawaddashboard-pager-btn">
-                
+                      <i class="fa-solid fa-chevron-left"></i>
                     </button>
                     <button class="kagawaddashboard-pager-btn on">1</button>
                     <button class="kagawaddashboard-pager-btn">2</button>
                     <button class="kagawaddashboard-pager-btn">3</button>
                     <button class="kagawaddashboard-pager-btn">
-                     
+                      <i class="fa-solid fa-chevron-right"></i>
                     </button>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <!-- Recent Activity -->
-              <div class="kagawaddashboard-panel">
+              <section class="kagawaddashboard-panel mt-3">
                 <div class="kagawaddashboard-panel-head">
-                  <h3>Recent Activity</h3>
-                  <span style="font-size: 12px; color: var(--text-muted)"
-                    >Last 48 hours</span
+                  <div class="kagawaddashboard-panel-title">
+                    <h3>Recent Concern History</h3>
+                    <p>Recently completed and archived concern records</p>
+                  </div>
+
+                  <a
+                    href="kagawadconcerns.html"
+                    class="kagawaddashboard-panel-link"
                   >
+                    View All
+                  </a>
                 </div>
-                <div class="kagawaddashboard-activity-list">
-                  <div class="kagawaddashboard-activity-row">
-                    <div
-                      class="kagawaddashboard-activity-icon"
-                      style="background: var(--green-bg); color: var(--green)"
-                    >
-                    </div>
-                    <div class="kagawaddashboard-activity-info">
-                      <div class="kagawaddashboard-activity-title">
-                        Resolved — Stray Animals (Remy Villanueva)
-                      </div>
-                      <div class="kagawaddashboard-activity-meta">
-                        Concern marked resolved. Remarks added. · Apr 21, 8:14
-                        AM
+
+                <div class="kagawaddashboard-history-list">
+                  <div class="kagawaddashboard-history-item">
+                    <div class="kagawaddashboard-history-left">
+                      <div class="kagawaddashboard-resident-avatar">NC</div>
+                      <div class="kagawaddashboard-history-info">
+                        <div class="kagawaddashboard-history-name">
+                          Nena Cruz
+                        </div>
+                        <div class="kagawaddashboard-history-sub">
+                          Health and Sanitation • Apr 18, 2026
+                        </div>
                       </div>
                     </div>
+                    <span class="kagawaddashboard-status-chip resolved">
+                      Resolved
+                    </span>
                   </div>
 
-                  <div class="kagawaddashboard-activity-row">
-                    <div
-                      class="kagawaddashboard-activity-icon"
-                      style="background: var(--blue-bg); color: var(--blue)"
-                    >
-                      <i class="fa-solid fa-spinner"></i>
-                    </div>
-                    <div class="kagawaddashboard-activity-info">
-                      <div class="kagawaddashboard-activity-title">
-                        Status updated — Road Damage (Lorna Santos)
-                      </div>
-                      <div class="kagawaddashboard-activity-meta">
-                        Changed from Open to In Progress · Apr 20, 3:40 PM
+                  <div class="kagawaddashboard-history-item">
+                    <div class="kagawaddashboard-history-left">
+                      <div class="kagawaddashboard-resident-avatar">GT</div>
+                      <div class="kagawaddashboard-history-info">
+                        <div class="kagawaddashboard-history-name">
+                          Gloria Tan
+                        </div>
+                        <div class="kagawaddashboard-history-sub">
+                          Other • Apr 15, 2026
+                        </div>
                       </div>
                     </div>
+                    <span class="kagawaddashboard-status-chip closed">
+                      Closed
+                    </span>
                   </div>
 
-                  <div class="kagawaddashboard-activity-row">
-                    <div
-                      class="kagawaddashboard-activity-icon"
-                      style="background: var(--amber-bg); color: var(--amber)"
-                    >
-                      <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                    <div class="kagawaddashboard-activity-info">
-                      <div class="kagawaddashboard-activity-title">
-                        New concern filed — Flooding / Drainage (Maria Lopez)
-                      </div>
-                      <div class="kagawaddashboard-activity-meta">
-                        Filed via Resident Portal · Apr 21, 7:00 AM
+                  <div class="kagawaddashboard-history-item">
+                    <div class="kagawaddashboard-history-left">
+                      <div class="kagawaddashboard-resident-avatar">MR</div>
+                      <div class="kagawaddashboard-history-info">
+                        <div class="kagawaddashboard-history-name">
+                          Mario Ramos
+                        </div>
+                        <div class="kagawaddashboard-history-sub">
+                          Garbage / Sanitation • Apr 12, 2026
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div class="kagawaddashboard-activity-row">
-                    <div
-                      class="kagawaddashboard-activity-icon"
-                      style="background: #f1f5f9; color: var(--text-muted)"
-                    >
-                      <i class="fa-solid fa-comment-dots"></i>
-                    </div>
-                    <div class="kagawaddashboard-activity-info">
-                      <div class="kagawaddashboard-activity-title">
-                        Remarks added — Noise Complaint (Ana Castillo)
-                      </div>
-                      <div class="kagawaddashboard-activity-meta">
-                        Forwarded to barangay tanod for monitoring · Apr 20,
-                        10:22 AM
-                      </div>
-                    </div>
+                    <span class="kagawaddashboard-status-chip resolved">
+                      Resolved
+                    </span>
                   </div>
                 </div>
-              </div>
+              </section>
             </div>
 
-            <!-- RIGHT -->
-            <div class="kagawaddashboard-right">
-              <!-- Stat Cards -->
-              <div class="kagawaddashboard-stats">
-                <div class="kagawaddashboard-stat-card open-color">
-                  
-                  
-                  </div>
-                  <div class="kagawaddashboard-stat-info">
-                    <div class="kagawaddashboard-stat-number">14</div>
-                    <div class="kagawaddashboard-stat-label">Open Concerns</div>
-                  </div>
-                </div>
-
-                <div class="kagawaddashboard-stat-card inprogress-color">
-                  <div class="kagawaddashboard-stat-icon inprogress-icon">
-                 
-                  </div>
-                  <div class="kagawaddashboard-stat-info">
-                    <div class="kagawaddashboard-stat-number">7</div>
-                    <div class="kagawaddashboard-stat-label">In Progress</div>
-                  </div>
-                </div>
-
-                <div class="kagawaddashboard-stat-card resolved-color">
-                  <div class="kagawaddashboard-stat-icon resolved-icon">
-                 
-                  </div>
-                  <div class="kagawaddashboard-stat-info">
-                    <div class="kagawaddashboard-stat-number">6</div>
-                    <div class="kagawaddashboard-stat-label">
-                      Resolved This Week
-                    </div>
-                  </div>
-                </div>
-
-                <div class="kagawaddashboard-stat-card closed-color">
-                  <div class="kagawaddashboard-stat-icon closed-icon">
-
-                  </div>
-                  <div class="kagawaddashboard-stat-info">
-                    <div class="kagawaddashboard-stat-number">2</div>
-                    <div class="kagawaddashboard-stat-label">Closed</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Category Breakdown -->
-              <div class="kagawaddashboard-panel">
-                <div class="kagawaddashboard-panel-head">
-                  <h3>By Category</h3>
-                  <span style="font-size: 12px; color: var(--text-muted)"
-                    >This month</span
-                  >
-                </div>
-                <div class="kagawaddashboard-category-list">
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Flooding / Drainage</span
-                      >
-                      <span class="kagawaddashboard-category-count">7</span>
-                    </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 70%"
-                      ></div>
-                    </div>
+            <div class="col-lg-4 col-xl-3">
+              <div class="kagawaddashboard-side-stack">
+                <section class="kagawaddashboard-side-panel">
+                  <div class="kagawaddashboard-side-head">
+                    <h3>Concern Summary</h3>
+                    <span>Today</span>
                   </div>
 
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Garbage / Sanitation</span
-                      >
-                      <span class="kagawaddashboard-category-count">6</span>
+                  <div class="kagawaddashboard-summary-list">
+                    <div class="kagawaddashboard-summary-item">
+                      <div class="kagawaddashboard-summary-left">
+                        <div class="kagawaddashboard-summary-icon">
+                          <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <div>
+                          <div class="kagawaddashboard-summary-label">Open</div>
+                          <div class="kagawaddashboard-summary-sub">
+                            Needs review
+                          </div>
+                        </div>
+                      </div>
+                      <div class="kagawaddashboard-summary-number">14</div>
                     </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 60%"
-                      ></div>
+
+                    <div class="kagawaddashboard-summary-item">
+                      <div class="kagawaddashboard-summary-left">
+                        <div class="kagawaddashboard-summary-icon">
+                          <i class="fa-solid fa-spinner"></i>
+                        </div>
+                        <div>
+                          <div class="kagawaddashboard-summary-label">
+                            In Progress
+                          </div>
+                          <div class="kagawaddashboard-summary-sub">
+                            Being handled
+                          </div>
+                        </div>
+                      </div>
+                      <div class="kagawaddashboard-summary-number">7</div>
                     </div>
+
+                    <div class="kagawaddashboard-summary-item">
+                      <div class="kagawaddashboard-summary-left">
+                        <div class="kagawaddashboard-summary-icon">
+                          <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                          <div class="kagawaddashboard-summary-label">
+                            Resolved
+                          </div>
+                          <div class="kagawaddashboard-summary-sub">
+                            This week
+                          </div>
+                        </div>
+                      </div>
+                      <div class="kagawaddashboard-summary-number">6</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="kagawaddashboard-side-panel">
+                  <div class="kagawaddashboard-side-head">
+                    <h3>By Category</h3>
+                    <span>This month</span>
                   </div>
 
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Road Damage</span
-                      >
-                      <span class="kagawaddashboard-category-count">5</span>
+                  <div class="kagawaddashboard-category-list">
+                    <div class="kagawaddashboard-category-row">
+                      <div class="kagawaddashboard-category-top">
+                        <span class="kagawaddashboard-category-name">
+                          Flooding / Drainage
+                        </span>
+                        <span class="kagawaddashboard-category-count">7</span>
+                      </div>
+                      <div class="kagawaddashboard-bar-track">
+                        <div
+                          class="kagawaddashboard-bar-fill"
+                          style="width: 70%"
+                        ></div>
+                      </div>
                     </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 50%"
-                      ></div>
+
+                    <div class="kagawaddashboard-category-row">
+                      <div class="kagawaddashboard-category-top">
+                        <span class="kagawaddashboard-category-name">
+                          Garbage / Sanitation
+                        </span>
+                        <span class="kagawaddashboard-category-count">6</span>
+                      </div>
+                      <div class="kagawaddashboard-bar-track">
+                        <div
+                          class="kagawaddashboard-bar-fill"
+                          style="width: 60%"
+                        ></div>
+                      </div>
                     </div>
+
+                    <div class="kagawaddashboard-category-row">
+                      <div class="kagawaddashboard-category-top">
+                        <span class="kagawaddashboard-category-name">
+                          Road Damage
+                        </span>
+                        <span class="kagawaddashboard-category-count">5</span>
+                      </div>
+                      <div class="kagawaddashboard-bar-track">
+                        <div
+                          class="kagawaddashboard-bar-fill"
+                          style="width: 50%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div class="kagawaddashboard-category-row">
+                      <div class="kagawaddashboard-category-top">
+                        <span class="kagawaddashboard-category-name">
+                          Noise Complaint
+                        </span>
+                        <span class="kagawaddashboard-category-count">4</span>
+                      </div>
+                      <div class="kagawaddashboard-bar-track">
+                        <div
+                          class="kagawaddashboard-bar-fill"
+                          style="width: 40%"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="kagawaddashboard-side-panel">
+                  <div class="kagawaddashboard-side-head">
+                    <h3>Reminders</h3>
+                    <span>Follow-ups</span>
                   </div>
 
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Noise Complaint</span
-                      >
-                      <span class="kagawaddashboard-category-count">4</span>
+                  <div class="kagawaddashboard-reminder-list">
+                    <div class="kagawaddashboard-reminder-row">
+                      <div class="kagawaddashboard-reminder-icon urgent">
+                        <i class="fa-solid fa-exclamation"></i>
+                      </div>
+                      <div>
+                        <span class="kagawaddashboard-reminder-title">
+                          4 concerns overdue
+                        </span>
+                        <span class="kagawaddashboard-reminder-sub">
+                          No update in the last 5 days.
+                        </span>
+                      </div>
                     </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 40%"
-                      ></div>
-                    </div>
-                  </div>
 
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Street Light Issue</span
-                      >
-                      <span class="kagawaddashboard-category-count">3</span>
+                    <div class="kagawaddashboard-reminder-row">
+                      <div class="kagawaddashboard-reminder-icon">
+                        <i class="fa-solid fa-file-lines"></i>
+                      </div>
+                      <div>
+                        <span class="kagawaddashboard-reminder-title">
+                          Monthly concern summary
+                        </span>
+                        <span class="kagawaddashboard-reminder-sub">
+                          Prepare report for April 30.
+                        </span>
+                      </div>
                     </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 30%"
-                      ></div>
-                    </div>
-                  </div>
 
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name"
-                        >Peace and Order</span
-                      >
-                      <span class="kagawaddashboard-category-count">2</span>
-                    </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 20%"
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div class="kagawaddashboard-category-row">
-                    <div class="kagawaddashboard-category-top">
-                      <span class="kagawaddashboard-category-name">Other</span>
-                      <span class="kagawaddashboard-category-count">2</span>
-                    </div>
-                    <div class="kagawaddashboard-bar-track">
-                      <div
-                        class="kagawaddashboard-bar-fill"
-                        style="width: 20%"
-                      ></div>
+                    <div class="kagawaddashboard-reminder-row">
+                      <div class="kagawaddashboard-reminder-icon">
+                        <i class="fa-solid fa-users"></i>
+                      </div>
+                      <div>
+                        <span class="kagawaddashboard-reminder-title">
+                          Barangay assembly
+                        </span>
+                        <span class="kagawaddashboard-reminder-sub">
+                          Prepare concern status updates.
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Reminders -->
-              <div class="kagawaddashboard-panel">
-                <div class="kagawaddashboard-panel-head">
-                  <h3>Reminders</h3>
-                  <a href="#" class="kagawaddashboard-panel-link">Add</a>
-                </div>
-                <div class="kagawaddashboard-reminder-list">
-                  <div class="kagawaddashboard-reminder-row">
-                    <div class="kagawaddashboard-reminder-dot urgent"></div>
-                    <div>
-                      <span class="kagawaddashboard-reminder-title"
-                        >4 concerns overdue for follow-up</span
-                      >
-                      <span class="kagawaddashboard-reminder-sub"
-                        >No update in the last 5 days.</span
-                      >
-                    </div>
-                  </div>
-
-                  <div class="kagawaddashboard-reminder-row">
-                    <div class="kagawaddashboard-reminder-dot urgent"></div>
-                    <div>
-                      <span class="kagawaddashboard-reminder-title"
-                        >Peace and Order — Awaiting Tanod Report</span
-                      >
-                      <span class="kagawaddashboard-reminder-sub"
-                        >Garcia concern needs follow-up coordination.</span
-                      >
-                    </div>
-                  </div>
-
-                  <div class="kagawaddashboard-reminder-row">
-                    <div class="kagawaddashboard-reminder-dot"></div>
-                    <div>
-                      <span class="kagawaddashboard-reminder-title"
-                        >Barangay Assembly — Apr 25</span
-                      >
-                      <span class="kagawaddashboard-reminder-sub"
-                        >Prepare concern status report for presentation.</span
-                      >
-                    </div>
-                  </div>
-
-                  <div class="kagawaddashboard-reminder-row">
-                    <div class="kagawaddashboard-reminder-dot"></div>
-                    <div>
-                      <span class="kagawaddashboard-reminder-title"
-                        >Monthly Concern Summary — Due Apr 30</span
-                      >
-                      <span class="kagawaddashboard-reminder-sub"
-                        >Compile and submit resolved concerns for the
-                        month.</span
-                      >
-                    </div>
-                  </div>
-                </div>
+                </section>
               </div>
             </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="kagawaddashboardReviewModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Review Concern
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <small class="text-muted fw-bold">Resident</small>
+                <p class="mb-0 fw-semibold">Maria Lopez</p>
+              </div>
+
+              <div class="col-6">
+                <small class="text-muted fw-bold">Category</small>
+                <p class="mb-0 fw-semibold">Flooding / Drainage</p>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Description</small>
+                <div class="p-3 rounded-4 mt-1" style="background: #f8fafc">
+                  Drainage near Sitio B has been clogged for 3 days.
+                </div>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Update Status</small>
+                <select class="form-select rounded-4 mt-1">
+                  <option>Open</option>
+                  <option>In Progress</option>
+                  <option>Resolved</option>
+                  <option>Closed</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Remarks</small>
+                <textarea
+                  class="form-control rounded-4 mt-1"
+                  rows="3"
+                  placeholder="Add remarks or action taken..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="kagawaddashboard-btn kagawaddashboard-btn-ghost"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="kagawaddashboard-btn kagawaddashboard-btn-primary"
+            >
+              Save Update
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Review / Update Modal -->
-    <div class="kagawaddashboard-modal-overlay" id="kagawaddashboard-modal">
-      <div class="kagawaddashboard-modal-box">
-        <div class="kagawaddashboard-modal-head">
-          <h3>Review Concern</h3>
-          <button class="kagawaddashboard-modal-close" onclick="closeModal()">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        <div class="kagawaddashboard-modal-body">
-          <div class="kagawaddashboard-modal-field">
-            <label>Resident</label>
-            <p id="kagawaddashboard-modal-resident">—</p>
-          </div>
-          <div class="kagawaddashboard-modal-field">
-            <label>Category</label>
-            <p id="kagawaddashboard-modal-category">—</p>
-          </div>
-          <div class="kagawaddashboard-modal-field">
-            <label>Description</label>
-            <p id="kagawaddashboard-modal-desc">—</p>
-          </div>
-          <div class="kagawaddashboard-modal-field">
-            <label>Update Status</label>
-            <select id="kagawaddashboard-modal-status">
-              <option value="open">Open</option>
-              <option value="inprogress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          <div class="kagawaddashboard-modal-field">
-            <label>Staff Remarks</label>
-            <textarea
-              rows="3"
-              placeholder="Add remarks or action taken..."
-            ></textarea>
-          </div>
-        </div>
-        <div class="kagawaddashboard-modal-foot">
-          <button
-            class="kagawaddashboard-btn kagawaddashboard-btn-ghost"
-            onclick="closeModal()"
-          >
-            Cancel
-          </button>
-          <button class="kagawaddashboard-btn kagawaddashboard-btn-navy">
-            Save Update
-          </button>
-        </div>
-      </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      function filterConcerns(clickedChip, filter) {
-        document
-          .querySelectorAll(".kagawaddashboard-chip")
-          .forEach(function (chip) {
-            chip.classList.remove("active");
-          });
-        clickedChip.classList.add("active");
+      var kagawaddashboardSidebar = document.getElementById(
+        "kagawaddashboard-sidebar",
+      );
 
-        var rows = document.querySelectorAll(
-          "#kagawaddashboard-concern-rows tr",
+      var kagawaddashboardMainArea = document.getElementById(
+        "kagawaddashboard-main",
+      );
+
+      var kagawaddashboardToggleWrap = document.getElementById(
+        "kagawaddashboard-toggle-wrap",
+      );
+
+      var kagawaddashboardToggleButton = document.getElementById(
+        "kagawaddashboard-toggle-button",
+      );
+
+      kagawaddashboardToggleButton.addEventListener("click", function () {
+        var kagawaddashboardIsSidebarMini =
+          kagawaddashboardSidebar.classList.toggle("mini");
+
+        kagawaddashboardMainArea.classList.toggle(
+          "shifted",
+          kagawaddashboardIsSidebarMini,
         );
-        rows.forEach(function (row) {
-          if (filter === "all" || row.dataset.status === filter) {
-            row.style.display = "";
-          } else {
-            row.style.display = "none";
-          }
+
+        kagawaddashboardToggleWrap.classList.toggle(
+          "mini",
+          kagawaddashboardIsSidebarMini,
+        );
+      });
+
+      var kagawaddashboardFilterButtons = document.querySelectorAll(
+        ".kagawaddashboard-chip",
+      );
+
+      var kagawaddashboardConcernRows = document.querySelectorAll(
+        "#kagawaddashboard-concern-rows tr",
+      );
+
+      kagawaddashboardFilterButtons.forEach(function (kagawaddashboardButton) {
+        kagawaddashboardButton.addEventListener("click", function () {
+          var kagawaddashboardFilter =
+            kagawaddashboardButton.getAttribute("data-filter");
+
+          kagawaddashboardFilterButtons.forEach(
+            function (kagawaddashboardOtherButton) {
+              kagawaddashboardOtherButton.classList.remove("on");
+            },
+          );
+
+          kagawaddashboardButton.classList.add("on");
+
+          kagawaddashboardConcernRows.forEach(function (kagawaddashboardRow) {
+            if (
+              kagawaddashboardFilter === "all" ||
+              kagawaddashboardRow.getAttribute("data-status") ===
+                kagawaddashboardFilter
+            ) {
+              kagawaddashboardRow.style.display = "";
+            } else {
+              kagawaddashboardRow.style.display = "none";
+            }
+          });
         });
-      }
-
-      function openModal(resident, category, desc, currentStatus) {
-        document.getElementById("kagawaddashboard-modal-resident").textContent =
-          resident;
-        document.getElementById("kagawaddashboard-modal-category").textContent =
-          category;
-        document.getElementById("kagawaddashboard-modal-desc").textContent =
-          desc;
-        document.getElementById("kagawaddashboard-modal-status").value =
-          currentStatus;
-        document.getElementById("kagawaddashboard-modal").classList.add("open");
-      }
-
-      function closeModal() {
-        document
-          .getElementById("kagawaddashboard-modal")
-          .classList.remove("open");
-      }
-
-      document
-        .getElementById("kagawaddashboard-modal")
-        .addEventListener("click", function (e) {
-          if (e.target === this) closeModal();
-        });
+      });
     </script>
   </body>
 </html>
