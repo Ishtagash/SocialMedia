@@ -16,7 +16,7 @@ if ($conn === false) {
 
 $userId = $_SESSION['user_id'];
 
-$regSql  = "SELECT FIRST_NAME, LAST_NAME, GENDER, PROFILE_PICTURE, ADDRESS, CONTACT_NUMBER FROM REGISTRATION WHERE USER_ID = ?";
+$regSql  = "SELECT FIRST_NAME, LAST_NAME, GENDER, PROFILE_PICTURE, ADDRESS, MOBILE_NUMBER FROM REGISTRATION WHERE USER_ID = ?";
 $regStmt = sqlsrv_query($conn, $regSql, [$userId]);
 if ($regStmt === false) {
     die("Query failed: " . print_r(sqlsrv_errors(), true));
@@ -28,7 +28,7 @@ $lastName        = $regRow ? htmlspecialchars(rtrim($regRow['LAST_NAME']))  : ''
 $fullName        = $firstName . ' ' . $lastName;
 $gender          = $regRow ? strtolower(rtrim($regRow['GENDER'] ?? '')) : '';
 $residentAddress = $regRow ? htmlspecialchars(rtrim($regRow['ADDRESS'] ?? '')) : '';
-$residentContact = $regRow ? htmlspecialchars(rtrim($regRow['CONTACT_NUMBER'] ?? '')) : '';
+$residentContact = $regRow ? htmlspecialchars(rtrim($regRow['MOBILE_NUMBER'] ?? '')) : '';
 
 if ($regRow && !empty($regRow['PROFILE_PICTURE'])) {
     $profilePicture = htmlspecialchars($regRow['PROFILE_PICTURE']);
