@@ -373,6 +373,7 @@ $pdfUrl   = exportUrl('pdf',   $filterAction, $filterUser, $filterDate);
     .audit-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .audit-title h2{font-size:22px;font-weight:700;color:var(--navy);margin:0 0 4px}
     .audit-title p{font-size:13px;color:var(--text-muted);margin:0}
+    .audit-body{display:flex;flex-direction:column;gap:20px}
     .audit-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
     .audit-filters{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02);flex-wrap:wrap}
     .filter-group{display:flex;flex-direction:column;gap:4px}
@@ -388,6 +389,7 @@ $pdfUrl   = exportUrl('pdf',   $filterAction, $filterUser, $filterDate);
     .log-role{font-size:11px;color:var(--text-muted)}
     .log-email{font-size:12px;color:var(--text-muted)}
     .log-details{font-size:12px;color:var(--text-muted);max-width:300px;word-break:break-word}
+    @media(max-width:768px){.audit-filters{flex-direction:column;align-items:stretch}.filter-btns{margin-left:0}.export-choices{grid-template-columns:1fr}}
 
     /* ACTION BADGES */
     .action-badge{display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
@@ -506,6 +508,8 @@ $pdfUrl   = exportUrl('pdf',   $filterAction, $filterUser, $filterDate);
         </button>
       </div>
 
+      <div class="audit-body">
+
       <div class="audit-panel">
         <form method="GET">
           <div class="audit-filters">
@@ -595,7 +599,7 @@ $pdfUrl   = exportUrl('pdf',   $filterAction, $filterUser, $filterDate);
         </div>
       </div>
 
-    </div>
+      </div><!-- end audit-body -->
   </main>
 </div>
 

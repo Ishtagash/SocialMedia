@@ -29,22 +29,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'get_resident' && $targetId) {
         header('Content-Type: application/json');
-        $row = sqlsrv_fetch_array(
-            sqlsrv_query($conn,
-                "SELECT U.USER_ID, U.USERNAME, U.EMAIL, U.STATUS, U.CREATED_AT, U.LAST_LOGIN,
-                        R.FIRST_NAME, R.LAST_NAME, R.MIDDLE_NAME, R.SUFFIX,
-                        R.BIRTHDATE, R.GENDER, R.MOBILE_NUMBER,
-                        R.ADDRESS, R.ID_TYPE, R.ID_PHOTO_PATH, R.PROFILE_PICTURE
-                 FROM USERS U
-                 LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
-                 WHERE U.USER_ID = ? AND U.ROLE = 'resident'",
-                [$targetId]
-            ),
-            SQLSRV_FETCH_ASSOC
+        error_reporting(0);
+
+        $stmt = sqlsrv_query($conn,
+            "SELECT U.USER_ID, U.USERNAME, U.EMAIL, U.STATUS, U.CREATED_AT, U.LAST_LOGIN,
+                    R.FIRST_NAME, R.LAST_NAME, R.MIDDLE_NAME, R.SUFFIX,
+                    R.BIRTHDATE, R.GENDER, R.MOBILE_NUMBER,
+                    R.ADDRESS, R.ID_TYPE, R.ID_PHOTO_PATH, R.PROFILE_PICTURE
+             FROM USERS U
+             LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
+             WHERE U.USER_ID = ? AND U.ROLE = 'resident'",
+            [$targetId]
         );
+
+        if ($stmt === false) {
+            echo json_encode(['error' => 'Query failed: ' . print_r(sqlsrv_errors(), true)]);
+            exit();
+        }
+
+        $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
         if (!$row) {
             echo json_encode(['error' => 'Resident not found in database.']);
             exit();
+        }
+
+        /* Try to fetch proof of residency separately — graceful if column doesn't exist yet */
+        $proofPath = '';
+        $proofStmt = sqlsrv_query($conn,
+            "SELECT PROOF_OF_RESIDENCY FROM REGISTRATION WHERE USER_ID = ?", [$targetId]);
+        if ($proofStmt) {
+            $proofRow = sqlsrv_fetch_array($proofStmt, SQLSRV_FETCH_ASSOC);
+            if ($proofRow) $proofPath = rtrim($proofRow['PROOF_OF_RESIDENCY'] ?? '');
         }
 
         function nullOrDash($val) {
@@ -97,8 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'mobile'     => nullOrDash($row['MOBILE_NUMBER']),
             'address'    => nullOrDash($row['ADDRESS']),
             'idType'     => nullOrDash($row['ID_TYPE']),
-            'idPhoto'    => rtrim($row['ID_PHOTO_PATH']   ?? ''),
-            'profilePic' => rtrim($row['PROFILE_PICTURE'] ?? ''),
+            'idPhoto'         => rtrim($row['ID_PHOTO_PATH']   ?? ''),
+            'profilePic'      => rtrim($row['PROFILE_PICTURE'] ?? ''),
+            'proofOfResidency'=> $proofPath,
             'status'     => strtolower(rtrim($row['STATUS'] ?? '')),
             'registered' => $regDate,
             'lastLogin'  => $lastLogin,
@@ -108,32 +124,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'verify' && $targetId) {
+        $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
+            "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+        $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+        $rName = trim($rName) ?: "User #$targetId";
         sqlsrv_query($conn, "UPDATE USERS SET STATUS = 'active' WHERE USER_ID = ? AND ROLE = 'resident'", [$targetId]);
         sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Verify Resident', ?, ?)",
-            [$userId, "Verified resident USER_ID $targetId", $now]);
-        header("Location: superadminresidentaccount.php?msg=" . urlencode('Resident verified successfully.')); exit();
+            [$userId, "Verified $rName — account set to active", $now]);
+        header("Location: superadminresidentaccount.php?success=" . urlencode("$rName has been verified successfully.")); exit();
     }
 
     if ($action === 'reject' && $targetId) {
+        $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
+            "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+        $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+        $rName = trim($rName) ?: "User #$targetId";
         sqlsrv_query($conn, "UPDATE USERS SET STATUS = 'rejected' WHERE USER_ID = ? AND ROLE = 'resident'", [$targetId]);
         sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Reject Resident', ?, ?)",
-            [$userId, "Rejected resident USER_ID $targetId", $now]);
-        header("Location: superadminresidentaccount.php?msg=" . urlencode('Resident account rejected.')); exit();
+            [$userId, "Rejected $rName — account denied", $now]);
+        header("Location: superadminresidentaccount.php?success=" . urlencode("$rName's account has been rejected.")); exit();
     }
 
     if ($action === 'toggle_status' && $targetId) {
         $newStatus = trim($_POST['new_status'] ?? '');
         if (in_array($newStatus, ['active', 'inactive'])) {
-            sqlsrv_query($conn, "UPDATE USERS SET STATUS = ? WHERE USER_ID = ? AND ROLE = 'resident'", [$newStatus, $targetId]);
+            $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
+                "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+            $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+            $rName = trim($rName) ?: "User #$targetId";
             $label = $newStatus === 'active' ? 'Enabled' : 'Disabled';
+            sqlsrv_query($conn, "UPDATE USERS SET STATUS = ? WHERE USER_ID = ? AND ROLE = 'resident'", [$newStatus, $targetId]);
             sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, ?, ?, ?)",
-                [$userId, "$label Resident Account", "Resident USER_ID $targetId set to $newStatus", $now]);
-            header("Location: superadminresidentaccount.php?msg=" . urlencode("Account $label successfully.")); exit();
+                [$userId, "$label Resident Account", "$label $rName's account — set to $newStatus", $now]);
+            header("Location: superadminresidentaccount.php?success=" . urlencode("$rName's account has been $label.")); exit();
         }
     }
 }
 
-if (isset($_GET['msg'])) { $message = htmlspecialchars($_GET['msg']); $messageType = 'success'; }
+if (isset($_GET['msg']))     { $message = htmlspecialchars($_GET['msg']);     $messageType = 'success'; }
+$successModal = isset($_GET['success']) ? $_GET['success'] : '';
 
 $search       = trim($_GET['search'] ?? '');
 $filterStatus = trim($_GET['filter']  ?? '');
@@ -156,21 +185,9 @@ $residentResult = sqlsrv_query($conn, $filterSql, $filterParams ?: []);
 $residents = [];
 if ($residentResult) { while ($r = sqlsrv_fetch_array($residentResult, SQLSRV_FETCH_ASSOC)) { $residents[] = $r; } }
 
-$totalResidents = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $totalResidents = (int)$row['CNT']; }
-
-$verifiedCount = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'active'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $verifiedCount = (int)$row['CNT']; }
-
 $pendingCount = 0;
 $r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'pending'");
 if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $pendingCount = (int)$row['CNT']; }
-
-$disabledCount = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'inactive'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (int)$row['CNT']; }
 ?>
 <!doctype html>
 <html lang="en">
@@ -183,13 +200,7 @@ if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (i
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="superadmin.css" />
   <style>
-    .resident-layout{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:20px;align-items:start}
-    .resident-main{display:flex;flex-direction:column;gap:20px;min-width:0}
-    .resident-side{display:flex;flex-direction:column;gap:12px}
-    .resident-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
-    .resident-card-label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
-    .resident-card-number{display:block;font-size:34px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:6px}
-    .resident-card-note{font-size:12px;color:var(--text-muted);line-height:1.4}
+    .resident-wrap{display:flex;flex-direction:column;gap:20px}
     .resident-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
     .resident-panel-toolbar{padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02)}
     .resident-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border)}
@@ -257,6 +268,13 @@ if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (i
     .msg-banner{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px}
     .msg-success{background:rgba(34,197,94,.12);color:#16a34a;border:1px solid rgba(34,197,94,.25)}
     .msg-error{background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.25)}
+    .success-modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,22,80,.5);z-index:600;align-items:center;justify-content:center;padding:20px}
+    .success-modal-overlay.open{display:flex}
+    .success-modal-box{background:#fff;border-radius:14px;padding:36px 30px;max-width:380px;width:90%;text-align:center;box-shadow:0 12px 48px rgba(5,22,80,.22);border-top:4px solid var(--green)}
+    .success-modal-icon{width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.12);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px}
+    .success-modal-box h3{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px}
+    .success-modal-box p{font-size:13px;color:var(--text-muted);margin-bottom:22px;line-height:1.6}
+    .success-modal-btn{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
     @media(max-width:1100px){.resident-layout{grid-template-columns:1fr}}
     @media(max-width:560px){.detail-grid{grid-template-columns:1fr}}
   </style>
@@ -272,6 +290,15 @@ if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (i
       <button class="btn-cancel-logout" onclick="closeLogout()">Cancel</button>
       <a href="logout.php" class="btn-confirm-logout"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
     </div>
+  </div>
+</div>
+
+<div class="success-modal-overlay" id="successModal">
+  <div class="success-modal-box">
+    <div class="success-modal-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <h3>Action Successful</h3>
+    <p id="successModalMsg"></p>
+    <button class="success-modal-btn" onclick="closeSuccessModal()">Done</button>
   </div>
 </div>
 
@@ -317,9 +344,8 @@ if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (i
     <div class="msg-banner msg-<?= $messageType ?>"><?= $message ?></div>
     <?php endif; ?>
 
-    <div class="resident-layout">
-      <div class="resident-main">
-        <div class="resident-panel">
+    <div class="resident-wrap">
+      <div class="resident-panel">
           <form method="GET">
             <div class="resident-panel-toolbar">
               <div class="resident-toolbar">
@@ -411,31 +437,7 @@ if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledCount = (i
               </tbody>
             </table>
           </div>
-        </div>
       </div>
-
-      <aside class="resident-side">
-        <div class="resident-card">
-          <span class="resident-card-label">Total Residents</span>
-          <strong class="resident-card-number"><?= $totalResidents ?></strong>
-          <p class="resident-card-note">All registered resident accounts</p>
-        </div>
-        <div class="resident-card">
-          <span class="resident-card-label">Verified Accounts</span>
-          <strong class="resident-card-number"><?= $verifiedCount ?></strong>
-          <p class="resident-card-note">Approved and active residents</p>
-        </div>
-        <div class="resident-card">
-          <span class="resident-card-label">Pending Verification</span>
-          <strong class="resident-card-number"><?= $pendingCount ?></strong>
-          <p class="resident-card-note">Waiting for review and approval</p>
-        </div>
-        <div class="resident-card">
-          <span class="resident-card-label">Disabled Accounts</span>
-          <strong class="resident-card-number"><?= $disabledCount ?></strong>
-          <p class="resident-card-note">Temporarily restricted accounts</p>
-        </div>
-      </aside>
     </div>
   </main>
 </div>
@@ -541,6 +543,13 @@ function renderModal(d) {
         idPhotoHtml +
       '</div>' +
 
+      '<div class="modal-section-block">' +
+        '<div class="modal-section-title">Proof of Residency</div>' +
+        (d.proofOfResidency
+          ? '<img src="' + escH(d.proofOfResidency) + '" alt="Proof of Residency" class="id-photo-img" style="margin-top:6px;">'
+          : '<div class="id-photo-none" style="margin-top:6px;"><i class="fa-solid fa-house"></i>\u2002No proof of residency provided</div>') +
+      '</div>' +
+
     '</div>';
 
   var leftBtns = '';
@@ -591,6 +600,20 @@ function dv(label, value) {
 function escH(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.remove('open');
+}
+document.getElementById('successModal').addEventListener('click', function(e){
+  if (e.target === this) closeSuccessModal();
+});
+
+<?php if ($successModal): ?>
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('successModalMsg').textContent = <?= json_encode($successModal) ?>;
+  document.getElementById('successModal').classList.add('open');
+});
+<?php endif; ?>
 
 function closeViewModal() {
   document.getElementById('viewModal').classList.remove('open');
