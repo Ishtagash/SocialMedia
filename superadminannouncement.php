@@ -1,265 +1,166 @@
 <?php
 session_start();
-
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'superadmin') {
-    header("Location: login.php");
-    exit();
+    header("Location: login.php"); exit();
 }
 
-$serverName = "LAPTOP-8KOIBQER\SQLEXPRESS";
+$serverName        = "LAPTOP-8KOIBQER\SQLEXPRESS";
 $connectionOptions = ["Database" => "SocialMedia", "Uid" => "", "PWD" => "", "CharacterSet" => "UTF-8"];
-$conn = sqlsrv_connect($serverName, $connectionOptions);
+$conn              = sqlsrv_connect($serverName, $connectionOptions);
 
 $userId = $_SESSION['user_id'];
-
 $nameRow = sqlsrv_fetch_array(
     sqlsrv_query($conn, "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$userId]),
     SQLSRV_FETCH_ASSOC
 );
 $displayName = $nameRow
-    ? htmlspecialchars(rtrim($nameRow['FIRST_NAME']) . ' ' . rtrim($nameRow['LAST_NAME']))
+    ? htmlspecialchars(rtrim($nameRow['FIRST_NAME']).' '.rtrim($nameRow['LAST_NAME']))
     : 'Super Admin';
 
-$message     = '';
-$messageType = '';
+$message = ''; $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $now    = date('Y-m-d H:i:s');
 
-    if ($action === 'post_announcement') {
-        $title     = trim($_POST['title']      ?? '');
-        $body      = trim($_POST['body']       ?? '');
-        $category  = trim($_POST['category']   ?? 'General');
-        $expiresAt = trim($_POST['expires_at'] ?? '');
+    if ($action === 'create') {
+        $title    = trim($_POST['title']    ?? '');
+        $body     = trim($_POST['body']     ?? '');
+        $category = trim($_POST['category'] ?? '');
+        $duration = (int)($_POST['duration'] ?? 7);
+        $isActive = 1;
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+$duration days"));
 
         if ($title && $body) {
-            $expParam = $expiresAt ? $expiresAt . ' 23:59:59' : null;
-
-            $ins = sqlsrv_query($conn,
+            $q = sqlsrv_query($conn,
                 "INSERT INTO ANNOUNCEMENTS (TITLE, BODY, CATEGORY, IS_ACTIVE, CREATED_BY, CREATED_AT, EXPIRES_AT)
-                 VALUES (?, ?, ?, 1, ?, ?, ?)",
-                [$title, $body, $category, $userId, $now, $expParam]
-            );
-
-            if ($ins) {
+                 VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [$title, $body, $category, $isActive, $userId, $now, $expiresAt]);
+            if ($q === false) {
+                $errs = sqlsrv_errors();
+                $message = 'DB Error: ' . ($errs[0]['message'] ?? 'Unknown'); $messageType = 'error';
+            } else {
                 sqlsrv_query($conn,
                     "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Create Announcement', ?, ?)",
-                    [$userId, "Posted: $title", $now]
-                );
-                header("Location: superadminannouncement.php?msg=" . urlencode('Announcement posted successfully.'));
-                exit();
-            } else {
-                $errors      = sqlsrv_errors();
-                $errMsg      = $errors ? $errors[0]['message'] : 'Unknown error';
-                $message     = 'Failed to post announcement. DB Error: ' . htmlspecialchars($errMsg);
-                $messageType = 'error';
+                    [$userId, "Created announcement: $title", $now]);
+                $safeTitle = str_replace('"', "'", $title);
+                header("Location: superadminannouncement.php?success=" . rawurlencode("Announcement posted: $safeTitle")); exit();
             }
         } else {
-            $message     = 'Title and body are required.';
-            $messageType = 'error';
+            $message = 'Title and body are required.'; $messageType = 'error';
         }
     }
 
-    if ($action === 'delete_announcement') {
-        $annId = (int)($_POST['ann_id'] ?? 0);
-        if ($annId) {
-            sqlsrv_query($conn, "UPDATE ANNOUNCEMENTS SET IS_ACTIVE = 0 WHERE ANNOUNCEMENT_ID = ?", [$annId]);
-            sqlsrv_query($conn,
-                "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Delete Announcement', ?, ?)",
-                [$userId, "Deleted ANNOUNCEMENT_ID $annId", $now]
-            );
-            header("Location: superadminannouncement.php?msg=" . urlencode('Announcement removed.'));
-            exit();
+    if ($action === 'edit' && isset($_POST['ann_id'])) {
+        $annId    = (int)$_POST['ann_id'];
+        $newTitle = trim($_POST['title'] ?? '');
+        $newBody  = trim($_POST['body']  ?? '');
+        if ($newTitle && $newBody) {
+            $eq = sqlsrv_query($conn,
+                "UPDATE ANNOUNCEMENTS SET TITLE=?, BODY=? WHERE ANNOUNCEMENT_ID=?",
+                [$newTitle, $newBody, $annId]);
+            if ($eq === false) {
+                $errs = sqlsrv_errors();
+                $message = 'Edit error: ' . ($errs[0]['message'] ?? 'Unknown'); $messageType = 'error';
+            } else {
+                sqlsrv_query($conn,
+                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Edit Announcement', ?, ?)",
+                    [$userId, "Edited announcement: $newTitle", $now]);
+                header("Location: superadminannouncement.php?success=" . rawurlencode("Announcement updated successfully.")); exit();
+            }
         }
     }
 
-    if ($action === 'edit_announcement') {
-        $annId     = (int)($_POST['ann_id']     ?? 0);
-        $title     = trim($_POST['title']        ?? '');
-        $body      = trim($_POST['body']         ?? '');
-        $category  = trim($_POST['category']     ?? 'General');
-        $expiresAt = trim($_POST['expires_at']   ?? '');
-        if ($annId && $title && $body) {
-            $expParam = $expiresAt ? $expiresAt . ' 23:59:59' : null;
-            sqlsrv_query($conn,
-                "UPDATE ANNOUNCEMENTS SET TITLE = ?, BODY = ?, CATEGORY = ?, EXPIRES_AT = ? WHERE ANNOUNCEMENT_ID = ?",
-                [$title, $body, $category, $expParam, $annId]
-            );
-            sqlsrv_query($conn,
-                "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Update Announcement', ?, ?)",
-                [$userId, "Edited ANNOUNCEMENT_ID $annId", $now]
-            );
-            header("Location: superadminannouncement.php?msg=" . urlencode('Announcement updated.'));
-            exit();
-        }
+    if ($action === 'toggle' && isset($_POST['ann_id'])) {
+        $annId    = (int)$_POST['ann_id'];
+        $newActive = (int)($_POST['new_active'] ?? 1);
+        sqlsrv_query($conn,
+            "UPDATE ANNOUNCEMENTS SET IS_ACTIVE=? WHERE ANNOUNCEMENT_ID=?", [$newActive, $annId]);
+        $label = $newActive ? 'Published' : 'Unpublished';
+        sqlsrv_query($conn,
+            "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Toggle Announcement', ?, ?)",
+            [$userId, "$label announcement ID $annId", $now]);
+        header("Location: superadminannouncement.php?success=" . rawurlencode("Announcement $label.")); exit();
+    }
+
+    if ($action === 'delete' && isset($_POST['ann_id'])) {
+        $annId = (int)$_POST['ann_id'];
+        sqlsrv_query($conn, "DELETE FROM ANNOUNCEMENTS WHERE ANNOUNCEMENT_ID=?", [$annId]);
+        sqlsrv_query($conn,
+            "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Delete Announcement', ?, ?)",
+            [$userId, "Deleted announcement ID $annId", $now]);
+        header("Location: superadminannouncement.php?success=" . rawurlencode("Announcement deleted.")); exit();
     }
 }
 
+$successModal = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
 if (isset($_GET['msg'])) { $message = htmlspecialchars($_GET['msg']); $messageType = 'success'; }
 
-$search    = trim($_GET['search']   ?? '');
-$catFilter = trim($_GET['category'] ?? '');
-$editId    = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
-$editAnn   = null;
+$filterActive = trim($_GET['filter'] ?? '');
+$search       = trim($_GET['search'] ?? '');
 
 $params = [];
-$sql = "SELECT A.ANNOUNCEMENT_ID, A.TITLE, A.BODY, A.CATEGORY, A.IS_ACTIVE,
-               A.CREATED_AT, A.EXPIRES_AT,
-               R.FIRST_NAME, R.LAST_NAME, U.USERNAME
-        FROM ANNOUNCEMENTS A
-        INNER JOIN USERS U ON U.USER_ID = A.CREATED_BY
-        LEFT JOIN REGISTRATION R ON R.USER_ID = A.CREATED_BY
-        WHERE A.IS_ACTIVE = 1
-        AND (A.EXPIRES_AT IS NULL OR A.EXPIRES_AT >= GETDATE())";
+$sql = "SELECT ANNOUNCEMENT_ID, TITLE, BODY, CATEGORY, IS_ACTIVE, CREATED_BY, CREATED_AT, EXPIRES_AT FROM ANNOUNCEMENTS WHERE 1=1";
+if ($filterActive !== '') { $sql .= " AND IS_ACTIVE = ?"; $params[] = (int)$filterActive; }
+if ($search) { $sql .= " AND TITLE LIKE ?"; $params[] = '%'.$search.'%'; }
+$sql .= " ORDER BY CREATED_AT DESC";
 
-if ($search) {
-    $like      = '%' . $search . '%';
-    $sql      .= " AND (A.TITLE LIKE ? OR A.BODY LIKE ?)";
-    $params[]  = $like;
-    $params[]  = $like;
-}
-if ($catFilter) {
-    $sql     .= " AND A.CATEGORY = ?";
-    $params[] = $catFilter;
-}
-$sql .= " ORDER BY A.CREATED_AT DESC";
-
-$annResult     = sqlsrv_query($conn, $sql, $params ?: []);
+$result = sqlsrv_query($conn, $sql, $params ?: []);
 $announcements = [];
-if ($annResult) {
-    while ($row = sqlsrv_fetch_array($annResult, SQLSRV_FETCH_ASSOC)) {
-        $announcements[] = $row;
-    }
-}
-
-if ($editId) {
-    $er = sqlsrv_query($conn,
-        "SELECT ANNOUNCEMENT_ID, TITLE, BODY, CATEGORY, EXPIRES_AT
-         FROM ANNOUNCEMENTS WHERE ANNOUNCEMENT_ID = ? AND IS_ACTIVE = 1",
-        [$editId]
-    );
-    if ($er) { $editAnn = sqlsrv_fetch_array($er, SQLSRV_FETCH_ASSOC); }
-}
-
-$totalPosted = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $totalPosted = (int)$row['CNT']; }
-
-$thisMonth = 0;
-$r = sqlsrv_query($conn,
-    "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS
-     WHERE IS_ACTIVE = 1 AND MONTH(CREATED_AT) = MONTH(GETDATE()) AND YEAR(CREATED_AT) = YEAR(GETDATE())"
-);
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $thisMonth = (int)$row['CNT']; }
-
-$expiringSoon = 0;
-$r = sqlsrv_query($conn,
-    "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS
-     WHERE IS_ACTIVE = 1 AND EXPIRES_AT IS NOT NULL
-     AND EXPIRES_AT BETWEEN GETDATE() AND DATEADD(day, 7, GETDATE())"
-);
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $expiringSoon = (int)$row['CNT']; }
-
-$recentAnn = [];
-$rr = sqlsrv_query($conn,
-    "SELECT TOP 5 A.TITLE, A.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, U.USERNAME
-     FROM ANNOUNCEMENTS A
-     INNER JOIN USERS U ON U.USER_ID = A.CREATED_BY
-     LEFT JOIN REGISTRATION R ON R.USER_ID = A.CREATED_BY
-     WHERE A.IS_ACTIVE = 1 ORDER BY A.CREATED_AT DESC"
-);
-if ($rr) { while ($row = sqlsrv_fetch_array($rr, SQLSRV_FETCH_ASSOC)) { $recentAnn[] = $row; } }
-
-$catBreakdown = [];
-$cb = sqlsrv_query($conn,
-    "SELECT CATEGORY, COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1 GROUP BY CATEGORY ORDER BY CNT DESC"
-);
-if ($cb) { while ($row = sqlsrv_fetch_array($cb, SQLSRV_FETCH_ASSOC)) { $catBreakdown[] = $row; } }
-$maxCat = $catBreakdown ? max(array_column($catBreakdown, 'CNT')) : 1;
-
-$categories = ['General', 'Event', 'Health', 'Reminder', 'Alert'];
-
-function getCategoryClass($cat) {
-    $map = ['General' => 'general', 'Event' => 'event', 'Health' => 'health',
-            'Reminder' => 'reminder', 'Alert' => 'alert'];
-    return $map[$cat] ?? 'general';
-}
+if ($result) { while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) { $announcements[] = $row; } }
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Announcements — Barangay Alapan 1-A</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="base.css" />
-  <link rel="stylesheet" href="superadmin.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="base.css"/>
+  <link rel="stylesheet" href="superadmin.css"/>
   <style>
-    .announcement-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
-    .announcement-left{display:flex;flex-direction:column;gap:16px;min-width:0}
-    .announcement-right{display:flex;flex-direction:column;gap:16px}
-    .announcement-topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
-    .announcement-topbar-left h2{font-size:22px;font-weight:700;color:var(--navy);margin:0 0 3px}
-    .announcement-topbar-left p{font-size:13px;color:var(--text-muted);margin:0}
-    .announcement-compose{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
-    .announcement-compose-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02)}
-    .announcement-compose-head h4{font-size:14px;font-weight:700;color:var(--navy);margin:0}
-    .announcement-compose-body{padding:20px;display:flex;flex-direction:column;gap:14px}
-    .announcement-field{display:flex;flex-direction:column;gap:6px}
-    .announcement-field label{font-size:12px;font-weight:700;color:var(--navy)}
-    .announcement-input{width:100%;height:42px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;outline:none;box-sizing:border-box;transition:border-color .2s}
-    .announcement-input:focus{border-color:var(--navy)}
-    .announcement-textarea{width:100%;min-height:110px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;outline:none;resize:vertical;box-sizing:border-box;transition:border-color .2s;line-height:1.6}
-    .announcement-textarea:focus{border-color:var(--navy)}
-    .announcement-field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .announcement-select{width:100%;height:42px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;outline:none;box-sizing:border-box}
-    .announcement-compose-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border);background:rgba(5,22,80,.02)}
-    .announcement-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .announcement-search-box{flex:1;min-width:200px;height:40px;display:flex;align-items:center;gap:9px;padding:0 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
-    .announcement-search-box i{color:var(--text-muted);font-size:13px}
-    .announcement-search-box input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text)}
-    .announcement-filter-select{height:40px;min-width:130px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none}
-    .announcement-list{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
-    .announcement-card{background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:10px;transition:background .15s}
-    .announcement-card:hover{background:rgba(5,22,80,.02)}
-    .announcement-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-    .announcement-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .announcement-category-tag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(5,22,80,.07);color:var(--navy)}
-    .announcement-category-tag.health{background:rgba(34,197,94,.1);color:#166534}
-    .announcement-category-tag.alert{background:rgba(239,68,68,.1);color:#991b1b}
-    .announcement-category-tag.event{background:rgba(59,130,246,.1);color:#1e40af}
-    .announcement-category-tag.reminder{background:rgba(245,158,11,.1);color:#92400e}
-    .announcement-category-tag.general{background:rgba(5,22,80,.07);color:var(--navy)}
-    .expiry-tag{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 9px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(245,158,11,.1);color:#92400e}
-    .announcement-card-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
-    .announcement-icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;text-decoration:none}
-    .announcement-icon-btn.delete-btn:hover{background:rgba(239,68,68,.08);color:#dc2626;border-color:rgba(239,68,68,.2)}
-    .announcement-icon-btn.edit-btn:hover{background:rgba(204,255,0,.1);border-color:var(--navy);color:var(--navy)}
-    .announcement-card-title{font-size:15px;font-weight:700;color:var(--navy);line-height:1.3;margin:0}
-    .announcement-card-body{font-size:13px;color:var(--text);line-height:1.65}
-    .announcement-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px;border-top:1px solid var(--border)}
-    .announcement-card-author{font-size:12px;color:var(--text-muted);font-weight:600}
-    .announcement-card-date{font-size:12px;color:var(--text-muted)}
-    .announcement-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
-    .announcement-stat-label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
-    .announcement-stat-number{display:block;font-size:34px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:6px}
-    .announcement-stat-note{font-size:12px;color:var(--text-muted);line-height:1.4}
-    .announcement-recent-panel,.announcement-breakdown-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
-    .announcement-recent-head,.announcement-breakdown-head{padding:13px 18px;border-bottom:1px solid var(--border)}
-    .announcement-recent-head h4,.announcement-breakdown-head h4{font-size:14px;font-weight:700;color:var(--navy);margin:0}
-    .announcement-recent-item{display:flex;flex-direction:column;gap:3px;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .15s}
-    .announcement-recent-item:last-child{border-bottom:none}
-    .announcement-recent-item:hover{background:rgba(5,22,80,.02)}
-    .announcement-recent-title{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .announcement-recent-meta{font-size:11px;color:var(--text-muted)}
-    .announcement-breakdown-body{padding:14px 18px;display:flex;flex-direction:column;gap:10px}
-    .announcement-breakdown-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .announcement-breakdown-name{font-size:13px;font-weight:600;color:var(--text);min-width:72px}
-    .announcement-breakdown-count{font-size:13px;font-weight:700;color:var(--navy)}
-    .announcement-breakdown-bar-wrap{flex:1;height:5px;background:rgba(5,22,80,.07);border-radius:999px;overflow:hidden}
-    .announcement-breakdown-bar{height:100%;background:var(--navy);border-radius:999px;opacity:.3}
+    .ann-wrap{display:flex;flex-direction:column;gap:20px}
+    .ann-page-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .ann-page-head h2{font-size:22px;font-weight:700;color:var(--navy);margin:0 0 4px}
+    .ann-page-head p{font-size:13px;color:var(--text-muted);margin:0}
+
+    .ann-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+    .ann-toolbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02);flex-wrap:wrap}
+    .ann-search{flex:1;min-width:220px;height:40px;display:flex;align-items:center;gap:9px;padding:0 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+    .ann-search i{color:var(--text-muted);font-size:13px}
+    .ann-search input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text)}
+    .ann-filter{height:40px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none;min-width:140px}
+    .ann-table-wrap{width:100%;overflow-x:auto}
+    .ann-body-preview{font-size:12px;color:var(--text-muted);max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* CREATE FORM */
+    .create-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .create-panel-head{padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02)}
+    .create-panel-head h4{font-size:14px;font-weight:700;color:var(--navy);margin:0}
+    .create-panel-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+    .form-field{display:flex;flex-direction:column;gap:6px}
+    .form-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.35px}
+    .form-input{height:42px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s;width:100%}
+    .form-input:focus{border-color:var(--navy)}
+    .form-textarea{padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical;min-height:110px;width:100%;transition:border-color .2s}
+    .form-textarea:focus{border-color:var(--navy)}
+    .form-select{height:42px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none;width:100%}
+    .form-row{display:grid;grid-template-columns:1fr 160px;gap:12px}
+    .create-foot{display:flex;justify-content:flex-end}
+
+    /* MODALS */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,22,80,.5);z-index:400;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:#fff;border-radius:14px;padding:32px 28px;max-width:420px;width:90%;text-align:center;box-shadow:0 12px 48px rgba(5,22,80,.22)}
+    .modal-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px}
+    .modal-box h3{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px}
+    .modal-box p{font-size:13px;color:var(--text-muted);margin-bottom:22px;line-height:1.6}
+    .modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .modal-btn-yes{background:var(--navy);color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+    .modal-btn-no{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+    .modal-btn-ok{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+
     .logout-overlay{position:fixed;inset:0;z-index:2000;background:rgba(5,22,80,.65);display:none;align-items:center;justify-content:center}
     .logout-overlay.open{display:flex}
     .logout-box{background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:90%;text-align:center;border-top:4px solid var(--lime);box-shadow:0 16px 48px rgba(5,22,80,.28)}
@@ -267,13 +168,11 @@ function getCategoryClass($cat) {
     .logout-box h3{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
     .logout-box p{font-size:14px;color:#666;margin-bottom:24px;line-height:1.6}
     .logout-btns{display:flex;gap:10px;justify-content:center}
-    .btn-confirm{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
-    .btn-cancel{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-    .msg-banner{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px}
+    .btn-confirm-lo{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+    .btn-cancel-lo{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+    .msg-banner{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:12px}
     .msg-success{background:rgba(34,197,94,.12);color:#16a34a;border:1px solid rgba(34,197,94,.25)}
     .msg-error{background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.25)}
-    @media(max-width:1100px){.announcement-layout{grid-template-columns:1fr}.announcement-right{display:grid;grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:680px){.announcement-right{grid-template-columns:1fr}.announcement-topbar{flex-direction:column;align-items:flex-start}.announcement-field-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body class="superadmin-body">
@@ -284,18 +183,77 @@ function getCategoryClass($cat) {
     <h3>Log out?</h3>
     <p>You will be returned to the login page.</p>
     <div class="logout-btns">
-      <button class="btn-cancel" onclick="closeLogout()">Cancel</button>
-      <a href="logout.php" class="btn-confirm"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+      <button class="btn-cancel-lo" onclick="closeLogout()">Cancel</button>
+      <a href="logout.php" class="btn-confirm-lo"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
     </div>
   </div>
 </div>
 
+<div class="modal-overlay" id="successModal">
+  <div class="modal-box" style="border-top:4px solid var(--green);">
+    <div class="modal-icon" style="background:rgba(34,197,94,.12);color:var(--green);"><i class="fa-solid fa-circle-check"></i></div>
+    <h3>Done!</h3>
+    <p id="successMsg"></p>
+    <div class="modal-btns"><button class="modal-btn-ok" onclick="closeSuccessModal()">OK</button></div>
+  </div>
+</div>
+
+<!-- VIEW / EDIT / DELETE MODAL -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal-box" style="max-width:520px;text-align:left;padding:0;border-radius:14px;overflow:hidden;">
+    <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+      <h3 style="font-size:15px;font-weight:700;color:#fff;margin:0;"><i class="fa-solid fa-bullhorn" style="margin-right:8px;opacity:.7;"></i>Announcement</h3>
+      <button onclick="closeViewModal()" style="background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="viewModeBody" style="padding:22px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Title</div>
+      <div id="viewTitle" style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:16px;"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Message</div>
+      <div id="viewBody" style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;max-height:220px;overflow-y:auto;background:rgba(5,22,80,.03);padding:14px;border-radius:8px;border:1px solid var(--border);"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+        <button onclick="switchToEdit()" class="modal-btn-no"><i class="fa-solid fa-pen" style="margin-right:6px;"></i>Edit</button>
+        <button onclick="confirmDelete()" class="modal-btn-yes" style="background:#ef4444;"><i class="fa-solid fa-trash" style="margin-right:6px;"></i>Delete</button>
+      </div>
+    </div>
+    <div id="editModeBody" style="padding:22px;display:none;">
+      <form method="POST" id="editForm">
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="ann_id" id="editAnnId">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px;">Title</label>
+          <input type="text" name="title" id="editTitle" class="form-input" required>
+        </div>
+        <div style="margin-bottom:18px;">
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px;">Message</label>
+          <textarea name="body" id="editBody" class="form-textarea" required></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" onclick="switchToView()" class="modal-btn-no">Cancel</button>
+          <button type="submit" class="modal-btn-yes"><i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>Save Changes</button>
+        </div>
+      </form>
+    </div>
+    <!-- Delete confirm strip (hidden by default) -->
+    <div id="deleteConfirmBody" style="padding:22px;display:none;text-align:center;">
+      <div class="modal-icon" style="background:rgba(239,68,68,.1);color:#b91c1c;margin-bottom:14px;"><i class="fa-solid fa-trash"></i></div>
+      <p style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:6px;">Delete this announcement?</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">This cannot be undone.</p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button onclick="switchToView()" class="modal-btn-no">Cancel</button>
+        <button onclick="submitDelete()" class="modal-btn-yes" style="background:#ef4444;">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="POST" id="deleteForm" style="display:none;">
+  <input type="hidden" name="action" value="delete">
+  <input type="hidden" name="ann_id" id="deleteAnnId">
+</form>
+
 <div class="superadmin-page">
   <header class="superadmin-header">
-    <div class="superadmin-brand">
-      <h1>Barangay Alapan 1-A</h1>
-      <p>Super Admin</p>
-    </div>
+    <div class="superadmin-brand"><h1>Barangay Alapan 1-A</h1><p>Super Admin</p></div>
     <nav class="superadmin-nav">
       <a href="superadmindashboard.php">Dashboard</a>
       <a href="superadminstaffaccount.php">Staff Accounts</a>
@@ -305,12 +263,10 @@ function getCategoryClass($cat) {
       <a href="superadminauditlogs.php">Audit Logs</a>
     </nav>
     <div class="superadmin-header-right">
-      <div class="superadmin-user">
-        <div class="superadmin-user-info">
-          <span class="superadmin-user-name"><?= $displayName ?></span>
-        </div>
-      </div>
-      <a href="#" class="superadmin-logout" onclick="openLogout(); return false;">Logout</a>
+      <div class="superadmin-user"><div class="superadmin-user-info">
+        <span class="superadmin-user-name"><?= $displayName ?></span>
+      </div></div>
+      <a href="#" class="superadmin-logout" onclick="openLogout();return false;">Logout</a>
     </div>
   </header>
 
@@ -319,250 +275,194 @@ function getCategoryClass($cat) {
     <div class="msg-banner msg-<?= $messageType ?>"><?= $message ?></div>
     <?php endif; ?>
 
-    <div class="announcement-topbar">
-      <div class="announcement-topbar-left">
-        <h2>Announcements</h2>
-        <p>Post and manage community announcements</p>
+    <div class="ann-wrap">
+      <div class="ann-page-head">
+        <div>
+          <h2>Announcements</h2>
+          <p>Post and manage community announcements visible to all residents.</p>
+        </div>
       </div>
-      <button class="superadmin-primary-btn" onclick="openCompose()">
-        <i class="fa-solid fa-plus"></i> New Announcement
-      </button>
-    </div>
 
-    <div class="announcement-layout">
-      <div class="announcement-left">
-
-        <div class="announcement-compose" id="composePanel" style="display:none;">
-          <div class="announcement-compose-head">
-            <h4><?= $editAnn ? 'Edit Announcement' : 'New Announcement' ?></h4>
-            <button type="button" class="announcement-icon-btn" onclick="closeCompose()">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-          <form method="POST">
-            <input type="hidden" name="action" value="<?= $editAnn ? 'edit_announcement' : 'post_announcement' ?>">
-            <?php if ($editAnn): ?>
-            <input type="hidden" name="ann_id" value="<?= (int)$editAnn['ANNOUNCEMENT_ID'] ?>">
-            <?php endif; ?>
-            <div class="announcement-compose-body">
-              <div class="announcement-field">
-                <label>Title *</label>
-                <input class="announcement-input" type="text" name="title" required
-                  placeholder="Announcement title"
-                  value="<?= $editAnn ? htmlspecialchars(rtrim($editAnn['TITLE'])) : '' ?>">
-              </div>
-              <div class="announcement-field">
-                <label>Body *</label>
-                <textarea class="announcement-textarea" name="body" required
-                  placeholder="Write the announcement content here..."><?= $editAnn ? htmlspecialchars(rtrim($editAnn['BODY'])) : '' ?></textarea>
-              </div>
-              <div class="announcement-field-row">
-                <div class="announcement-field">
-                  <label>Category</label>
-                  <select class="announcement-select" name="category">
-                    <?php foreach ($categories as $cat): ?>
-                    <option value="<?= $cat ?>"
-                      <?= ($editAnn && rtrim($editAnn['CATEGORY']) === $cat) ? 'selected' : '' ?>>
-                      <?= $cat ?>
-                    </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="announcement-field">
-                  <label>
-                    Expiry Date
-                    <span style="font-weight:400;color:var(--text-muted);"> (optional)</span>
-                  </label>
-                  <input class="announcement-input" type="date" name="expires_at"
-                    min="<?= date('Y-m-d') ?>"
-                    value="<?php
-                      if ($editAnn && $editAnn['EXPIRES_AT']) {
-                          $expObj = $editAnn['EXPIRES_AT'] instanceof DateTime
-                            ? $editAnn['EXPIRES_AT']
-                            : new DateTime($editAnn['EXPIRES_AT']);
-                          echo $expObj->format('Y-m-d');
-                      }
-                    ?>">
-                </div>
-              </div>
+      <!-- CREATE FORM -->
+      <div class="create-panel">
+        <div class="create-panel-head">
+          <h4><i class="fa-solid fa-plus" style="margin-right:7px;"></i>Post New Announcement</h4>
+        </div>
+        <form method="POST" class="create-panel-body">
+          <input type="hidden" name="action" value="create">
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label">Title</label>
+              <input type="text" name="title" class="form-input" placeholder="Announcement title..." required>
             </div>
-            <div class="announcement-compose-foot">
-              <button type="button" class="superadmin-outline-btn" onclick="closeCompose()">Cancel</button>
+            <div class="form-field">
+              <label class="form-label">Category <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+              <input type="text" name="category" class="form-input" placeholder="e.g. Health, Events, Safety...">
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Message</label>
+            <textarea name="body" class="form-textarea" placeholder="Write the announcement content here..." required></textarea>
+          </div>
+          <div class="form-row" style="grid-template-columns:1fr 200px;">
+            <div class="form-field" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:10px;">
+              <label class="form-label" style="margin:0;white-space:nowrap;">Expires after</label>
+              <select name="duration" class="form-select" style="max-width:200px;">
+                <option value="3">3 days</option>
+                <option value="7" selected>1 week</option>
+                <option value="14">2 weeks</option>
+                <option value="30">1 month</option>
+                <option value="90">3 months</option>
+                <option value="365">1 year</option>
+              </select>
+            </div>
+            <div class="create-foot" style="justify-content:flex-end;">
               <button type="submit" class="superadmin-primary-btn">
-                <i class="fa-solid fa-<?= $editAnn ? 'floppy-disk' : 'paper-plane' ?>"></i>
-                <?= $editAnn ? 'Save Changes' : 'Post Announcement' ?>
+                <i class="fa-solid fa-paper-plane"></i> Post Announcement
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
+      </div>
 
-        <form method="GET" id="filterForm">
-          <div class="announcement-filter-bar">
-            <div class="announcement-search-box">
+      <!-- LIST -->
+      <div class="ann-panel">
+        <form method="GET">
+          <div class="ann-toolbar">
+            <div class="ann-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" name="search" placeholder="Search announcements..."
-                value="<?= htmlspecialchars($search) ?>">
+              <input type="text" name="search" placeholder="Search by title..." value="<?= htmlspecialchars($search) ?>">
             </div>
-            <select class="announcement-filter-select" name="category"
-              onchange="document.getElementById('filterForm').submit()">
-              <option value="">All Categories</option>
-              <?php foreach ($categories as $cat): ?>
-              <option value="<?= $cat ?>" <?= $catFilter === $cat ? 'selected' : '' ?>><?= $cat ?></option>
-              <?php endforeach; ?>
+            <select class="ann-filter" name="filter" onchange="this.form.submit()">
+              <option value="">All</option>
+              <option value="1" <?= $filterActive==='1'?'selected':'' ?>>Active</option>
+              <option value="0" <?= $filterActive==='0'?'selected':'' ?>>Inactive</option>
             </select>
-            <button type="submit" class="superadmin-primary-btn" style="min-height:40px;padding:0 16px;">
+            <button type="submit" class="superadmin-primary-btn" style="min-height:40px;padding:0 14px;">
               <i class="fa-solid fa-magnifying-glass"></i>
             </button>
-            <?php if ($search || $catFilter): ?>
-            <a href="superadminannouncement.php" class="superadmin-outline-btn"
-               style="min-height:40px;padding:0 14px;display:inline-flex;align-items:center;">Clear</a>
-            <?php endif; ?>
           </div>
         </form>
 
-        <div class="announcement-list">
-          <?php if (empty($announcements)): ?>
-          <div class="announcement-card">
-            <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px 0;">
-              No announcements found.
-            </p>
-          </div>
-          <?php else: ?>
-          <?php foreach ($announcements as $ann):
-            $annTitle   = htmlspecialchars(rtrim($ann['TITLE']));
-            $annBody    = htmlspecialchars(rtrim($ann['BODY']));
-            $annCat     = rtrim($ann['CATEGORY'] ?? 'General');
-            $annCatCls  = getCategoryClass($annCat);
-            $annId      = (int)$ann['ANNOUNCEMENT_ID'];
-            $authorName = trim(rtrim($ann['FIRST_NAME'] ?? '') . ' ' . rtrim($ann['LAST_NAME'] ?? ''))
-                          ?: rtrim($ann['USERNAME']);
-            $annDate    = $ann['CREATED_AT'] instanceof DateTime
-              ? $ann['CREATED_AT']->format('F j, Y')
-              : date('F j, Y', strtotime($ann['CREATED_AT']));
-            $expiresAt  = $ann['EXPIRES_AT'];
-            $expiryStr  = '';
-            if ($expiresAt) {
-                $expiryObj = $expiresAt instanceof DateTime ? $expiresAt : new DateTime($expiresAt);
-                $expiryStr = 'Expires ' . $expiryObj->format('M j, Y');
-            }
-          ?>
-          <div class="announcement-card">
-            <div class="announcement-card-top">
-              <div class="announcement-card-meta">
-                <span class="announcement-category-tag <?= $annCatCls ?>"><?= htmlspecialchars($annCat) ?></span>
-                <?php if ($expiryStr): ?>
-                <span class="expiry-tag"><i class="fa-regular fa-clock"></i> <?= $expiryStr ?></span>
-                <?php endif; ?>
-              </div>
-              <div class="announcement-card-actions">
-                <a href="superadminannouncement.php?edit=<?= $annId ?>"
-                   class="announcement-icon-btn edit-btn" title="Edit">
-                  <i class="fa-solid fa-pen"></i>
-                </a>
-                <form method="POST" style="display:inline;"
-                  onsubmit="return confirm('Delete this announcement?')">
-                  <input type="hidden" name="action" value="delete_announcement">
-                  <input type="hidden" name="ann_id" value="<?= $annId ?>">
-                  <button type="submit" class="announcement-icon-btn delete-btn" title="Delete">
-                    <i class="fa-solid fa-trash"></i>
+        <div class="ann-table-wrap">
+          <table class="superadmin-table">
+            <thead>
+              <tr><th>Title</th><th>Category</th><th>Preview</th><th>Status</th><th>Expires</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <?php if (empty($announcements)): ?>
+              <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No announcements found.</td></tr>
+              <?php else: foreach ($announcements as $ann):
+                $annId       = (int)($ann['ANNOUNCEMENT_ID'] ?? 0);
+                $annTitle    = htmlspecialchars(rtrim($ann['TITLE'] ?? ''));
+                $annBodyRaw  = rtrim($ann['BODY'] ?? '');
+                $annBody     = htmlspecialchars($annBodyRaw);
+                $annCat      = htmlspecialchars(rtrim($ann['CATEGORY'] ?? ''));
+                $annActive   = (int)($ann['IS_ACTIVE'] ?? 1);
+                $annDate     = $ann['CREATED_AT'] instanceof DateTime
+                    ? $ann['CREATED_AT']->format('M d, Y') : date('M d, Y', strtotime($ann['CREATED_AT'] ?? 'now'));
+                $annExpires  = '';
+                if ($ann['EXPIRES_AT'] instanceof DateTime) {
+                    $annExpires = $ann['EXPIRES_AT']->format('M d, Y');
+                } elseif (!empty($ann['EXPIRES_AT'])) {
+                    $annExpires = date('M d, Y', strtotime($ann['EXPIRES_AT']));
+                }
+              ?>
+              <tr>
+                <td style="font-weight:700;color:var(--navy);max-width:180px;"><?= $annTitle ?></td>
+                <td style="font-size:12px;color:var(--text-muted);"><?= $annCat ?: '—' ?></td>
+                <td><span class="ann-body-preview"><?= $annBody ?></span></td>
+                <td>
+                  <span class="table-status <?= $annActive ? 'active' : 'inactive' ?>">
+                    <?= $annActive ? 'Active' : 'Inactive' ?>
+                  </span>
+                </td>
+                <td style="font-size:12px;color:var(--text-muted);"><?= $annExpires ?: '—' ?></td>
+                <td>
+                  <button type="button"
+                          class="superadmin-primary-btn"
+                          style="min-height:34px;padding:0 14px;font-size:13px;"
+                          data-ann-id="<?= $annId ?>"
+                          data-ann-title="<?= htmlspecialchars(rtrim($ann['TITLE'] ?? ''), ENT_QUOTES) ?>"
+                          data-ann-body="<?= htmlspecialchars(rtrim($ann['BODY'] ?? ''), ENT_QUOTES) ?>"
+                          data-ann-active="<?= $annActive ?>"
+                          onclick="openViewModalFromBtn(this)">
+                    <i class="fa-solid fa-eye"></i> View
                   </button>
-                </form>
-              </div>
-            </div>
-            <h3 class="announcement-card-title"><?= $annTitle ?></h3>
-            <p class="announcement-card-body"><?= $annBody ?></p>
-            <div class="announcement-card-foot">
-              <span class="announcement-card-author">Posted by <?= htmlspecialchars($authorName) ?></span>
-              <span class="announcement-card-date"><?= $annDate ?> · All Residents</span>
-            </div>
-          </div>
-          <?php endforeach; ?>
-          <?php endif; ?>
+                </td>
+              </tr>
+              <?php endforeach; endif; ?>
+            </tbody>
+          </table>
         </div>
-
       </div>
-
-      <aside class="announcement-right">
-        <div class="announcement-stat-card">
-          <span class="announcement-stat-label">Total Active</span>
-          <strong class="announcement-stat-number"><?= $totalPosted ?></strong>
-          <p class="announcement-stat-note">All active announcements</p>
-        </div>
-        <div class="announcement-stat-card">
-          <span class="announcement-stat-label">This Month</span>
-          <strong class="announcement-stat-number"><?= $thisMonth ?></strong>
-          <p class="announcement-stat-note">Posted in <?= date('F Y') ?></p>
-        </div>
-        <div class="announcement-stat-card">
-          <span class="announcement-stat-label">Expiring Soon</span>
-          <strong class="announcement-stat-number"><?= $expiringSoon ?></strong>
-          <p class="announcement-stat-note">Posts expiring within 7 days</p>
-        </div>
-
-        <div class="announcement-recent-panel">
-          <div class="announcement-recent-head"><h4>Recently Posted</h4></div>
-          <?php if (empty($recentAnn)): ?>
-          <div class="announcement-recent-item">
-            <span class="announcement-recent-title">No recent posts.</span>
-          </div>
-          <?php else: ?>
-          <?php foreach ($recentAnn as $ra):
-            $raAuthor = trim(rtrim($ra['FIRST_NAME'] ?? '') . ' ' . rtrim($ra['LAST_NAME'] ?? ''))
-                        ?: rtrim($ra['USERNAME']);
-            $raDate   = $ra['CREATED_AT'] instanceof DateTime
-              ? $ra['CREATED_AT']->format('M d')
-              : date('M d', strtotime($ra['CREATED_AT']));
-          ?>
-          <div class="announcement-recent-item">
-            <span class="announcement-recent-title"><?= htmlspecialchars(rtrim($ra['TITLE'])) ?></span>
-            <span class="announcement-recent-meta"><?= htmlspecialchars($raAuthor) ?> · <?= $raDate ?></span>
-          </div>
-          <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-
-        <div class="announcement-breakdown-panel">
-          <div class="announcement-breakdown-head"><h4>By Category</h4></div>
-          <div class="announcement-breakdown-body">
-            <?php if (empty($catBreakdown)): ?>
-            <p style="font-size:13px;color:var(--text-muted);">No data yet.</p>
-            <?php else: ?>
-            <?php foreach ($catBreakdown as $cb):
-              $bw = $maxCat > 0 ? round(($cb['CNT'] / $maxCat) * 100) : 0;
-            ?>
-            <div class="announcement-breakdown-row">
-              <span class="announcement-breakdown-name"><?= htmlspecialchars(rtrim($cb['CATEGORY'])) ?></span>
-              <div class="announcement-breakdown-bar-wrap">
-                <div class="announcement-breakdown-bar" style="width:<?= $bw ?>%;"></div>
-              </div>
-              <span class="announcement-breakdown-count"><?= $cb['CNT'] ?></span>
-            </div>
-            <?php endforeach; ?>
-            <?php endif; ?>
-          </div>
-        </div>
-      </aside>
     </div>
   </main>
 </div>
 
 <script>
-function openCompose() {
-  var p = document.getElementById('composePanel');
-  p.style.display = 'block';
-  p.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-function closeCompose() {
-  document.getElementById('composePanel').style.display = 'none';
-}
-<?php if ($editAnn): ?>
-document.addEventListener('DOMContentLoaded', function() { openCompose(); });
-<?php endif; ?>
 function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
 function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
-document.getElementById('logoutModal').addEventListener('click', function(e) {
-  if (e.target === this) closeLogout();
+document.getElementById('logoutModal').addEventListener('click',function(e){if(e.target===this)closeLogout();});
+
+function closeSuccessModal() { document.getElementById('successModal').classList.remove('open'); }
+document.getElementById('successModal').addEventListener('click',function(e){if(e.target===this)closeSuccessModal();});
+
+var currentAnnId = 0;
+var currentAnnActive = 1;
+
+function openViewModalFromBtn(btn) {
+  var id       = parseInt(btn.getAttribute('data-ann-id'), 10);
+  var title    = btn.getAttribute('data-ann-title');
+  var body     = btn.getAttribute('data-ann-body');
+  var isActive = parseInt(btn.getAttribute('data-ann-active'), 10);
+  openViewModal(id, title, body, isActive);
+}
+
+function openViewModal(id, title, body, isActive) {
+  currentAnnId     = id;
+  currentAnnActive = isActive;
+  document.getElementById('viewTitle').textContent = title;
+  document.getElementById('viewBody').textContent  = body;
+  document.getElementById('editAnnId').value = id;
+  document.getElementById('editTitle').value = title;
+  document.getElementById('editBody').value  = body;
+  switchToView();
+  document.getElementById('viewModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeViewModal() {
+  document.getElementById('viewModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function switchToView() {
+  document.getElementById('viewModeBody').style.display      = '';
+  document.getElementById('editModeBody').style.display      = 'none';
+  document.getElementById('deleteConfirmBody').style.display = 'none';
+}
+function switchToEdit() {
+  document.getElementById('viewModeBody').style.display      = 'none';
+  document.getElementById('editModeBody').style.display      = '';
+  document.getElementById('deleteConfirmBody').style.display = 'none';
+}
+function confirmDelete() {
+  document.getElementById('viewModeBody').style.display      = 'none';
+  document.getElementById('editModeBody').style.display      = 'none';
+  document.getElementById('deleteConfirmBody').style.display = '';
+}
+function submitDelete() {
+  document.getElementById('deleteAnnId').value = currentAnnId;
+  closeViewModal();
+  document.getElementById('deleteForm').submit();
+}
+document.getElementById('viewModal').addEventListener('click',function(e){if(e.target===this)closeViewModal();});
+
+<?php if ($successModal): ?>
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('successMsg').textContent = <?= json_encode($successModal) ?>;
+  document.getElementById('successModal').classList.add('open');
 });
+<?php endif; ?>
 </script>
 </body>
 </html>

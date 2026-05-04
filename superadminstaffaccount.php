@@ -62,28 +62,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($dupMsg) {
             $message = $dupMsg; $messageType = 'error';
         } else {
-            $resetQ = sqlsrv_query($conn,
+
+            $nameCache = [];
+            $nameForId = function($uid) use ($conn, &$nameCache) {
+                if (isset($nameCache[$uid])) return $nameCache[$uid];
+                $nr = sqlsrv_fetch_array(
+                    sqlsrv_query($conn,
+                        "SELECT R.FIRST_NAME, R.LAST_NAME, U.USERNAME
+                         FROM USERS U
+                         LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
+                         WHERE U.USER_ID = ?", [$uid]),
+                    SQLSRV_FETCH_ASSOC
+                );
+                $fn   = rtrim($nr['FIRST_NAME'] ?? '');
+                $ln   = rtrim($nr['LAST_NAME']  ?? '');
+                $name = trim("$fn $ln") ?: rtrim($nr['USERNAME'] ?? "User #$uid");
+                $nameCache[$uid] = $name;
+                return $name;
+            };
+
+            /* ── SNAPSHOT: who currently holds what BEFORE we change anything ── */
+            $before = [];
+            $snapQ  = sqlsrv_query($conn,
+                "SELECT USER_ID, POSITION FROM USERS WHERE ROLE = 'staff' AND POSITION IS NOT NULL AND USER_ID != ?",
+                [$userId]);
+            if ($snapQ) {
+                while ($sr = sqlsrv_fetch_array($snapQ, SQLSRV_FETCH_ASSOC)) {
+                    $before[(int)$sr['USER_ID']] = rtrim($sr['POSITION'] ?? '');
+                }
+            }
+
+            /* ── Build NEW state: uid => position ── */
+            $after = [];
+            foreach ($singlePositions as $pos) {
+                $uid = $submitted[$pos];
+                if ($uid) $after[$uid] = $pos;
+            }
+            foreach (array_unique($kagawadIds) as $uid) {
+                if ($uid) $after[$uid] = 'Kagawad';
+            }
+
+            /* ── Apply: reset everyone then set new assignments ── */
+            sqlsrv_query($conn,
                 "UPDATE USERS SET ROLE = 'resident', POSITION = NULL WHERE ROLE = 'staff' AND USER_ID != ?",
                 [$userId]);
 
-            foreach ($singlePositions as $pos) {
-                $uid = $submitted[$pos];
-                if (!$uid) continue;
+            foreach ($after as $uid => $pos) {
                 sqlsrv_query($conn,
                     "UPDATE USERS SET ROLE = 'staff', STATUS = 'active', POSITION = ? WHERE USER_ID = ?",
                     [$pos, $uid]);
-                sqlsrv_query($conn,
-                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
-                    [$userId, "Assigned USER_ID $uid as $pos", $now]);
             }
 
-            foreach (array_unique($kagawadIds) as $uid) {
-                sqlsrv_query($conn,
-                    "UPDATE USERS SET ROLE = 'staff', STATUS = 'active', POSITION = 'Kagawad' WHERE USER_ID = ?",
-                    [$uid]);
-                sqlsrv_query($conn,
-                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
-                    [$userId, "Assigned USER_ID $uid as Kagawad", $now]);
+            /* ── Write audit entries based on what actually changed ── */
+
+            /* 1. People who had a position before and still have one (same or different) */
+            foreach ($before as $uid => $oldPos) {
+                $name   = $nameForId($uid);
+                $newPos = $after[$uid] ?? null;
+                if ($newPos === null) {
+                    /* Was staff, now removed → Revert to Resident */
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Revert to Resident', ?, ?)",
+                        [$userId, "$name was removed from $oldPos and reverted to resident", $now]);
+                } elseif ($newPos !== $oldPos) {
+                    /* Position changed → Change Position */
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Change Position', ?, ?)",
+                        [$userId, "$name moved from $oldPos to $newPos", $now]);
+                }
+                /* Same position — no log entry needed */
+            }
+
+            /* 2. People who are newly assigned (weren't staff before) → Assign Position */
+            foreach ($after as $uid => $pos) {
+                if (!isset($before[$uid])) {
+                    $name = $nameForId($uid);
+                    sqlsrv_query($conn,
+                        "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
+                        [$userId, "$name assigned as $pos", $now]);
+                }
             }
 
             header("Location: superadminstaffaccount.php?saved=1");
@@ -110,27 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $showSavedModal = isset($_GET['saved']) && $_GET['saved'] === '1';
 if (isset($_GET['msg'])) { $message = htmlspecialchars($_GET['msg']); $messageType = 'success'; }
-
-$search       = trim($_GET['search'] ?? '');
-$statusFilter = trim($_GET['status'] ?? '');
-$staffParams  = [];
-$staffSql     = "SELECT U.USER_ID, U.EMAIL, U.USERNAME, U.STATUS, U.LAST_LOGIN, U.POSITION,
-                        R.FIRST_NAME, R.LAST_NAME
-                 FROM USERS U
-                 LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
-                 WHERE U.ROLE = 'staff'";
-if ($search) {
-    $like = '%' . $search . '%';
-    $staffSql .= " AND (R.FIRST_NAME LIKE ? OR R.LAST_NAME LIKE ? OR U.EMAIL LIKE ? OR U.USERNAME LIKE ?)";
-    $staffParams[] = $like; $staffParams[] = $like; $staffParams[] = $like; $staffParams[] = $like;
-}
-if ($statusFilter && in_array($statusFilter, ['active','inactive'])) {
-    $staffSql .= " AND U.STATUS = ?"; $staffParams[] = $statusFilter;
-}
-$staffSql   .= " ORDER BY R.LAST_NAME ASC, R.FIRST_NAME ASC";
-$staffResult = sqlsrv_query($conn, $staffSql, $staffParams ?: []);
-$staffList   = [];
-if ($staffResult) { while ($row = sqlsrv_fetch_array($staffResult, SQLSRV_FETCH_ASSOC)) { $staffList[] = $row; } }
 
 $allPeople = [];
 $apResult  = sqlsrv_query($conn,
@@ -164,16 +200,6 @@ if ($ch) {
     }
 }
 
-$totalStaff  = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'staff'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $totalStaff = (int)$row['CNT']; }
-
-$activeStaff = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'staff' AND STATUS = 'active'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $activeStaff = (int)$row['CNT']; }
-
-$disabledStaff = $totalStaff - $activeStaff;
-
 function posKey($p) { return 'pos_' . strtolower(str_replace([' ','-'],'_',$p)); }
 ?>
 <!doctype html>
@@ -187,9 +213,7 @@ function posKey($p) { return 'pos_' . strtolower(str_replace([' ','-'],'_',$p));
   <link rel="stylesheet" href="base.css"/>
   <link rel="stylesheet" href="superadmin.css"/>
   <style>
-    .staff-page-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}
-    .staff-left{display:flex;flex-direction:column;gap:20px;min-width:0}
-    .staff-right{display:flex;flex-direction:column;gap:14px}
+    .staff-page-layout{display:flex;flex-direction:column;gap:20px}
     .positions-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
     .positions-head{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02)}
     .positions-head h4{font-size:15px;font-weight:700;color:var(--navy);margin:0 0 3px}
@@ -225,20 +249,7 @@ function posKey($p) { return 'pos_' . strtolower(str_replace([' ','-'],'_',$p));
     .modal-btn-yes:hover{background:var(--navy-mid)}
     .modal-btn-no{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
     .modal-btn-ok{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-    .staff-main-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-    .staff-panel-toolbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02);flex-wrap:wrap}
-    .staff-panel-search{flex:1;min-width:200px;height:40px;display:flex;align-items:center;gap:9px;padding:0 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
-    .staff-panel-search i{color:var(--text-muted);font-size:13px}
-    .staff-panel-search input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text)}
-    .staff-panel-select{height:40px;min-width:130px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;outline:none}
-    .staff-panel-head{padding:13px 18px;border-bottom:1px solid var(--border)}
-    .staff-panel-head h4{font-size:14px;font-weight:700;color:var(--navy);margin:0}
-    .staff-table-wrap{width:100%;overflow-x:auto}
-    .pos-chip-table{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(5,22,80,.07);color:var(--navy)}
-    .staff-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
-    .staff-stat-label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
-    .staff-stat-num{display:block;font-size:36px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:6px}
-    .staff-stat-note{font-size:12px;color:var(--text-muted);line-height:1.45}
+
     .logout-overlay{position:fixed;inset:0;z-index:2000;background:rgba(5,22,80,.65);display:none;align-items:center;justify-content:center}
     .logout-overlay.open{display:flex}
     .logout-box{background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:90%;text-align:center;border-top:4px solid var(--lime);box-shadow:0 16px 48px rgba(5,22,80,.28)}
@@ -314,7 +325,6 @@ function posKey($p) { return 'pos_' . strtolower(str_replace([' ','-'],'_',$p));
     <?php endif; ?>
 
     <div class="staff-page-layout">
-      <div class="staff-left">
 
         <div class="positions-panel">
           <div class="positions-head">
@@ -395,84 +405,6 @@ function posKey($p) { return 'pos_' . strtolower(str_replace([' ','-'],'_',$p));
           </form>
         </div>
 
-        <!-- STAFF TABLE -->
-        <div class="staff-main-panel">
-          <form method="GET" id="filterForm">
-            <div class="staff-panel-toolbar">
-              <div class="staff-panel-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" name="search" placeholder="Search name or email..." value="<?= htmlspecialchars($search) ?>">
-              </div>
-              <select class="staff-panel-select" name="status" onchange="document.getElementById('filterForm').submit()">
-                <option value="">All Status</option>
-                <option value="active"   <?= $statusFilter==='active'  ?'selected':'' ?>>Active</option>
-                <option value="inactive" <?= $statusFilter==='inactive'?'selected':'' ?>>Disabled</option>
-              </select>
-              <button type="submit" class="superadmin-primary-btn" style="min-height:40px;padding:0 14px;">
-                <i class="fa-solid fa-magnifying-glass"></i>
-              </button>
-            </div>
-          </form>
-          <div class="staff-panel-head"><h4>Current Staff Members</h4></div>
-          <div class="staff-table-wrap">
-            <table class="superadmin-table">
-              <thead><tr><th>Name</th><th>Position</th><th>Email</th><th>Status</th><th>Last Active</th><th>Action</th></tr></thead>
-              <tbody>
-                <?php if (empty($staffList)): ?>
-                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No staff accounts found.</td></tr>
-                <?php else: ?>
-                <?php foreach ($staffList as $s):
-                  $sId     = (int)$s['USER_ID'];
-                  $fn      = rtrim($s['FIRST_NAME'] ?? '');
-                  $ln      = rtrim($s['LAST_NAME']  ?? '');
-                  $sName   = htmlspecialchars(trim("$fn $ln") ?: rtrim($s['USERNAME'] ?? ''));
-                  $sPos    = htmlspecialchars(rtrim($s['POSITION'] ?? ''));
-                  $sEmail  = htmlspecialchars(rtrim($s['EMAIL'] ?? ''));
-                  $sStatus = strtolower(rtrim($s['STATUS'] ?? ''));
-                  $ll = '——';
-                  if ($s['LAST_LOGIN'] instanceof DateTime) $ll = $s['LAST_LOGIN']->format('M d, Y');
-                  elseif (!empty($s['LAST_LOGIN'])) $ll = date('M d, Y', strtotime($s['LAST_LOGIN']));
-                ?>
-                <tr>
-                  <td><?= $sName ?></td>
-                  <td><?= $sPos ? '<span class="pos-chip-table">'.$sPos.'</span>' : '<span style="color:var(--text-muted);font-size:12px;">——</span>' ?></td>
-                  <td><?= $sEmail ?></td>
-                  <td><span class="table-status <?= $sStatus==='active'?'active':'inactive' ?>"><?= $sStatus==='active'?'Active':'Disabled' ?></span></td>
-                  <td><?= $ll ?></td>
-                  <td>
-                    <form method="POST" style="display:inline;">
-                      <input type="hidden" name="action" value="toggle_status">
-                      <input type="hidden" name="target_id" value="<?= $sId ?>">
-                      <input type="hidden" name="new_status" value="<?= $sStatus==='active'?'inactive':'active' ?>">
-                      <button type="submit" class="table-btn table-btn-light"><?= $sStatus==='active'?'Disable':'Enable' ?></button>
-                    </form>
-                  </td>
-                </tr>
-                <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="staff-right">
-        <div class="staff-stat-card">
-          <span class="staff-stat-label">Total Staff</span>
-          <strong class="staff-stat-num"><?= $totalStaff ?></strong>
-          <p class="staff-stat-note">All assigned barangay officials</p>
-        </div>
-        <div class="staff-stat-card">
-          <span class="staff-stat-label">Active Accounts</span>
-          <strong class="staff-stat-num"><?= $activeStaff ?></strong>
-          <p class="staff-stat-note">Currently active accounts</p>
-        </div>
-        <div class="staff-stat-card">
-          <span class="staff-stat-label">Disabled</span>
-          <strong class="staff-stat-num"><?= $disabledStaff ?></strong>
-          <p class="staff-stat-note">Temporarily disabled</p>
-        </div>
       </div>
     </div>
   </main>

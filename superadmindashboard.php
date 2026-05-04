@@ -1,9 +1,7 @@
 <?php
 session_start();
-
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'superadmin') {
-    header("Location: login.php");
-    exit();
+    header("Location: login.php"); exit();
 }
 
 $serverName        = "LAPTOP-8KOIBQER\SQLEXPRESS";
@@ -11,120 +9,180 @@ $connectionOptions = ["Database" => "SocialMedia", "Uid" => "", "PWD" => "", "Ch
 $conn              = sqlsrv_connect($serverName, $connectionOptions);
 
 $userId = $_SESSION['user_id'];
-
 $nameRow = sqlsrv_fetch_array(
     sqlsrv_query($conn, "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$userId]),
     SQLSRV_FETCH_ASSOC
 );
 $displayName = $nameRow
-    ? htmlspecialchars(rtrim($nameRow['FIRST_NAME']) . ' ' . rtrim($nameRow['LAST_NAME']))
+    ? htmlspecialchars(rtrim($nameRow['FIRST_NAME']).' '.rtrim($nameRow['LAST_NAME']))
     : 'Super Admin';
+$firstName = $nameRow ? htmlspecialchars(rtrim($nameRow['FIRST_NAME'])) : 'Admin';
 
-$totalResidents = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $totalResidents = (int)$row['CNT']; }
+function sqn($conn, $sql, $p = []) {
+    $r = sqlsrv_query($conn, $sql, $p ?: []);
+    if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); return (int)($row['CNT'] ?? 0); }
+    return 0;
+}
 
-$pendingVerification = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'pending'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $pendingVerification = (int)$row['CNT']; }
+/* ── THINGS THAT NEED ACTION ── */
+$pending_residents   = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='resident' AND STATUS='pending'");
+$pending_complaints  = sqn($conn,"SELECT COUNT(*) AS CNT FROM COMPLAINTS WHERE STATUS='pending'");
+$disabled_staff      = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='staff' AND STATUS='inactive'");
 
-$activeStaff = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'staff' AND STATUS = 'active'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $activeStaff = (int)$row['CNT']; }
+/* ── VACANT POSITIONS ── */
+$singlePos = ['Punong Barangay','Secretary','Treasurer','SK Chairperson'];
+$vacantSingle = 0;
+$vacantList   = [];
+foreach ($singlePos as $p) {
+    $c = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='staff' AND POSITION=?",[$p]);
+    if ($c === 0) { $vacantSingle++; $vacantList[] = $p; }
+}
+$kagawadFilled = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='staff' AND POSITION='Kagawad'");
+$kagawadVacant = max(0, 7 - $kagawadFilled);
+$totalVacant   = $vacantSingle + $kagawadVacant;
 
-$openRequests = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS WHERE STATUS = 'PENDING'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $openRequests = (int)$row['CNT']; }
+/* ── QUICK OVERVIEW ── */
+$total_residents = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='resident'");
+$total_staff     = sqn($conn,"SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE='staff'");
+$total_posts     = sqn($conn,"SELECT COUNT(*) AS CNT FROM POSTS");
+$active_ann      = sqn($conn,"SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE=1");
+$log_today       = sqn($conn,"SELECT COUNT(*) AS CNT FROM AUDIT_LOGS WHERE CAST(CREATED_AT AS DATE)=CAST(GETDATE() AS DATE)");
 
-$openConcerns = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM CONCERNS WHERE STATUS = 'OPEN'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $openConcerns = (int)$row['CNT']; }
-
-$overdueRequests = 0;
-$r = sqlsrv_query($conn,
-    "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS
-     WHERE STATUS = 'PENDING' AND DATEDIFF(day, CREATED_AT, GETDATE()) > 3"
-);
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $overdueRequests = (int)$row['CNT']; }
-
-$disabledAccounts = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'inactive'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $disabledAccounts = (int)$row['CNT']; }
-
-$pendingResidents = [];
+/* ── RECENT PENDING RESIDENTS (top 5) ── */
+$pendingRes = [];
 $pr = sqlsrv_query($conn,
-    "SELECT TOP 5 U.USER_ID, R.FIRST_NAME, R.LAST_NAME, R.ADDRESS, U.CREATED_AT
-     FROM USERS U INNER JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
-     WHERE U.ROLE = 'resident' AND U.STATUS = 'pending'
-     ORDER BY U.CREATED_AT DESC"
-);
-if ($pr) { while ($row = sqlsrv_fetch_array($pr, SQLSRV_FETCH_ASSOC)) { $pendingResidents[] = $row; } }
+    "SELECT TOP 5 U.USER_ID, U.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.MOBILE_NUMBER
+     FROM USERS U LEFT JOIN REGISTRATION R ON R.USER_ID=U.USER_ID
+     WHERE U.ROLE='resident' AND U.STATUS='pending'
+     ORDER BY U.CREATED_AT DESC");
+if ($pr) { while ($row=sqlsrv_fetch_array($pr,SQLSRV_FETCH_ASSOC)) {
+    $fn=rtrim($row['FIRST_NAME']??''); $ln=rtrim($row['LAST_NAME']??'');
+    $d = $row['CREATED_AT'] instanceof DateTime ? $row['CREATED_AT']->format('M d, Y') : date('M d, Y',strtotime($row['CREATED_AT']??'now'));
+    $pendingRes[] = ['id'=>(int)$row['USER_ID'],'name'=>trim("$fn $ln")?:('User #'.(int)$row['USER_ID']),'date'=>$d,'mobile'=>rtrim($row['MOBILE_NUMBER']??'——'),'initials'=>strtoupper(substr($fn,0,1).substr($ln,0,1))];
+}}
 
+/* ── RECENT PENDING COMPLAINTS (top 5) ── */
+$pendingComplaints = [];
+$pc = sqlsrv_query($conn,
+    "SELECT TOP 5 C.COMPLAINT_ID, C.SUBJECT, C.CREATED_AT,
+            R.FIRST_NAME, R.LAST_NAME
+     FROM COMPLAINTS C
+     LEFT JOIN USERS U ON U.USER_ID=C.USER_ID
+     LEFT JOIN REGISTRATION R ON R.USER_ID=C.USER_ID
+     WHERE C.STATUS='pending'
+     ORDER BY C.CREATED_AT DESC");
+if ($pc) { while ($row=sqlsrv_fetch_array($pc,SQLSRV_FETCH_ASSOC)) {
+    $fn=rtrim($row['FIRST_NAME']??''); $ln=rtrim($row['LAST_NAME']??'');
+    $d = $row['CREATED_AT'] instanceof DateTime ? $row['CREATED_AT']->format('M d, Y') : date('M d, Y',strtotime($row['CREATED_AT']??'now'));
+    $pendingComplaints[] = ['id'=>(int)$row['COMPLAINT_ID'],'subject'=>rtrim($row['SUBJECT']??'—'),'name'=>trim("$fn $ln")?:'Unknown','date'=>$d,'initials'=>strtoupper(substr($fn,0,1).substr($ln,0,1))];
+}}
+
+/* ── RECENT AUDIT LOG (top 6) ── */
 $recentLogs = [];
 $rl = sqlsrv_query($conn,
-    "SELECT TOP 5 L.ACTION, L.DETAILS, L.CREATED_AT, U.USERNAME
-     FROM AUDIT_LOGS L INNER JOIN USERS U ON U.USER_ID = L.USER_ID
-     ORDER BY L.CREATED_AT DESC"
-);
-if ($rl) { while ($row = sqlsrv_fetch_array($rl, SQLSRV_FETCH_ASSOC)) { $recentLogs[] = $row; } }
+    "SELECT TOP 6 L.ACTION, L.DETAILS, L.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, U.USERNAME
+     FROM AUDIT_LOGS L
+     LEFT JOIN USERS U ON U.USER_ID=L.USER_ID
+     LEFT JOIN REGISTRATION R ON R.USER_ID=L.USER_ID
+     ORDER BY L.CREATED_AT DESC");
+if ($rl) { while ($row=sqlsrv_fetch_array($rl,SQLSRV_FETCH_ASSOC)) {
+    $fn=rtrim($row['FIRST_NAME']??''); $ln=rtrim($row['LAST_NAME']??''); $un=rtrim($row['USERNAME']??'');
+    $name=trim("$fn $ln")?:($un?:'System');
+    $ts = $row['CREATED_AT'] instanceof DateTime ? $row['CREATED_AT']->format('M d, g:i A') : date('M d, g:i A',strtotime($row['CREATED_AT']??'now'));
+    $recentLogs[] = ['action'=>rtrim($row['ACTION']??''),'details'=>rtrim($row['DETAILS']??''),'name'=>$name,'ts'=>$ts,'initials'=>strtoupper(substr($fn?:$un,0,1).substr($ln,0,1))];
+}}
 
-$reqPending   = 0; $reqApproved  = 0; $reqRejected  = 0; $reqCompleted = 0;
-$rs = sqlsrv_query($conn, "SELECT STATUS, COUNT(*) AS CNT FROM DOCUMENT_REQUESTS GROUP BY STATUS");
-if ($rs) {
-    while ($row = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
-        switch (strtoupper(rtrim($row['STATUS']))) {
-            case 'PENDING':   $reqPending   = (int)$row['CNT']; break;
-            case 'APPROVED':  $reqApproved  = (int)$row['CNT']; break;
-            case 'REJECTED':  $reqRejected  = (int)$row['CNT']; break;
-            case 'COMPLETED': $reqCompleted = (int)$row['CNT']; break;
-        }
-    }
-}
+$hour = (int)date('G');
+$greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+$today = date('l, F j, Y');
 
-$activeAnnouncements = 0;
-$r = sqlsrv_query($conn,
-    "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS
-     WHERE IS_ACTIVE = 1 AND (EXPIRES_AT IS NULL OR EXPIRES_AT >= GETDATE())"
-);
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $activeAnnouncements = (int)$row['CNT']; }
-
-$latestAnn = [];
-$la = sqlsrv_query($conn,
-    "SELECT TOP 3 A.TITLE, A.CATEGORY, A.CREATED_AT
-     FROM ANNOUNCEMENTS A
-     WHERE A.IS_ACTIVE = 1 AND (A.EXPIRES_AT IS NULL OR A.EXPIRES_AT >= GETDATE())
-     ORDER BY A.CREATED_AT DESC"
-);
-if ($la) { while ($row = sqlsrv_fetch_array($la, SQLSRV_FETCH_ASSOC)) { $latestAnn[] = $row; } }
-
-$totalConcernsOpen     = 0;
-$totalConcernsResolved = 0;
-$cr = sqlsrv_query($conn, "SELECT STATUS, COUNT(*) AS CNT FROM CONCERNS GROUP BY STATUS");
-if ($cr) {
-    while ($row = sqlsrv_fetch_array($cr, SQLSRV_FETCH_ASSOC)) {
-        $s = strtoupper(rtrim($row['STATUS']));
-        if ($s === 'OPEN')     $totalConcernsOpen     = (int)$row['CNT'];
-        if ($s === 'RESOLVED') $totalConcernsResolved = (int)$row['CNT'];
-    }
-}
-
-function getCatDot($cat) {
-    $map = ['General' => '#051650', 'Event' => '#1e40af', 'Health' => '#166534',
-            'Reminder' => '#92400e', 'Alert' => '#991b1b'];
-    return $map[trim($cat)] ?? '#051650';
-}
+$totalActions = $pending_residents + $pending_complaints + $totalVacant;
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Super Admin Dashboard — Barangay Alapan 1-A</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="base.css" />
-  <link rel="stylesheet" href="superadmin.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dashboard — Barangay Alapan 1-A</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="base.css"/>
+  <link rel="stylesheet" href="superadmin.css"/>
   <style>
+    .db-wrap{display:flex;flex-direction:column;gap:24px}
+
+    /* HERO */
+    .db-hero{background:var(--navy);border-radius:16px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .db-hero-left h2{font-size:22px;font-weight:700;color:#fff;margin:0 0 4px}
+    .db-hero-left p{font-size:13px;color:rgba(255,255,255,.6);margin:0}
+    .db-hero-badge{background:var(--lime);color:var(--navy);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;flex-shrink:0;position:relative;cursor:default}
+    .db-hero-badge .badge-num{font-size:22px;font-weight:700;line-height:1}
+    .badge-tooltip{visibility:hidden;opacity:0;position:absolute;top:calc(100% + 10px);right:0;background:var(--navy);color:#fff;border-radius:10px;padding:14px 16px;min-width:230px;box-shadow:0 8px 32px rgba(5,22,80,.25);z-index:100;font-weight:400;transition:opacity .15s ease, visibility .15s ease;transition-delay:0s}
+    .badge-tooltip::before{content:'';position:absolute;top:-6px;right:20px;width:12px;height:12px;background:var(--navy);transform:rotate(45deg);border-radius:2px}
+    .db-hero-badge:hover .badge-tooltip{visibility:visible;opacity:1;transition-delay:0s}
+    .badge-tooltip:hover{visibility:visible;opacity:1}
+    .db-hero-badge:not(:hover) .badge-tooltip:not(:hover){transition-delay:.25s}
+    .tooltip-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 8px;border-radius:7px;font-size:12px;text-decoration:none;color:#fff;transition:background .15s}
+    .tooltip-item:hover{background:rgba(255,255,255,.12)}
+    .tooltip-item-label{opacity:.85;display:flex;align-items:center;gap:6px}
+    .tooltip-item-count{font-weight:700;font-size:13px;background:rgba(255,255,255,.18);border-radius:6px;padding:1px 8px;flex-shrink:0}
+
+    /* OVERVIEW STRIP */
+    .db-overview{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+    .ov-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+    .ov-num{font-size:24px;font-weight:700;color:var(--navy);line-height:1}
+    .ov-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.35px;margin-top:4px}
+
+    /* TWO COL LAYOUT */
+    .db-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .db-col-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+    /* ACTION PANEL */
+    .action-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .action-panel-head{padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(5,22,80,.02);display:flex;align-items:center;justify-content:space-between}
+    .action-panel-head h4{font-size:13px;font-weight:700;color:var(--navy);margin:0;display:flex;align-items:center;gap:8px}
+    .action-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:999px;font-size:11px;font-weight:700;padding:0 6px}
+    .count-amber{background:rgba(245,158,11,.15);color:#b45309}
+    .count-red  {background:rgba(239,68,68,.12);color:#b91c1c}
+    .count-blue {background:rgba(59,130,246,.12);color:#1e40af}
+    .count-navy {background:rgba(5,22,80,.1);color:var(--navy)}
+    .action-panel-body{flex:1;overflow:hidden}
+    .action-item{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(5,22,80,.05);transition:background .15s}
+    .action-item:last-child{border-bottom:none}
+    .action-item:hover{background:rgba(5,22,80,.03)}
+    .ai-avatar{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+    .ai-info{min-width:0;flex:1}
+    .ai-name{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ai-sub{font-size:11px;color:var(--text-muted)}
+    .ai-date{font-size:11px;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
+    .action-empty{padding:24px 18px;text-align:center;color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .action-panel-foot{padding:10px 18px;border-top:1px solid var(--border);text-align:center}
+    .action-panel-foot a{font-size:12px;font-weight:700;color:var(--navy);text-decoration:none;opacity:.7}
+    .action-panel-foot a:hover{opacity:1}
+
+    /* VACANT POSITIONS */
+    .vacant-list{display:flex;flex-direction:column}
+    .vacant-item{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(5,22,80,.05)}
+    .vacant-item:last-child{border-bottom:none}
+    .vacant-pos{font-size:13px;font-weight:600;color:var(--navy)}
+    .vacant-tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;background:rgba(245,158,11,.12);color:#b45309}
+
+    /* ACTIVITY FEED */
+    .feed-item{display:flex;align-items:flex-start;gap:11px;padding:10px 18px;border-bottom:1px solid rgba(5,22,80,.05)}
+    .feed-item:last-child{border-bottom:none}
+    .feed-dot{width:8px;height:8px;border-radius:50%;background:var(--navy);flex-shrink:0;margin-top:5px}
+    .feed-text{font-size:12px;color:var(--text);line-height:1.5}
+    .feed-name{font-weight:700;color:var(--navy)}
+    .feed-ts{font-size:11px;color:var(--text-muted);display:block;margin-top:1px}
+
+    /* QUICK NAV */
+    .quick-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .qn-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-decoration:none;display:flex;flex-direction:column;align-items:flex-start;gap:8px;box-shadow:var(--shadow);transition:all .18s}
+    .qn-card:hover{border-color:var(--navy);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+    .qn-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px}
+    .qn-label{font-size:13px;font-weight:700;color:var(--navy)}
+    .qn-sub{font-size:11px;color:var(--text-muted)}
+
     .logout-overlay{position:fixed;inset:0;z-index:2000;background:rgba(5,22,80,.65);display:none;align-items:center;justify-content:center}
     .logout-overlay.open{display:flex}
     .logout-box{background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:90%;text-align:center;border-top:4px solid var(--lime);box-shadow:0 16px 48px rgba(5,22,80,.28)}
@@ -132,37 +190,10 @@ function getCatDot($cat) {
     .logout-box h3{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
     .logout-box p{font-size:14px;color:#666;margin-bottom:24px;line-height:1.6}
     .logout-btns{display:flex;gap:10px;justify-content:center}
-    .btn-confirm{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
-    .btn-cancel{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-    .dashboard-btn{display:inline-flex;align-items:center;justify-content:center}
-
-    .syssum-section-title{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding:14px 18px 8px;display:block}
-    .syssum-req-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px}
-    .syssum-box{border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
-    .syssum-box.pending  {background:rgba(245,158,11,.10)}
-    .syssum-box.approved {background:rgba(34,197,94,.10)}
-    .syssum-box.rejected {background:rgba(239,68,68,.10)}
-    .syssum-box.completed{background:rgba(5,22,80,.07)}
-    .syssum-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-    .syssum-box.pending  .syssum-icon{background:rgba(245,158,11,.2);color:#92400e}
-    .syssum-box.approved .syssum-icon{background:rgba(34,197,94,.2);color:#166534}
-    .syssum-box.rejected .syssum-icon{background:rgba(239,68,68,.2);color:#991b1b}
-    .syssum-box.completed .syssum-icon{background:rgba(5,22,80,.12);color:var(--navy)}
-    .syssum-num{font-size:22px;font-weight:700;color:var(--navy);line-height:1}
-    .syssum-label{font-size:11px;color:var(--text-muted);font-weight:600;margin-top:2px}
-    .syssum-divider{height:1px;background:var(--border);margin:0 18px}
-    .syssum-meta-row{display:flex;align-items:center;justify-content:space-between;padding:10px 18px}
-    .syssum-meta-row:first-child{padding-top:14px}
-    .syssum-meta-row:last-child{padding-bottom:14px}
-    .syssum-meta-left{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
-    .syssum-meta-left i{font-size:13px;width:16px;text-align:center}
-    .syssum-meta-val{font-size:13px;font-weight:700;color:var(--navy)}
-
-    .ann-mini-item{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border)}
-    .ann-mini-item:last-child{border-bottom:none}
-    .ann-mini-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .ann-mini-title{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
-    .ann-mini-date{font-size:11px;color:var(--text-muted);white-space:nowrap}
+    .btn-confirm-lo{background:var(--navy);color:var(--lime);border:none;padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+    .btn-cancel-lo{background:transparent;color:var(--navy);border:1px solid rgba(5,22,80,.25);padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+    @media(max-width:1100px){.db-overview{grid-template-columns:repeat(3,1fr)}.db-cols{grid-template-columns:1fr}}
+    @media(max-width:720px){.db-overview{grid-template-columns:repeat(2,1fr)}.quick-nav{grid-template-columns:repeat(2,1fr)}.db-col-wide{grid-template-columns:1fr}}
   </style>
 </head>
 <body class="superadmin-body">
@@ -173,18 +204,15 @@ function getCatDot($cat) {
     <h3>Log out?</h3>
     <p>You will be returned to the login page.</p>
     <div class="logout-btns">
-      <button class="btn-cancel" onclick="closeLogout()">Cancel</button>
-      <a href="logout.php" class="btn-confirm"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+      <button class="btn-cancel-lo" onclick="closeLogout()">Cancel</button>
+      <a href="logout.php" class="btn-confirm-lo"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
     </div>
   </div>
 </div>
 
 <div class="superadmin-page">
   <header class="superadmin-header">
-    <div class="superadmin-brand">
-      <h1>Barangay Alapan 1-A</h1>
-      <p>Super Admin Dashboard</p>
-    </div>
+    <div class="superadmin-brand"><h1>Barangay Alapan 1-A</h1><p>Super Admin</p></div>
     <nav class="superadmin-nav">
       <a href="superadmindashboard.php" class="active">Dashboard</a>
       <a href="superadminstaffaccount.php">Staff Accounts</a>
@@ -194,286 +222,236 @@ function getCatDot($cat) {
       <a href="superadminauditlogs.php">Audit Logs</a>
     </nav>
     <div class="superadmin-header-right">
-      <div class="superadmin-user">
-        <div class="superadmin-user-info">
-          <span class="superadmin-user-name"><?= $displayName ?></span>
-        </div>
-      </div>
-      <a href="#" class="superadmin-logout" onclick="openLogout(); return false;">Logout</a>
+      <div class="superadmin-user"><div class="superadmin-user-info">
+        <span class="superadmin-user-name"><?= $displayName ?></span>
+      </div></div>
+      <a href="#" class="superadmin-logout" onclick="openLogout();return false;">Logout</a>
     </div>
   </header>
 
-  <main class="dashboard-wrapper">
-    <div class="dashboard-topbar">
-      <div class="dashboard-topbar-left">
-        <h2>Dashboard Overview</h2>
-        <p><?= date('l, F j, Y') ?></p>
+  <main class="superadmin-content">
+  <div class="db-wrap">
+
+    <!-- HERO -->
+    <div class="db-hero">
+      <div class="db-hero-left">
+        <h2><?= $greeting ?>, <?= $firstName ?>.</h2>
+        <p><?= $today ?></p>
       </div>
-      <div class="dashboard-topbar-actions">
-        <a href="superadminstaffaccount.php?action=add" class="superadmin-primary-btn">
-          <i class="fa-solid fa-user-plus"></i> Add Staff
-        </a>
-        <a href="superadminreports.php" class="superadmin-outline-btn">
-          <i class="fa-solid fa-chart-bar"></i> Reports
-        </a>
+      <?php if ($totalActions > 0): ?>
+      <div class="db-hero-badge">
+        <div>
+          <div class="badge-num"><?= $totalActions ?></div>
+          <div style="font-size:11px;opacity:.8;">item<?= $totalActions!==1?'s':'' ?> need attention</div>
+        </div>
+        <i class="fa-solid fa-circle-exclamation" style="font-size:20px;opacity:.7;"></i>
+        <div class="badge-tooltip">
+          <?php if ($pending_residents > 0): ?>
+          <a href="superadminresidentaccount.php?filter=pending" class="tooltip-item">
+            <span class="tooltip-item-label"><i class="fa-solid fa-user-clock"></i>Residents pending</span>
+            <span class="tooltip-item-count"><?= $pending_residents ?></span>
+          </a>
+          <?php endif; ?>
+          <?php if ($pending_complaints > 0): ?>
+          <a href="staffcomplaints.php" class="tooltip-item">
+            <span class="tooltip-item-label"><i class="fa-solid fa-circle-exclamation"></i>Complaints</span>
+            <span class="tooltip-item-count"><?= $pending_complaints ?></span>
+          </a>
+          <?php endif; ?>
+          <?php if ($totalVacant > 0): ?>
+          <a href="superadminstaffaccount.php" class="tooltip-item">
+            <span class="tooltip-item-label"><i class="fa-solid fa-chair"></i>Vacant positions</span>
+            <span class="tooltip-item-count"><?= $totalVacant ?></span>
+          </a>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php else: ?>
+      <div class="db-hero-badge" style="background:rgba(255,255,255,.15);color:#fff;">
+        <i class="fa-solid fa-circle-check" style="font-size:18px;"></i>
+        <span>All caught up!</span>
+      </div>
+      <?php endif; ?>
+    </div>
+
+    <!-- OVERVIEW STRIP -->
+    <div class="db-overview" style="grid-template-columns:repeat(5,1fr);">
+      <div class="ov-card">
+        <span class="ov-num"><?= $total_residents ?></span>
+        <span class="ov-label">Residents</span>
+      </div>
+      <div class="ov-card">
+        <span class="ov-num"><?= $total_staff ?></span>
+        <span class="ov-label">Officials</span>
+      </div>
+      <div class="ov-card">
+        <span class="ov-num"><?= $total_posts ?></span>
+        <span class="ov-label">Posts</span>
+      </div>
+      <div class="ov-card">
+        <span class="ov-num"><?= $active_ann ?></span>
+        <span class="ov-label">Announcements</span>
+      </div>
+      <div class="ov-card">
+        <span class="ov-num"><?= $log_today ?></span>
+        <span class="ov-label">Actions Today</span>
       </div>
     </div>
 
-    <div class="dashboard-stat-row">
-      <div class="dashboard-stat-box">
-        <span class="dashboard-stat-label">Total Residents</span>
-        <span class="dashboard-stat-value"><?= $totalResidents ?></span>
-        <span class="dashboard-stat-sub">Registered accounts</span>
-      </div>
-      <div class="dashboard-stat-box">
-        <span class="dashboard-stat-label">Pending Verification</span>
-        <span class="dashboard-stat-value"><?= $pendingVerification ?></span>
-        <span class="dashboard-stat-sub">Awaiting review</span>
-      </div>
-      <div class="dashboard-stat-box">
-        <span class="dashboard-stat-label">Active Staff</span>
-        <span class="dashboard-stat-value"><?= $activeStaff ?></span>
-        <span class="dashboard-stat-sub">Currently enabled</span>
-      </div>
-      <div class="dashboard-stat-box">
-        <span class="dashboard-stat-label">Open Requests</span>
-        <span class="dashboard-stat-value"><?= $openRequests ?></span>
-        <span class="dashboard-stat-sub">Unresolved requests</span>
-      </div>
-      <div class="dashboard-stat-box">
-        <span class="dashboard-stat-label">Open Concerns</span>
-        <span class="dashboard-stat-value"><?= $openConcerns ?></span>
-        <span class="dashboard-stat-sub">Filed concerns</span>
-      </div>
+    <!-- QUICK NAV -->
+    <div class="quick-nav">
+      <a href="superadminresidentaccount.php?filter=pending" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-user-clock"></i></div>
+        <span class="qn-label">Verify Residents</span>
+        <span class="qn-sub"><?= $pending_residents ?> pending verification</span>
+      </a>
+      <a href="superadminstaffaccount.php" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-users-gear"></i></div>
+        <span class="qn-label">Assign Positions</span>
+        <span class="qn-sub"><?= $totalVacant ?> vacant slot<?= $totalVacant!==1?'s':'' ?></span>
+      </a>
+      <a href="superadminannouncement.php" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-bullhorn"></i></div>
+        <span class="qn-label">Announcements</span>
+        <span class="qn-sub"><?= $active_ann ?> currently live</span>
+      </a>
+      <a href="superadminreports.php" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-chart-bar"></i></div>
+        <span class="qn-label">View Reports</span>
+        <span class="qn-sub">Analytics &amp; stats</span>
+      </a>
+      <a href="superadminauditlogs.php" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-clipboard-list"></i></div>
+        <span class="qn-label">Audit Logs</span>
+        <span class="qn-sub"><?= $log_today ?> actions today</span>
+      </a>
+      <a href="superadminresidentaccount.php" class="qn-card">
+        <div class="qn-icon" style="background:rgba(5,22,80,.07);color:var(--navy);"><i class="fa-solid fa-users"></i></div>
+        <span class="qn-label">All Residents</span>
+        <span class="qn-sub"><?= $total_residents ?> registered</span>
+      </a>
     </div>
 
-    <div class="dashboard-body">
-      <div class="dashboard-col">
+    <!-- MAIN COLUMNS -->
+    <div class="db-cols">
 
-        <div class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h4>Needs Attention Today</h4>
-            <a href="superadminresidentaccount.php">View All</a>
-          </div>
-          <div class="dashboard-panel-body">
-            <?php if ($pendingVerification > 0): ?>
-            <div class="dashboard-alert-item">
-              <div class="dashboard-alert-text">
-                <strong><?= $pendingVerification ?> resident account<?= $pendingVerification > 1 ? 's' : '' ?> waiting for verification</strong>
-                <p>Review newly submitted resident registrations.</p>
-              </div>
-              <a href="superadminresidentaccount.php?filter=pending" class="dashboard-btn">Review</a>
-            </div>
-            <?php endif; ?>
-            <?php if ($overdueRequests > 0): ?>
-            <div class="dashboard-alert-item">
-              <div class="dashboard-alert-text">
-                <strong><?= $overdueRequests ?> document request<?= $overdueRequests > 1 ? 's' : '' ?> overdue</strong>
-                <p>Pending over 3 days and not yet processed.</p>
-              </div>
-              <a href="superadminreports.php" class="dashboard-btn dashboard-btn-ghost">Open</a>
-            </div>
-            <?php endif; ?>
-            <?php if ($disabledAccounts > 0): ?>
-            <div class="dashboard-alert-item">
-              <div class="dashboard-alert-text">
-                <strong><?= $disabledAccounts ?> disabled resident account<?= $disabledAccounts > 1 ? 's' : '' ?> need review</strong>
-                <p>Decide whether to restore or keep account restrictions.</p>
-              </div>
-              <a href="superadminresidentaccount.php?filter=inactive" class="dashboard-btn dashboard-btn-ghost">Inspect</a>
-            </div>
-            <?php endif; ?>
-            <?php if ($pendingVerification === 0 && $overdueRequests === 0 && $disabledAccounts === 0): ?>
-            <div class="dashboard-alert-item">
-              <div class="dashboard-alert-text">
-                <strong>No urgent items today</strong>
-                <p>Everything is up to date.</p>
-              </div>
-            </div>
-            <?php endif; ?>
-          </div>
-        </div>
+      <!-- LEFT: PENDING ITEMS -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <div class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h4>Pending Verification</h4>
-            <a href="superadminresidentaccount.php?filter=pending">Review All</a>
+        <!-- Pending Residents -->
+        <div class="action-panel">
+          <div class="action-panel-head">
+            <h4>
+              <i class="fa-solid fa-user-clock"></i>
+              Pending Resident Verifications
+              <span class="action-count count-amber"><?= $pending_residents ?></span>
+            </h4>
           </div>
-          <div class="dashboard-panel-body">
-            <table class="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Address</th>
-                  <th>Submitted</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php if (empty($pendingResidents)): ?>
-                <tr>
-                  <td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px 18px;">
-                    No pending verifications.
-                  </td>
-                </tr>
-                <?php else: ?>
-                <?php foreach ($pendingResidents as $res):
-                  $createdAt = $res['CREATED_AT'] instanceof DateTime
-                    ? $res['CREATED_AT']->format('M d, Y')
-                    : date('M d, Y', strtotime($res['CREATED_AT']));
-                ?>
-                <tr>
-                  <td><?= htmlspecialchars(rtrim($res['FIRST_NAME']) . ' ' . rtrim($res['LAST_NAME'])) ?></td>
-                  <td><?= htmlspecialchars(mb_strimwidth(rtrim($res['ADDRESS'] ?? '—'), 0, 30, '...')) ?></td>
-                  <td><?= $createdAt ?></td>
-                  <td>
-                    <a href="superadminresidentaccount.php?view=<?= (int)$res['USER_ID'] ?>"
-                       class="dashboard-btn">Review</a>
-                  </td>
-                </tr>
-                <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
+          <div class="action-panel-body">
+            <?php if (empty($pendingRes)): ?>
+            <div class="action-empty">
+              <i class="fa-solid fa-circle-check" style="font-size:22px;opacity:.4;"></i>
+              No pending verifications
+            </div>
+            <?php else: foreach ($pendingRes as $r): ?>
+            <div class="action-item">
+              <div class="ai-avatar"><?= htmlspecialchars($r['initials']?:'?') ?></div>
+              <div class="ai-info">
+                <div class="ai-name"><?= htmlspecialchars($r['name']) ?></div>
+                <div class="ai-sub"><?= htmlspecialchars($r['mobile']) ?></div>
+              </div>
+              <div class="ai-date"><?= htmlspecialchars($r['date']) ?></div>
+            </div>
+            <?php endforeach; endif; ?>
           </div>
+          <?php if ($pending_residents > 0): ?>
+          <div class="action-panel-foot">
+            <a href="superadminresidentaccount.php?filter=pending">View all <?= $pending_residents ?> pending &rarr;</a>
+          </div>
+          <?php endif; ?>
         </div>
 
       </div>
 
-      <div class="dashboard-col">
+      <!-- RIGHT: VACANT POSITIONS + ACTIVITY -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <div class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h4>Document Request Summary</h4>
-            <a href="superadminreports.php">Full Report</a>
+        <!-- Vacant Positions -->
+        <div class="action-panel">
+          <div class="action-panel-head">
+            <h4>
+              <i class="fa-solid fa-chair"></i>
+              Vacant Positions
+              <span class="action-count count-amber"><?= $totalVacant ?></span>
+            </h4>
           </div>
-
-          <span class="syssum-section-title">All-time status of document requests</span>
-          <div class="syssum-req-grid">
-            <div class="syssum-box pending">
-              <div class="syssum-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-              <div>
-                <div class="syssum-num"><?= $reqPending ?></div>
-                <div class="syssum-label">Pending</div>
-              </div>
-            </div>
-            <div class="syssum-box approved">
-              <div class="syssum-icon"><i class="fa-solid fa-thumbs-up"></i></div>
-              <div>
-                <div class="syssum-num"><?= $reqApproved ?></div>
-                <div class="syssum-label">Approved</div>
-              </div>
-            </div>
-            <div class="syssum-box rejected">
-              <div class="syssum-icon"><i class="fa-solid fa-circle-xmark"></i></div>
-              <div>
-                <div class="syssum-num"><?= $reqRejected ?></div>
-                <div class="syssum-label">Rejected</div>
-              </div>
-            </div>
-            <div class="syssum-box completed">
-              <div class="syssum-icon"><i class="fa-solid fa-box-archive"></i></div>
-              <div>
-                <div class="syssum-num"><?= $reqCompleted ?></div>
-                <div class="syssum-label">Completed</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="syssum-divider"></div>
-
-          <span class="syssum-section-title">Concerns &amp; Announcements</span>
-          <div class="syssum-meta-row">
-            <span class="syssum-meta-left">
-              <i class="fa-solid fa-circle-exclamation" style="color:#b45309;"></i>
-              Open Concerns
-            </span>
-            <span class="syssum-meta-val"><?= $totalConcernsOpen ?></span>
-          </div>
-          <div class="syssum-meta-row">
-            <span class="syssum-meta-left">
-              <i class="fa-solid fa-circle-check" style="color:#16a34a;"></i>
-              Resolved Concerns
-            </span>
-            <span class="syssum-meta-val"><?= $totalConcernsResolved ?></span>
-          </div>
-          <div class="syssum-meta-row">
-            <span class="syssum-meta-left">
-              <i class="fa-solid fa-bullhorn" style="color:var(--navy);"></i>
-              Active Announcements
-            </span>
-            <span class="syssum-meta-val"><?= $activeAnnouncements ?></span>
-          </div>
-        </div>
-
-        <div class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h4>Latest Announcements</h4>
-            <a href="superadminannouncement.php">Manage</a>
-          </div>
-          <div class="dashboard-panel-body" style="padding:0;">
-            <?php if (empty($latestAnn)): ?>
-            <div class="ann-mini-item">
-              <span class="ann-mini-title" style="color:var(--text-muted);">No announcements posted yet.</span>
+          <div class="action-panel-body">
+            <?php if ($totalVacant === 0): ?>
+            <div class="action-empty">
+              <i class="fa-solid fa-circle-check" style="font-size:22px;opacity:.4;"></i>
+              All positions are filled
             </div>
             <?php else: ?>
-            <?php foreach ($latestAnn as $a):
-              $aDate = $a['CREATED_AT'] instanceof DateTime
-                ? $a['CREATED_AT']->format('M j')
-                : date('M j', strtotime($a['CREATED_AT']));
-            ?>
-            <div class="ann-mini-item">
-              <div class="ann-mini-dot" style="background:<?= getCatDot(rtrim($a['CATEGORY'] ?? '')) ?>;"></div>
-              <span class="ann-mini-title"><?= htmlspecialchars(rtrim($a['TITLE'])) ?></span>
-              <span class="ann-mini-date"><?= $aDate ?></span>
+            <div class="vacant-list">
+              <?php foreach ($vacantList as $vp): ?>
+              <div class="vacant-item">
+                <span class="vacant-pos"><?= htmlspecialchars($vp) ?></span>
+                <span class="vacant-tag">Vacant</span>
+              </div>
+              <?php endforeach; ?>
+              <?php if ($kagawadVacant > 0): ?>
+              <div class="vacant-item">
+                <span class="vacant-pos">Kagawad (<?= $kagawadFilled ?>/7 filled)</span>
+                <span class="vacant-tag"><?= $kagawadVacant ?> open</span>
+              </div>
+              <?php endif; ?>
             </div>
-            <?php endforeach; ?>
             <?php endif; ?>
+          </div>
+          <div class="action-panel-foot">
+            <a href="superadminstaffaccount.php">Manage positions &rarr;</a>
           </div>
         </div>
 
-        <div class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h4>Recent Activity</h4>
-            <a href="superadminauditlogs.php">View Logs</a>
+        <!-- Recent Activity Feed -->
+        <div class="action-panel">
+          <div class="action-panel-head">
+            <h4>
+              <i class="fa-solid fa-bolt" style="color:var(--navy);"></i>
+              Recent Activity
+              <span class="action-count count-navy"><?= $log_today ?> today</span>
+            </h4>
           </div>
-          <div class="dashboard-panel-body">
+          <div class="action-panel-body">
             <?php if (empty($recentLogs)): ?>
-            <div class="dashboard-activity-item">
-              <span class="dashboard-activity-user">—</span>
-              <span class="dashboard-activity-desc">No recent activity found.</span>
-              <span class="dashboard-activity-time"></span>
+            <div class="action-empty">No recent activity.</div>
+            <?php else: foreach ($recentLogs as $log): ?>
+            <div class="feed-item">
+              <div class="feed-dot"></div>
+              <div class="feed-text">
+                <span class="feed-name"><?= htmlspecialchars($log['name']) ?></span>
+                — <?= htmlspecialchars(mb_strimwidth($log['details'],0,60,'...')) ?>
+                <span class="feed-ts"><?= htmlspecialchars($log['ts']) ?></span>
+              </div>
             </div>
-            <?php else: ?>
-            <?php foreach ($recentLogs as $log):
-              $logTime = $log['CREATED_AT'] instanceof DateTime
-                ? $log['CREATED_AT']->format('g:i A')
-                : date('g:i A', strtotime($log['CREATED_AT']));
-            ?>
-            <div class="dashboard-activity-item">
-              <span class="dashboard-activity-user"><?= htmlspecialchars(rtrim($log['USERNAME'])) ?></span>
-              <span class="dashboard-activity-desc">
-                <?= htmlspecialchars(rtrim($log['ACTION'])) ?>
-                <?php if (!empty($log['DETAILS'])): ?> — <?= htmlspecialchars(rtrim($log['DETAILS'])) ?><?php endif; ?>
-              </span>
-              <span class="dashboard-activity-time"><?= $logTime ?></span>
-            </div>
-            <?php endforeach; ?>
-            <?php endif; ?>
+            <?php endforeach; endif; ?>
+          </div>
+          <div class="action-panel-foot">
+            <a href="superadminauditlogs.php">Full audit log &rarr;</a>
           </div>
         </div>
 
       </div>
     </div>
+
+  </div>
   </main>
 </div>
 
 <script>
 function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
 function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
-document.getElementById('logoutModal').addEventListener('click', function(e) {
-  if (e.target === this) closeLogout();
-});
+document.getElementById('logoutModal').addEventListener('click',function(e){if(e.target===this)closeLogout();});
 </script>
 </body>
 </html>
