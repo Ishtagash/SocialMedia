@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Captain Dashboard</title>
+    <title>Captain Dashboard — BarangayKonek</title>
 
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
@@ -47,14 +47,14 @@
         --green-bg: #f0fdf4;
         --green-text: #166534;
 
-        --red-bg: #fef2f2;
-        --red-text: #991b1b;
-
         --gray-bg: #f1f5f9;
         --gray-text: #475569;
 
+        --red-bg: #fef2f2;
+        --red-text: #991b1b;
+
         --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
-        --shadow-hover: 0 16px 34px rgba(5, 22, 80, 0.14);
+        --shadow-hover: 0 14px 30px rgba(5, 22, 80, 0.13);
         --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
       }
 
@@ -123,6 +123,12 @@
         }
       }
 
+      @keyframes captaindashboardBarGrow {
+        from {
+          width: 0;
+        }
+      }
+
       .captaindashboard-container {
         display: flex;
         min-height: 100vh;
@@ -151,63 +157,6 @@
 
       .captaindashboard-sidebar.mini {
         width: var(--sidebar-mini);
-      }
-
-      .captaindashboard-identity {
-        height: var(--topbar-h);
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 0 15px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        white-space: nowrap;
-        overflow: hidden;
-      }
-
-      .captaindashboard-identity-logo {
-        width: 38px;
-        height: 38px;
-        border-radius: 14px;
-        overflow: hidden;
-        flex-shrink: 0;
-        background: rgba(255, 255, 255, 0.12);
-      }
-
-      .captaindashboard-identity-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .captaindashboard-identity-name {
-        font-size: 14px;
-        font-weight: 800;
-        color: #ffffff;
-        line-height: 1.2;
-      }
-
-      .captaindashboard-identity-chip {
-        display: inline-flex;
-        align-items: center;
-        margin-top: 5px;
-        padding: 4px 10px;
-        border-radius: 12px;
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 11px;
-        font-weight: 800;
-        line-height: 1;
-      }
-
-      .captaindashboard-sidebar.mini .captaindashboard-identity-name,
-      .captaindashboard-sidebar.mini .captaindashboard-identity-chip {
-        opacity: 0;
-        width: 0;
-        pointer-events: none;
-      }
-
-      .captaindashboard-sidebar.mini .captaindashboard-identity-logo {
-        margin: 0 auto;
       }
 
       .captaindashboard-toggle-wrap {
@@ -255,7 +204,73 @@
         transform: rotate(180deg);
       }
 
-      .captaindashboard-nav {
+      .captaindashboard-identity {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .captaindashboard-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .captaindashboard-identity-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .captaindashboard-identity-logo-placeholder {
+        font-size: 18px;
+        color: var(--lime);
+        font-weight: 800;
+      }
+
+      .captaindashboard-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+
+      .captaindashboard-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-identity-name,
+      .captaindashboard-sidebar.mini .captaindashboard-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-identity-logo {
+        margin: 0 auto;
+      }
+
+      .captaindashboard-menu {
         flex: 1;
         padding: 16px 10px;
         display: flex;
@@ -265,14 +280,18 @@
         overflow-x: hidden;
       }
 
-      .captaindashboard-nav-divider {
+      .captaindashboard-menu::-webkit-scrollbar {
+        display: none;
+      }
+
+      .captaindashboard-menu-divider {
         height: 1px;
         background: rgba(255, 255, 255, 0.08);
         margin: 8px;
         flex-shrink: 0;
       }
 
-      .captaindashboard-nav-link {
+      .captaindashboard-menu-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -287,47 +306,45 @@
         flex-shrink: 0;
         transition:
           background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease;
+          color 0.18s ease;
       }
 
-      .captaindashboard-nav-link:hover {
+      .captaindashboard-menu-link:hover {
         background: rgba(255, 255, 255, 0.09);
         color: #ffffff;
-        transform: translateX(3px);
       }
 
-      .captaindashboard-nav-link.active {
+      .captaindashboard-menu-link.active {
         background: var(--lime);
         color: var(--navy);
       }
 
-      .captaindashboard-nav-left {
+      .captaindashboard-menu-left {
         display: flex;
         align-items: center;
         gap: 10px;
         min-width: 0;
       }
 
-      .captaindashboard-nav-left i {
+      .captaindashboard-menu-left i {
         width: 18px;
         text-align: center;
         font-size: 13px;
         flex-shrink: 0;
       }
 
-      .captaindashboard-nav-label {
+      .captaindashboard-menu-label {
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
-      .captaindashboard-sidebar.mini .captaindashboard-nav-label {
+      .captaindashboard-sidebar.mini .captaindashboard-menu-label {
         opacity: 0;
         width: 0;
         pointer-events: none;
       }
 
-      .captaindashboard-nav-count {
+      .captaindashboard-menu-count {
         font-size: 10px;
         font-weight: 800;
         background: rgba(255, 255, 255, 0.15);
@@ -335,19 +352,19 @@
         min-width: 22px;
         height: 22px;
         padding: 0 6px;
-        border-radius: 12px;
+        border-radius: 999px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
       }
 
-      .captaindashboard-nav-link.active .captaindashboard-nav-count {
+      .captaindashboard-menu-link.active .captaindashboard-menu-count {
         background: rgba(5, 22, 80, 0.18);
         color: var(--navy);
       }
 
-      .captaindashboard-sidebar.mini .captaindashboard-nav-count {
+      .captaindashboard-sidebar.mini .captaindashboard-menu-count {
         opacity: 0;
         pointer-events: none;
       }
@@ -374,14 +391,12 @@
         white-space: nowrap;
         transition:
           background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease;
+          color 0.18s ease;
       }
 
       .captaindashboard-logout:hover {
         background: rgba(239, 68, 68, 0.14);
         color: #fca5a5;
-        transform: translateX(3px);
       }
 
       .captaindashboard-main {
@@ -478,14 +493,14 @@
         animation: captaindashboardBellShake 0.55s ease;
       }
 
-      .captaindashboard-notif-count {
+      .captaindashboard-notification-count {
         position: absolute;
         top: -6px;
         right: -5px;
         min-width: 17px;
         height: 17px;
         padding: 0 5px;
-        border-radius: 12px;
+        border-radius: 999px;
         background: var(--lime);
         color: var(--navy);
         font-size: 10px;
@@ -504,16 +519,11 @@
         border-radius: 999px;
         background: var(--soft-bg);
         cursor: pointer;
-        transition:
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
+        transition: border-color 0.18s ease;
       }
 
       .captaindashboard-profile:hover {
         border-color: var(--navy);
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
       }
 
       .captaindashboard-avatar {
@@ -556,7 +566,7 @@
           ),
           radial-gradient(
             circle at top right,
-            rgba(204, 255, 0, 0.28),
+            rgba(204, 255, 0, 0.26),
             transparent 35%
           );
         border-radius: 28px;
@@ -603,7 +613,7 @@
       }
 
       .captaindashboard-hero-text,
-      .captaindashboard-hero-action {
+      .captaindashboard-hero-actions {
         position: relative;
         z-index: 1;
       }
@@ -620,47 +630,118 @@
         font-size: 13px;
         color: rgba(255, 255, 255, 0.68);
         margin-top: 7px;
-        max-width: 600px;
+        max-width: 560px;
         margin-bottom: 0;
       }
 
-      .captaindashboard-hero-action {
-        min-height: 42px;
-        padding: 0 18px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        color: var(--lime);
-        font-size: 13px;
-        font-weight: 800;
+      .captaindashboard-hero-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .captaindashboard-hero-chip {
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
         white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
       }
 
-      .captaindashboard-content-row {
-        align-items: start;
+      .captaindashboard-hero-chip:hover {
+        background: var(--lime);
+        color: var(--navy);
+        transform: translateY(-1px);
       }
 
+      .captaindashboard-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .captaindashboard-card,
       .captaindashboard-panel,
-      .captaindashboard-side-panel {
-        background: #ffffff;
+      .captaindashboard-side-panel,
+      .captaindashboard-stat-card {
+        background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 28px;
         box-shadow: var(--shadow-light);
-        animation: captaindashboardFadeUp 0.28s ease both;
+        animation: captaindashboardFadeUp 0.32s ease both;
         transition:
           transform 0.2s ease,
           box-shadow 0.2s ease,
           border-color 0.2s ease;
       }
 
+      .captaindashboard-card:hover,
       .captaindashboard-panel:hover,
-      .captaindashboard-side-panel:hover {
+      .captaindashboard-side-panel:hover,
+      .captaindashboard-stat-card:hover {
         transform: translateY(-3px);
         box-shadow: var(--shadow-hover);
         border-color: #d7deea;
+      }
+
+      .captaindashboard-stat-card {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .captaindashboard-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .captaindashboard-stat-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-muted);
+      }
+
+      .captaindashboard-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: var(--soft-bg);
+        color: var(--navy);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+
+      .captaindashboard-stat-value {
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+      }
+
+      .captaindashboard-stat-note {
+        margin-top: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
       }
 
       .captaindashboard-panel {
@@ -676,81 +757,68 @@
         gap: 14px;
       }
 
-      .captaindashboard-panel-title h3 {
+      .captaindashboard-panel-title h3,
+      .captaindashboard-side-head h3 {
         font-size: 18px;
         font-weight: 800;
         color: var(--navy);
         margin-bottom: 4px;
       }
 
-      .captaindashboard-panel-title p {
+      .captaindashboard-panel-title p,
+      .captaindashboard-side-head span {
         font-size: 12px;
         color: var(--text-muted);
         font-weight: 600;
         margin-bottom: 0;
       }
 
-      .captaindashboard-panel-link {
+      .captaindashboard-btn {
         min-height: 38px;
         padding: 0 15px;
-        border-radius: 14px;
-        background: var(--soft-bg);
-        border: 1px solid var(--border);
-        color: var(--navy);
-        font-size: 12px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .captaindashboard-panel-link:hover {
-        background: #ffffff;
-        border-color: var(--navy);
-        color: var(--navy);
-        transform: translateY(-1px);
-      }
-
-      .captaindashboard-filter-bar {
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .captaindashboard-chip {
-        min-height: 38px;
-        padding: 0 14px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: var(--soft-bg);
-        color: var(--text-muted);
+        border-radius: 999px;
+        border: none;
         font-size: 12px;
         font-weight: 800;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        white-space: nowrap;
         transition:
           background 0.18s ease,
           color 0.18s ease,
           border-color 0.18s ease,
-          transform 0.18s ease;
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .captaindashboard-chip:hover {
-        border-color: var(--navy);
-        color: var(--navy);
+      .captaindashboard-btn:hover {
         transform: translateY(-1px);
       }
 
-      .captaindashboard-chip.on {
+      .captaindashboard-btn-navy {
         background: var(--navy);
+        color: #ffffff;
+      }
+
+      .captaindashboard-btn-navy:hover {
+        background: var(--lime);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .captaindashboard-btn-ghost {
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+      }
+
+      .captaindashboard-btn-ghost:hover {
         border-color: var(--navy);
-        color: var(--lime);
+        color: var(--navy);
+        background: #ffffff;
       }
 
       .captaindashboard-table-wrap {
@@ -780,14 +848,12 @@
         border-bottom: 1px solid var(--border);
         transition:
           background 0.18s ease,
-          transform 0.18s ease,
           box-shadow 0.18s ease;
       }
 
       .captaindashboard-table tbody tr:hover {
         background: #fbfdff;
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.04);
+        box-shadow: inset 4px 0 0 var(--lime);
       }
 
       .captaindashboard-table td {
@@ -796,40 +862,15 @@
         color: var(--text);
       }
 
-      .captaindashboard-staff-cell {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-      }
-
-      .captaindashboard-staff-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 999px;
-        background: var(--navy);
-        color: var(--lime);
-        font-size: 10px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .captaindashboard-staff-name {
-        font-weight: 700;
-        color: var(--text);
-        font-size: 13px;
-        white-space: nowrap;
-      }
-
-      .captaindashboard-operation-text {
-        max-width: 260px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .captaindashboard-table-ref {
+        font-size: 12px;
         color: var(--text-muted);
-        font-size: 12.5px;
+        font-weight: 700;
+      }
+
+      .captaindashboard-table-name {
+        font-weight: 800;
+        color: var(--navy);
       }
 
       .captaindashboard-status-chip {
@@ -838,7 +879,7 @@
         justify-content: center;
         min-height: 30px;
         padding: 0 12px;
-        border-radius: 12px;
+        border-radius: 999px;
         font-size: 11.5px;
         font-weight: 800;
         white-space: nowrap;
@@ -851,22 +892,22 @@
         border-color: rgba(146, 64, 14, 0.12);
       }
 
-      .captaindashboard-status-chip.active {
+      .captaindashboard-status-chip.review {
         background: var(--blue-bg);
         color: var(--blue-text);
         border-color: rgba(30, 64, 175, 0.12);
       }
 
-      .captaindashboard-status-chip.done {
+      .captaindashboard-status-chip.approved {
         background: var(--green-bg);
         color: var(--green-text);
         border-color: rgba(22, 101, 52, 0.12);
       }
 
-      .captaindashboard-status-chip.urgent {
-        background: var(--red-bg);
-        color: var(--red-text);
-        border-color: rgba(153, 27, 27, 0.12);
+      .captaindashboard-status-chip.draft {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border-color: rgba(71, 85, 105, 0.12);
       }
 
       .captaindashboard-action-cell {
@@ -875,99 +916,69 @@
         align-items: center;
       }
 
-      .captaindashboard-btn {
-        min-height: 38px;
-        padding: 0 14px;
-        border-radius: 14px;
-        font-size: 12px;
-        font-weight: 800;
-        border: none;
-        cursor: pointer;
-        white-space: nowrap;
+      .captaindashboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px;
+      }
+
+      .captaindashboard-list-card {
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 13px;
+        align-items: center;
         transition:
           background 0.18s ease,
-          color 0.18s ease,
           border-color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .captaindashboard-btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .captaindashboard-btn-primary {
-        background: var(--navy);
-        color: #ffffff;
-      }
-
-      .captaindashboard-btn-primary:hover {
-        background: var(--lime);
-        color: var(--navy);
-      }
-
-      .captaindashboard-btn-ghost {
-        background: var(--soft-bg);
-        color: var(--text-muted);
-        border: 1px solid var(--border);
-      }
-
-      .captaindashboard-btn-ghost:hover {
-        border-color: var(--navy);
-        color: var(--navy);
-      }
-
-      .captaindashboard-table-foot {
-        padding: 15px 22px 18px;
-        border-top: 1px solid var(--border);
-        background: #fafbfd;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .captaindashboard-foot-info {
-        font-size: 12px;
-        color: var(--text-muted);
-        font-weight: 600;
-      }
-
-      .captaindashboard-pager {
-        display: flex;
-        gap: 5px;
-      }
-
-      .captaindashboard-pager-btn {
-        width: 31px;
-        height: 31px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: #ffffff;
-        color: var(--text-muted);
-        font-size: 12px;
-        font-weight: 700;
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
         cursor: pointer;
+      }
+
+      .captaindashboard-list-card:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captaindashboard-list-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: #ffffff;
+        color: var(--navy);
+        border: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease;
+        flex-shrink: 0;
+        font-size: 14px;
       }
 
-      .captaindashboard-pager-btn:hover {
-        border-color: var(--navy);
+      .captaindashboard-list-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .captaindashboard-list-title {
+        font-size: 13.5px;
+        font-weight: 800;
         color: var(--navy);
-        transform: translateY(-1px);
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .captaindashboard-pager-btn.on {
-        background: var(--navy);
-        color: var(--lime);
-        border-color: var(--navy);
+      .captaindashboard-list-meta {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        font-weight: 700;
       }
 
       .captaindashboard-side-stack {
@@ -988,31 +999,70 @@
         margin-bottom: 15px;
       }
 
-      .captaindashboard-side-head h3 {
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--navy);
-        margin-bottom: 0;
-      }
-
-      .captaindashboard-side-head span {
-        font-size: 12px;
-        color: var(--text-muted);
-        font-weight: 700;
-      }
-
-      .captaindashboard-summary-list {
+      .captaindashboard-action-grid {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
 
-      .captaindashboard-summary-item {
+      .captaindashboard-action-card {
+        min-height: 94px;
+        padding: 14px 10px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--soft-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captaindashboard-action-card:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captaindashboard-action-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        color: var(--navy);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 13px 14px;
-        border-radius: 20px;
+        justify-content: center;
+      }
+
+      .captaindashboard-action-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1.3;
+      }
+
+      .captaindashboard-staff-list,
+      .captaindashboard-notice-list,
+      .captaindashboard-bar-list {
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+
+      .captaindashboard-staff-row,
+      .captaindashboard-notice-row {
+        padding: 12px;
+        border-radius: 18px;
         background: var(--soft-bg);
         border: 1px solid var(--border);
         transition:
@@ -1022,81 +1072,83 @@
           box-shadow 0.18s ease;
       }
 
-      .captaindashboard-summary-item:hover {
+      .captaindashboard-staff-row:hover,
+      .captaindashboard-notice-row:hover {
         background: #ffffff;
         border-color: #d7deea;
         transform: translateY(-2px);
         box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
       }
 
-      .captaindashboard-summary-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .captaindashboard-summary-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 16px;
-        background: #ffffff;
-        color: var(--navy);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border);
-      }
-
-      .captaindashboard-summary-label {
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--text);
-      }
-
-      .captaindashboard-summary-sub {
-        font-size: 11px;
-        color: var(--text-muted);
-        font-weight: 600;
-      }
-
-      .captaindashboard-summary-number {
-        font-size: 22px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .captaindashboard-category-list,
-      .captaindashboard-reminder-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .captaindashboard-category-row {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        transition: transform 0.18s ease;
-      }
-
-      .captaindashboard-category-row:hover {
-        transform: translateX(3px);
-      }
-
-      .captaindashboard-category-top {
+      .captaindashboard-staff-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
       }
 
-      .captaindashboard-category-name {
+      .captaindashboard-staff-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .captaindashboard-staff-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        background: var(--navy);
+        color: var(--lime);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-staff-name,
+      .captaindashboard-notice-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1.2;
+      }
+
+      .captaindashboard-staff-role,
+      .captaindashboard-notice-sub {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      .captaindashboard-staff-count {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 9px;
+        white-space: nowrap;
+      }
+
+      .captaindashboard-bar-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .captaindashboard-bar-name {
         font-size: 12.5px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--text);
       }
 
-      .captaindashboard-category-count {
+      .captaindashboard-bar-value {
         font-size: 12px;
         font-weight: 800;
         color: var(--navy);
@@ -1112,127 +1164,36 @@
       .captaindashboard-bar-fill {
         height: 100%;
         border-radius: 999px;
-        background: linear-gradient(90deg, var(--navy), #254ca8);
-        transition: filter 0.18s ease;
+        background: var(--navy);
+        animation: captaindashboardBarGrow 0.8s ease both;
       }
 
-      .captaindashboard-category-row:hover .captaindashboard-bar-fill {
-        filter: brightness(1.15);
-      }
-
-      .captaindashboard-reminder-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 11px;
-        padding: 13px 14px;
-        border-radius: 18px;
-        background: var(--soft-bg);
-        border: 1px solid var(--border);
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .captaindashboard-reminder-row:hover {
-        background: #ffffff;
-        border-color: #d7deea;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
-      }
-
-      .captaindashboard-reminder-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 14px;
-        background: #ffffff;
-        color: var(--navy);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border);
-        flex-shrink: 0;
-      }
-
-      .captaindashboard-reminder-icon.urgent {
-        color: var(--red-text);
-        background: var(--red-bg);
-      }
-
-      .captaindashboard-reminder-title {
-        display: block;
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--text);
-        margin-bottom: 2px;
-      }
-
-      .captaindashboard-reminder-sub {
-        display: block;
-        font-size: 12px;
-        color: var(--text-muted);
-        line-height: 1.45;
-      }
-
-      .captaindashboard-history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 18px;
-      }
-
-      .captaindashboard-history-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 13px 14px;
-        border-radius: 20px;
-        background: var(--soft-bg);
-        border: 1px solid var(--border);
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .captaindashboard-history-item:hover {
-        background: #ffffff;
-        border-color: #d7deea;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
-      }
-
-      .captaindashboard-history-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-      }
-
-      .captaindashboard-history-info {
-        min-width: 0;
-      }
-
-      .captaindashboard-history-name {
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--navy);
-        white-space: nowrap;
-      }
-
-      .captaindashboard-history-sub {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
-        white-space: nowrap;
+      .captaindashboard-modal-content {
+        border: none;
+        border-radius: 28px;
         overflow: hidden;
-        text-overflow: ellipsis;
+      }
+
+      .captaindashboard-modal-header {
+        border-bottom: 1px solid var(--border);
+      }
+
+      @media (max-width: 1180px) {
+        .captaindashboard-stat-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (max-width: 992px) {
+        .captaindashboard-hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .captaindashboard-hero-actions {
+          justify-content: flex-start;
+        }
+
         .captaindashboard-side-stack {
           margin-top: 16px;
         }
@@ -1258,8 +1219,8 @@
 
         .captaindashboard-identity-name,
         .captaindashboard-identity-chip,
-        .captaindashboard-nav-label,
-        .captaindashboard-nav-count {
+        .captaindashboard-menu-label,
+        .captaindashboard-menu-count {
           opacity: 0;
           width: 0;
           pointer-events: none;
@@ -1282,31 +1243,12 @@
           max-width: none;
         }
 
-        .captaindashboard-hero {
-          flex-direction: column;
-          align-items: flex-start;
+        .captaindashboard-stat-grid {
+          grid-template-columns: 1fr;
         }
 
-        .captaindashboard-hero-action {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .captaindashboard-filter-bar {
-          align-items: stretch;
-        }
-
-        .captaindashboard-chip {
-          flex: 1;
-        }
-
-        .captaindashboard-action-cell {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .captaindashboard-action-cell .captaindashboard-btn {
-          width: 100%;
+        .captaindashboard-action-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -1327,86 +1269,92 @@
       <aside class="captaindashboard-sidebar" id="captaindashboard-sidebar">
         <div class="captaindashboard-identity">
           <div class="captaindashboard-identity-logo">
-            <img src="alapan.png" alt="Alapan logo" />
+            <span class="captaindashboard-identity-logo-placeholder">B</span>
           </div>
 
           <div>
             <div class="captaindashboard-identity-name">BarangayKonek</div>
-            <span class="captaindashboard-identity-chip">Captain Portal</span>
+            <span class="captaindashboard-identity-chip"> Captain Portal </span>
           </div>
         </div>
 
-        <nav class="captaindashboard-nav">
+        <nav class="captaindashboard-menu">
           <a
             href="captaindashboard.html"
-            class="captaindashboard-nav-link active"
+            class="captaindashboard-menu-link active"
           >
-            <div class="captaindashboard-nav-left">
+            <div class="captaindashboard-menu-left">
               <i class="fa-solid fa-house"></i>
-              <span class="captaindashboard-nav-label">Dashboard</span>
+              <span class="captaindashboard-menu-label">Dashboard</span>
             </div>
           </a>
 
-          <a href="captainrequests.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
-              <i class="fa-solid fa-file-lines"></i>
-              <span class="captaindashboard-nav-label">Document Requests</span>
+          <a href="captainapprovals.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-circle-check"></i>
+              <span class="captaindashboard-menu-label">Approvals</span>
             </div>
-            <span class="captaindashboard-nav-count">18</span>
+
+            <span class="captaindashboard-menu-count">5</span>
           </a>
 
-          <a href="captainconcerns.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
+          <a
+            href="captainannouncements.html"
+            class="captaindashboard-menu-link"
+          >
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span class="captaindashboard-menu-label">Announcements</span>
+            </div>
+          </a>
+
+          <div class="captaindashboard-menu-divider"></div>
+
+          <a href="captainoverview.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span class="captaindashboard-menu-label">System Overview</span>
+            </div>
+          </a>
+
+          <a href="captainconcerns.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
               <i class="fa-solid fa-triangle-exclamation"></i>
-              <span class="captaindashboard-nav-label">Concerns</span>
+              <span class="captaindashboard-menu-label">Concerns</span>
             </div>
-            <span class="captaindashboard-nav-count">7</span>
+
+            <span class="captaindashboard-menu-count">18</span>
           </a>
 
-          <a href="captaintransactions.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
-              <i class="fa-solid fa-coins"></i>
-              <span class="captaindashboard-nav-label">Transactions</span>
+          <a href="captainreports.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-file-lines"></i>
+              <span class="captaindashboard-menu-label">Reports</span>
             </div>
           </a>
 
-          <a href="captaincommunity.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
+          <div class="captaindashboard-menu-divider"></div>
+
+          <a href="captaincommunity.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
               <i class="fa-solid fa-people-group"></i>
-              <span class="captaindashboard-nav-label">Community Feed</span>
-            </div>
-            <span class="captaindashboard-nav-count">4</span>
-          </a>
-
-          <div class="captaindashboard-nav-divider"></div>
-
-          <a href="captainstaff.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
-              <i class="fa-solid fa-user-tie"></i>
-              <span class="captaindashboard-nav-label">Staff Overview</span>
+              <span class="captaindashboard-menu-label">Community Board</span>
             </div>
           </a>
 
-          <a href="captainreports.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
-              <i class="fa-solid fa-chart-line"></i>
-              <span class="captaindashboard-nav-label">Reports</span>
-            </div>
-          </a>
-
-          <a href="captainsettings.html" class="captaindashboard-nav-link">
-            <div class="captaindashboard-nav-left">
+          <a href="captainsettings.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
               <i class="fa-solid fa-gear"></i>
-              <span class="captaindashboard-nav-label">Settings</span>
+              <span class="captaindashboard-menu-label">Settings</span>
             </div>
           </a>
         </nav>
 
         <div class="captaindashboard-sidebar-footer">
-          <button class="captaindashboard-logout">
+          <a href="home.html" class="captaindashboard-logout">
             <i class="fa-solid fa-right-from-bracket"></i>
-            <span class="captaindashboard-nav-label">Log Out</span>
-          </button>
+            <span class="captaindashboard-menu-label">Log Out</span>
+          </a>
         </div>
       </aside>
 
@@ -1416,24 +1364,24 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input
               type="text"
-              placeholder="Search staff, operations, residents..."
+              placeholder="Search approvals, concerns, reports..."
             />
           </div>
 
           <div class="captaindashboard-topbar-right">
             <div class="captaindashboard-topbar-icon">
               <i class="fa-solid fa-bell"></i>
-              <span class="captaindashboard-notif-count">5</span>
+              <span class="captaindashboard-notification-count">5</span>
             </div>
 
             <div class="captaindashboard-profile">
-              <div class="captaindashboard-avatar">BC</div>
+              <div class="captaindashboard-avatar">RD</div>
 
               <div>
                 <div class="captaindashboard-profile-name">
-                  Barangay Captain
+                  Roberto Dela Cruz
                 </div>
-                <div class="captaindashboard-profile-role">Operations Head</div>
+                <div class="captaindashboard-profile-role">Punong Barangay</div>
               </div>
             </div>
           </div>
@@ -1442,84 +1390,146 @@
         <div class="captaindashboard-body">
           <section class="captaindashboard-hero">
             <div class="captaindashboard-hero-text">
-              <h2>Good morning, Barangay Captain</h2>
+              <h2>Captain Dashboard</h2>
               <p>
-                Oversee document requests, concerns, transactions, community
-                posts, and staff progress from one central operations dashboard.
+                Monitor approvals, announcements, concerns, staff activity, and
+                barangay reports in one place.
               </p>
             </div>
 
-            <div class="captaindashboard-hero-action">
-              <i class="fa-solid fa-calendar-day"></i>
-              <span>Tuesday, April 21, 2026</span>
+            <div class="captaindashboard-hero-actions">
+              <a
+                href="captainapprovals.html"
+                class="captaindashboard-hero-chip"
+              >
+                <i class="fa-solid fa-circle-check"></i>
+                5 Pending Approvals
+              </a>
+
+              <a
+                href="captainannouncements.html"
+                class="captaindashboard-hero-chip"
+              >
+                <i class="fa-solid fa-bullhorn"></i>
+                New Announcement
+              </a>
+
+              <a href="captainreports.html" class="captaindashboard-hero-chip">
+                <i class="fa-solid fa-file-lines"></i>
+                View Reports
+              </a>
             </div>
           </section>
 
-          <div class="row g-3 captaindashboard-content-row">
+          <section class="captaindashboard-stat-grid">
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">
+                  Pending Approvals
+                </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-clock"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">5</div>
+              <div class="captaindashboard-stat-note">
+                2 more than yesterday
+              </div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label"> Announcements </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-bullhorn"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">12</div>
+              <div class="captaindashboard-stat-note">Posted this month</div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">Open Concerns</span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">18</div>
+              <div class="captaindashboard-stat-note">
+                3 fewer than last week
+              </div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">
+                  Documents Released
+                </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-file-circle-check"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">94</div>
+              <div class="captaindashboard-stat-note">
+                11 released this week
+              </div>
+            </div>
+          </section>
+
+          <div class="row g-3">
             <div class="col-lg-8 col-xl-9">
-              <section class="captaindashboard-panel">
+              <section class="captaindashboard-panel mb-3">
                 <div class="captaindashboard-panel-head">
                   <div class="captaindashboard-panel-title">
-                    <h3>Ongoing Staff Operations</h3>
-                    <p>Monitor current work handled by barangay staff</p>
+                    <h3>Pending Approvals</h3>
+                    <p>Requests waiting for your decision.</p>
                   </div>
 
-                  <a
-                    href="captainstaff.html"
-                    class="captaindashboard-panel-link"
-                  >
-                    View All
+                  <a href="captainapprovals.html">
+                    <button
+                      class="captaindashboard-btn captaindashboard-btn-ghost"
+                    >
+                      View All
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                   </a>
-                </div>
-
-                <div class="captaindashboard-filter-bar">
-                  <button class="captaindashboard-chip on" data-filter="all">
-                    All
-                  </button>
-                  <button class="captaindashboard-chip" data-filter="pending">
-                    Pending
-                  </button>
-                  <button class="captaindashboard-chip" data-filter="active">
-                    Active
-                  </button>
-                  <button class="captaindashboard-chip" data-filter="urgent">
-                    Urgent
-                  </button>
-                  <button class="captaindashboard-chip" data-filter="done">
-                    Completed
-                  </button>
                 </div>
 
                 <div class="captaindashboard-table-wrap">
                   <table class="captaindashboard-table">
                     <thead>
                       <tr>
-                        <th>Staff / Office</th>
-                        <th>Operation</th>
-                        <th>Current Task</th>
-                        <th>Updated</th>
+                        <th>Reference</th>
+                        <th>Resident</th>
+                        <th>Type</th>
+                        <th>Submitted</th>
                         <th>Status</th>
                         <th>Action</th>
                       </tr>
                     </thead>
 
-                    <tbody id="captaindashboard-operation-rows">
-                      <tr data-status="pending">
+                    <tbody>
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
                         <td>
-                          <div class="captaindashboard-staff-cell">
-                            <div class="captaindashboard-staff-avatar">SC</div>
-                            <span class="captaindashboard-staff-name">
-                              Secretary Office
-                            </span>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-051
                           </div>
                         </td>
-                        <td>Document Requests</td>
                         <td>
-                          <div class="captaindashboard-operation-text">
-                            18 certificates waiting for final review.
+                          <div class="captaindashboard-table-name">
+                            Ana Lopez
                           </div>
                         </td>
-                        <td>Today, 9:20 AM</td>
+                        <td>Business Permit</td>
+                        <td>Apr 30, 2026</td>
                         <td>
                           <span class="captaindashboard-status-chip pending">
                             Pending
@@ -1528,165 +1538,105 @@
                         <td>
                           <div class="captaindashboard-action-cell">
                             <button
-                              class="captaindashboard-btn captaindashboard-btn-primary"
-                              data-bs-toggle="modal"
-                              data-bs-target="#captaindashboardReviewModal"
+                              class="captaindashboard-btn captaindashboard-btn-navy"
                             >
                               Review
-                            </button>
-                            <button
-                              class="captaindashboard-btn captaindashboard-btn-ghost"
-                            >
-                              View
                             </button>
                           </div>
                         </td>
                       </tr>
 
-                      <tr data-status="urgent">
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
                         <td>
-                          <div class="captaindashboard-staff-cell">
-                            <div class="captaindashboard-staff-avatar">KG</div>
-                            <span class="captaindashboard-staff-name">
-                              Kagawad Desk
-                            </span>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-050
                           </div>
                         </td>
-                        <td>Resident Concerns</td>
                         <td>
-                          <div class="captaindashboard-operation-text">
-                            Drainage complaint marked urgent for follow-up.
+                          <div class="captaindashboard-table-name">
+                            Jose Reyes
                           </div>
                         </td>
-                        <td>Today, 10:05 AM</td>
+                        <td>Barangay Clearance</td>
+                        <td>Apr 30, 2026</td>
                         <td>
-                          <span class="captaindashboard-status-chip urgent">
-                            Urgent
+                          <span class="captaindashboard-status-chip review">
+                            For Review
                           </span>
                         </td>
                         <td>
                           <div class="captaindashboard-action-cell">
                             <button
-                              class="captaindashboard-btn captaindashboard-btn-primary"
-                              data-bs-toggle="modal"
-                              data-bs-target="#captaindashboardReviewModal"
+                              class="captaindashboard-btn captaindashboard-btn-navy"
                             >
                               Review
-                            </button>
-                            <button
-                              class="captaindashboard-btn captaindashboard-btn-ghost"
-                            >
-                              View
                             </button>
                           </div>
                         </td>
                       </tr>
 
-                      <tr data-status="active">
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
                         <td>
-                          <div class="captaindashboard-staff-cell">
-                            <div class="captaindashboard-staff-avatar">TR</div>
-                            <span class="captaindashboard-staff-name">
-                              Treasurer Office
-                            </span>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-049
                           </div>
                         </td>
-                        <td>Transactions</td>
                         <td>
-                          <div class="captaindashboard-operation-text">
-                            Payment records and receipt logs being updated.
+                          <div class="captaindashboard-table-name">
+                            Maria Santos
                           </div>
                         </td>
-                        <td>Today, 10:30 AM</td>
+                        <td>Certificate of Indigency</td>
+                        <td>Apr 29, 2026</td>
                         <td>
-                          <span class="captaindashboard-status-chip active">
-                            Active
+                          <span class="captaindashboard-status-chip pending">
+                            Pending
                           </span>
                         </td>
                         <td>
                           <div class="captaindashboard-action-cell">
                             <button
-                              class="captaindashboard-btn captaindashboard-btn-primary"
-                              data-bs-toggle="modal"
-                              data-bs-target="#captaindashboardReviewModal"
+                              class="captaindashboard-btn captaindashboard-btn-navy"
                             >
                               Review
-                            </button>
-                            <button
-                              class="captaindashboard-btn captaindashboard-btn-ghost"
-                            >
-                              View
                             </button>
                           </div>
                         </td>
                       </tr>
 
-                      <tr data-status="active">
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
                         <td>
-                          <div class="captaindashboard-staff-cell">
-                            <div class="captaindashboard-staff-avatar">CM</div>
-                            <span class="captaindashboard-staff-name">
-                              Community Staff
-                            </span>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-048
                           </div>
                         </td>
-                        <td>Community Feed</td>
                         <td>
-                          <div class="captaindashboard-operation-text">
-                            4 flagged posts are being checked for accuracy.
+                          <div class="captaindashboard-table-name">
+                            Ramon Cruz
                           </div>
                         </td>
-                        <td>Today, 11:00 AM</td>
+                        <td>Barangay Clearance</td>
+                        <td>Apr 29, 2026</td>
                         <td>
-                          <span class="captaindashboard-status-chip active">
-                            Active
+                          <span class="captaindashboard-status-chip review">
+                            For Review
                           </span>
                         </td>
                         <td>
                           <div class="captaindashboard-action-cell">
                             <button
-                              class="captaindashboard-btn captaindashboard-btn-primary"
-                              data-bs-toggle="modal"
-                              data-bs-target="#captaindashboardReviewModal"
+                              class="captaindashboard-btn captaindashboard-btn-navy"
                             >
                               Review
-                            </button>
-                            <button
-                              class="captaindashboard-btn captaindashboard-btn-ghost"
-                            >
-                              View
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr data-status="done">
-                        <td>
-                          <div class="captaindashboard-staff-cell">
-                            <div class="captaindashboard-staff-avatar">SK</div>
-                            <span class="captaindashboard-staff-name">
-                              SK Desk
-                            </span>
-                          </div>
-                        </td>
-                        <td>Youth Updates</td>
-                        <td>
-                          <div class="captaindashboard-operation-text">
-                            Community activity notice already posted.
-                          </div>
-                        </td>
-                        <td>Yesterday, 4:15 PM</td>
-                        <td>
-                          <span class="captaindashboard-status-chip done">
-                            Completed
-                          </span>
-                        </td>
-                        <td>
-                          <div class="captaindashboard-action-cell">
-                            <button
-                              class="captaindashboard-btn captaindashboard-btn-ghost"
-                            >
-                              View
                             </button>
                           </div>
                         </td>
@@ -1694,220 +1644,190 @@
                     </tbody>
                   </table>
                 </div>
-
-                <div class="captaindashboard-table-foot">
-                  <span class="captaindashboard-foot-info">
-                    Showing 5 of 37 staff operation records
-                  </span>
-
-                  <div class="captaindashboard-pager">
-                    <button class="captaindashboard-pager-btn">
-                      <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button class="captaindashboard-pager-btn on">1</button>
-                    <button class="captaindashboard-pager-btn">2</button>
-                    <button class="captaindashboard-pager-btn">3</button>
-                    <button class="captaindashboard-pager-btn">
-                      <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                  </div>
-                </div>
               </section>
 
-              <section class="captaindashboard-panel mt-3">
+              <section class="captaindashboard-panel mb-3">
                 <div class="captaindashboard-panel-head">
                   <div class="captaindashboard-panel-title">
-                    <h3>Recent Staff Updates</h3>
-                    <p>Latest completed or reported staff actions</p>
+                    <h3>Recent Announcements</h3>
+                    <p>Latest posts published by the barangay office.</p>
                   </div>
 
-                  <a
-                    href="captainreports.html"
-                    class="captaindashboard-panel-link"
-                  >
-                    View Reports
+                  <a href="captainannouncements.html">
+                    <button
+                      class="captaindashboard-btn captaindashboard-btn-ghost"
+                    >
+                      Manage
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                   </a>
                 </div>
 
-                <div class="captaindashboard-history-list">
-                  <div class="captaindashboard-history-item">
-                    <div class="captaindashboard-history-left">
-                      <div class="captaindashboard-staff-avatar">SC</div>
-                      <div class="captaindashboard-history-info">
-                        <div class="captaindashboard-history-name">
-                          Secretary Office
-                        </div>
-                        <div class="captaindashboard-history-sub">
-                          Released 12 requested certificates today
-                        </div>
+                <div class="captaindashboard-list">
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Community Clean-Up Drive — May 3, 2026
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Posted Apr 30, 2026 · Pinned
                       </div>
                     </div>
-                    <span class="captaindashboard-status-chip done">Done</span>
+
+                    <span class="captaindashboard-status-chip approved">
+                      Published
+                    </span>
                   </div>
 
-                  <div class="captaindashboard-history-item">
-                    <div class="captaindashboard-history-left">
-                      <div class="captaindashboard-staff-avatar">TR</div>
-                      <div class="captaindashboard-history-info">
-                        <div class="captaindashboard-history-name">
-                          Treasurer Office
-                        </div>
-                        <div class="captaindashboard-history-sub">
-                          Updated transaction history and receipt records
-                        </div>
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-droplet"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Water Interruption Notice — Zone 3 & 4
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Posted Apr 28, 2026
                       </div>
                     </div>
-                    <span class="captaindashboard-status-chip active"
-                      >Updated</span
-                    >
+
+                    <span class="captaindashboard-status-chip approved">
+                      Published
+                    </span>
                   </div>
 
-                  <div class="captaindashboard-history-item">
-                    <div class="captaindashboard-history-left">
-                      <div class="captaindashboard-staff-avatar">KG</div>
-                      <div class="captaindashboard-history-info">
-                        <div class="captaindashboard-history-name">
-                          Kagawad Desk
-                        </div>
-                        <div class="captaindashboard-history-sub">
-                          Resolved 3 sanitation-related concerns
-                        </div>
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Barangay Assembly — May 10, 2026
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Draft created Apr 27, 2026
                       </div>
                     </div>
-                    <span class="captaindashboard-status-chip done"
-                      >Resolved</span
-                    >
+
+                    <span class="captaindashboard-status-chip draft">
+                      Draft
+                    </span>
+                  </div>
+
+                  <button
+                    class="captaindashboard-btn captaindashboard-btn-navy"
+                  >
+                    <i class="fa-solid fa-plus"></i>
+                    Post New Announcement
+                  </button>
+                </div>
+              </section>
+
+              <section class="captaindashboard-panel">
+                <div class="captaindashboard-panel-head">
+                  <div class="captaindashboard-panel-title">
+                    <h3>Recent Activity</h3>
+                    <p>Newest barangay system actions today.</p>
+                  </div>
+                </div>
+
+                <div class="captaindashboard-list">
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-check"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        APR-2026-046 was approved
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Barangay Clearance for Carla Mendoza · 8:42 AM
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        New concern submitted by Maria Lopez
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Flooding / Drainage near Sitio B · 8:15 AM
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Water Interruption Notice was published
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Sent to residents · Yesterday
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
             </div>
 
-            <div class="col-lg-4 col-xl-3">
+            <aside class="col-lg-4 col-xl-3">
               <div class="captaindashboard-side-stack">
                 <section class="captaindashboard-side-panel">
                   <div class="captaindashboard-side-head">
-                    <h3>Operation Summary</h3>
-                    <span>Today</span>
+                    <h3>Quick Actions</h3>
                   </div>
 
-                  <div class="captaindashboard-summary-list">
-                    <div class="captaindashboard-summary-item">
-                      <div class="captaindashboard-summary-left">
-                        <div class="captaindashboard-summary-icon">
-                          <i class="fa-solid fa-file-lines"></i>
-                        </div>
-                        <div>
-                          <div class="captaindashboard-summary-label">
-                            Requests
-                          </div>
-                          <div class="captaindashboard-summary-sub">
-                            Pending documents
-                          </div>
-                        </div>
+                  <div class="captaindashboard-action-grid">
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-circle-check"></i>
                       </div>
-                      <div class="captaindashboard-summary-number">18</div>
-                    </div>
-
-                    <div class="captaindashboard-summary-item">
-                      <div class="captaindashboard-summary-left">
-                        <div class="captaindashboard-summary-icon">
-                          <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                        <div>
-                          <div class="captaindashboard-summary-label">
-                            Concerns
-                          </div>
-                          <div class="captaindashboard-summary-sub">
-                            Needs follow-up
-                          </div>
-                        </div>
-                      </div>
-                      <div class="captaindashboard-summary-number">7</div>
-                    </div>
-
-                    <div class="captaindashboard-summary-item">
-                      <div class="captaindashboard-summary-left">
-                        <div class="captaindashboard-summary-icon">
-                          <i class="fa-solid fa-coins"></i>
-                        </div>
-                        <div>
-                          <div class="captaindashboard-summary-label">
-                            Transactions
-                          </div>
-                          <div class="captaindashboard-summary-sub">
-                            Recorded today
-                          </div>
-                        </div>
-                      </div>
-                      <div class="captaindashboard-summary-number">31</div>
-                    </div>
-                  </div>
-                </section>
-
-                <section class="captaindashboard-side-panel">
-                  <div class="captaindashboard-side-head">
-                    <h3>Department Progress</h3>
-                    <span>This week</span>
-                  </div>
-
-                  <div class="captaindashboard-category-list">
-                    <div class="captaindashboard-category-row">
-                      <div class="captaindashboard-category-top">
-                        <span class="captaindashboard-category-name">
-                          Secretary Office
-                        </span>
-                        <span class="captaindashboard-category-count">76%</span>
-                      </div>
-                      <div class="captaindashboard-bar-track">
-                        <div
-                          class="captaindashboard-bar-fill"
-                          style="width: 76%"
-                        ></div>
+                      <div class="captaindashboard-action-label">
+                        Review Approvals
                       </div>
                     </div>
 
-                    <div class="captaindashboard-category-row">
-                      <div class="captaindashboard-category-top">
-                        <span class="captaindashboard-category-name">
-                          Kagawad Desk
-                        </span>
-                        <span class="captaindashboard-category-count">58%</span>
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-bullhorn"></i>
                       </div>
-                      <div class="captaindashboard-bar-track">
-                        <div
-                          class="captaindashboard-bar-fill"
-                          style="width: 58%"
-                        ></div>
+                      <div class="captaindashboard-action-label">
+                        Post Announcement
                       </div>
                     </div>
 
-                    <div class="captaindashboard-category-row">
-                      <div class="captaindashboard-category-top">
-                        <span class="captaindashboard-category-name">
-                          Treasurer Office
-                        </span>
-                        <span class="captaindashboard-category-count">86%</span>
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
                       </div>
-                      <div class="captaindashboard-bar-track">
-                        <div
-                          class="captaindashboard-bar-fill"
-                          style="width: 86%"
-                        ></div>
+                      <div class="captaindashboard-action-label">
+                        View Concerns
                       </div>
                     </div>
 
-                    <div class="captaindashboard-category-row">
-                      <div class="captaindashboard-category-top">
-                        <span class="captaindashboard-category-name">
-                          Community Staff
-                        </span>
-                        <span class="captaindashboard-category-count">64%</span>
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-chart-pie"></i>
                       </div>
-                      <div class="captaindashboard-bar-track">
-                        <div
-                          class="captaindashboard-bar-fill"
-                          style="width: 64%"
-                        ></div>
+                      <div class="captaindashboard-action-label">
+                        System Reports
                       </div>
                     </div>
                   </div>
@@ -1915,67 +1835,182 @@
 
                 <section class="captaindashboard-side-panel">
                   <div class="captaindashboard-side-head">
-                    <h3>Captain Reminders</h3>
-                    <span>Follow-ups</span>
+                    <div>
+                      <h3>Important Notices</h3>
+                      <span>For you</span>
+                    </div>
                   </div>
 
-                  <div class="captaindashboard-reminder-list">
-                    <div class="captaindashboard-reminder-row">
-                      <div class="captaindashboard-reminder-icon urgent">
-                        <i class="fa-solid fa-exclamation"></i>
+                  <div class="captaindashboard-notice-list">
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        5 approvals overdue
                       </div>
-                      <div>
-                        <span class="captaindashboard-reminder-title">
-                          2 urgent concerns
-                        </span>
-                        <span class="captaindashboard-reminder-sub">
-                          Check escalated safety and drainage reports.
-                        </span>
+                      <div class="captaindashboard-notice-sub">
+                        Waiting for your signature.
                       </div>
                     </div>
 
-                    <div class="captaindashboard-reminder-row">
-                      <div class="captaindashboard-reminder-icon">
-                        <i class="fa-solid fa-file-signature"></i>
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        Assembly on May 10
                       </div>
-                      <div>
-                        <span class="captaindashboard-reminder-title">
-                          Approval review
-                        </span>
-                        <span class="captaindashboard-reminder-sub">
-                          Review pending resident verification batch.
-                        </span>
+                      <div class="captaindashboard-notice-sub">
+                        Finalize agenda this week.
                       </div>
                     </div>
 
-                    <div class="captaindashboard-reminder-row">
-                      <div class="captaindashboard-reminder-icon">
-                        <i class="fa-solid fa-chart-line"></i>
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        April report ready
                       </div>
-                      <div>
-                        <span class="captaindashboard-reminder-title">
-                          Weekly report
+                      <div class="captaindashboard-notice-sub">
+                        Treasurer submitted summary.
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <div>
+                      <h3>Staff Overview</h3>
+                      <span>Active today</span>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-staff-list">
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">SC</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Sec. Clara Abad
+                          </div>
+                          <div class="captaindashboard-staff-role">
+                            Secretary
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">8 requests</div>
+                    </div>
+
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">TR</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Treas. Rosa Navarro
+                          </div>
+                          <div class="captaindashboard-staff-role">
+                            Treasurer
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">₱3.2K</div>
+                    </div>
+
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">KM</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Kgd. Mario Tan
+                          </div>
+                          <div class="captaindashboard-staff-role">Kagawad</div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">6 concerns</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <div>
+                      <h3>Concerns by Type</h3>
+                      <span>This month</span>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-bar-list">
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Flooding / Drainage
                         </span>
-                        <span class="captaindashboard-reminder-sub">
-                          Prepare staff operation summary by Friday.
+                        <span class="captaindashboard-bar-value">10</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 85%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Garbage / Sanitation
                         </span>
+                        <span class="captaindashboard-bar-value">7</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 65%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Road Damage
+                        </span>
+                        <span class="captaindashboard-bar-value">5</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 50%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Noise Complaint
+                        </span>
+                        <span class="captaindashboard-bar-value">3</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 30%"
+                        ></div>
                       </div>
                     </div>
                   </div>
                 </section>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
       </main>
     </div>
 
-    <div class="modal fade" id="captaindashboardReviewModal" tabindex="-1">
+    <div class="modal fade" id="captaindashboardApprovalModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0">
-          <div class="modal-header">
+        <div class="modal-content captaindashboard-modal-content">
+          <div class="modal-header captaindashboard-modal-header">
             <h5 class="modal-title fw-bold text-primary-emphasis">
-              Review Staff Operation
+              Review Approval
             </h5>
             <button
               type="button"
@@ -1987,28 +2022,51 @@
           <div class="modal-body">
             <div class="row g-3">
               <div class="col-6">
-                <small class="text-muted fw-bold">Office</small>
-                <p class="mb-0 fw-semibold">Secretary Office</p>
+                <small class="text-muted fw-bold">Reference</small>
+                <p class="mb-0 fw-semibold">APR-2026-051</p>
               </div>
 
               <div class="col-6">
-                <small class="text-muted fw-bold">Operation</small>
-                <p class="mb-0 fw-semibold">Document Requests</p>
+                <small class="text-muted fw-bold">Resident</small>
+                <p class="mb-0 fw-semibold">Ana Lopez</p>
               </div>
 
               <div class="col-12">
-                <small class="text-muted fw-bold">Current Task</small>
-                <div class="p-3 rounded-4 mt-1" style="background: #f8fafc">
-                  18 certificates waiting for final review.
+                <small class="text-muted fw-bold">Request Type</small>
+                <p class="mb-0 fw-semibold">Business Permit Clearance</p>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Purpose</small>
+                <div
+                  class="p-3 rounded-4 mt-1"
+                  style="background: #f8fafc; font-size: 13.5px"
+                >
+                  Required for renewal of business operations at Sitio A, Purok
+                  2.
                 </div>
               </div>
 
               <div class="col-12">
-                <small class="text-muted fw-bold">Captain Note</small>
+                <small class="text-muted fw-bold">Decision</small>
+                <select
+                  class="form-select rounded-pill mt-1"
+                  style="font-size: 13.5px"
+                >
+                  <option>Pending Review</option>
+                  <option>Approved</option>
+                  <option>Rejected</option>
+                  <option>Return for Revision</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Captain's Remarks</small>
                 <textarea
                   class="form-control rounded-4 mt-1"
                   rows="3"
-                  placeholder="Add instruction or follow-up note..."
+                  style="font-size: 13.5px"
+                  placeholder="Add official remarks or reason for decision..."
                 ></textarea>
               </div>
             </div>
@@ -2022,11 +2080,13 @@
             >
               Cancel
             </button>
+
             <button
               type="button"
-              class="captaindashboard-btn captaindashboard-btn-primary"
+              class="captaindashboard-btn captaindashboard-btn-navy"
             >
-              Save Note
+              <i class="fa-solid fa-circle-check"></i>
+              Save Decision
             </button>
           </div>
         </div>
@@ -2053,53 +2113,18 @@
       );
 
       captaindashboardToggleButton.addEventListener("click", function () {
-        var captaindashboardIsSidebarMini =
+        var captaindashboardIsMini =
           captaindashboardSidebar.classList.toggle("mini");
 
         captaindashboardMainArea.classList.toggle(
           "shifted",
-          captaindashboardIsSidebarMini,
+          captaindashboardIsMini,
         );
 
         captaindashboardToggleWrap.classList.toggle(
           "mini",
-          captaindashboardIsSidebarMini,
+          captaindashboardIsMini,
         );
-      });
-
-      var captaindashboardFilterButtons = document.querySelectorAll(
-        ".captaindashboard-chip",
-      );
-
-      var captaindashboardOperationRows = document.querySelectorAll(
-        "#captaindashboard-operation-rows tr",
-      );
-
-      captaindashboardFilterButtons.forEach(function (captaindashboardButton) {
-        captaindashboardButton.addEventListener("click", function () {
-          var captaindashboardFilter =
-            captaindashboardButton.getAttribute("data-filter");
-
-          captaindashboardFilterButtons.forEach(
-            function (captaindashboardOtherButton) {
-              captaindashboardOtherButton.classList.remove("on");
-            },
-          );
-
-          captaindashboardButton.classList.add("on");
-
-          captaindashboardOperationRows.forEach(function (captaindashboardRow) {
-            if (
-              captaindashboardFilter === "all" ||
-              captaindashboardRow.getAttribute("data-status") ===
-                captaindashboardFilter
-            ) {
-              captaindashboardRow.style.display = "";
-            } else {
-              captaindashboardRow.style.display = "none";
-            }
-          });
-        });
       });
     </script>
   </body>
