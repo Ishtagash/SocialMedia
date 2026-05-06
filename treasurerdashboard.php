@@ -3,84 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Treasurer Dashboard</title>
+    <title>Treasurer Dashboard — BarangayKonek</title>
+
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+
     <style>
       :root {
         --navy: #051650;
         --navy-mid: #0a2160;
         --lime: #ccff00;
-        --lime-dim: #aadd00;
         --surface: #ffffff;
-        --page-bg: #f2f4f8;
-        --border-color: #e3e7f0;
-        --text-main: #1a2240;
-        --text-soft: #7a869a;
-        --green: #22c55e;
-        --green-bg: #f0fdf4;
-        --green-text: #166534;
-        --blue: #3b82f6;
-        --blue-bg: #eff6ff;
-        --blue-text: #1e40af;
-        --amber: #f59e0b;
-        --amber-bg: #fffbeb;
-        --amber-text: #92400e;
-        --card-radius: 14px;
-        --card-shadow: 0 1px 4px rgba(5, 22, 80, 0.07);
-        --card-shadow-lg: 0 6px 20px rgba(5, 22, 80, 0.12);
-        --sidebar-width: 228px;
-        --topbar-height: 62px;
+        --bg: #f4f7fb;
+        --soft-bg: #f8fafc;
+        --border: #e3e7f0;
+        --text: #1a2240;
+        --text-muted: #7a869a;
+        --sidebar-w: 228px;
+        --sidebar-mini: 64px;
+        --topbar-h: 62px;
+        --soft-navy-bg: #edf2ff;
+        --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --shadow-hover: 0 14px 30px rgba(5, 22, 80, 0.13);
+        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
       }
 
-      *,
-      *::before,
-      *::after {
+      * {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
       }
 
       body {
+        margin: 0;
         font-family: "DM Sans", sans-serif;
-        background: var(--page-bg);
-        color: var(--text-main);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
+        color: var(--text);
         min-height: 100vh;
         overflow-x: hidden;
       }
 
-      @keyframes slide-in-left {
-        from {
-          opacity: 0;
-          transform: translateX(-22px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
+      a {
+        text-decoration: none;
       }
 
-      @keyframes fade-down {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      button,
+      input,
+      select {
+        font-family: inherit;
       }
 
-      @keyframes fade-up {
+      @keyframes treasurerdashboardFadeUp {
         from {
           opacity: 0;
-          transform: translateY(16px);
+          transform: translateY(10px);
         }
         to {
           opacity: 1;
@@ -88,154 +80,304 @@
         }
       }
 
-      .treasurerdashboard-page {
+      @keyframes treasurerdashboardBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        20% {
+          transform: rotate(14deg);
+        }
+        40% {
+          transform: rotate(-12deg);
+        }
+        60% {
+          transform: rotate(8deg);
+        }
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      .treasurerdashboard-container {
         display: flex;
         min-height: 100vh;
       }
 
-      /* SIDEBAR */
       .treasurerdashboard-sidebar {
-        width: var(--sidebar-width);
-        background: var(--navy);
-        display: flex;
-        flex-direction: column;
+        width: var(--sidebar-w);
+        height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
-        height: 100vh;
         z-index: 40;
-        animation: slide-in-left 0.4s cubic-bezier(0.22, 0.68, 0, 1.1) both;
-      }
-
-      .treasurerdashboard-brand-row {
-        height: var(--topbar-height);
+        overflow: hidden;
         display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 0 18px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
+        flex-direction: column;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--shadow-sidebar);
+        transition: width 0.25s ease;
       }
 
-      .treasurerdashboard-brand-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        background: var(--lime);
+      .treasurerdashboard-sidebar.mini {
+        width: var(--sidebar-mini);
+      }
+
+      .treasurerdashboard-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--sidebar-w);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .treasurerdashboard-toggle-wrap.mini {
+        left: var(--sidebar-mini);
+      }
+
+      .treasurerdashboard-toggle-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
         display: flex;
         align-items: center;
         justify-content: center;
-        overflow: hidden;
-        flex-shrink: 0;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
       }
 
-      .treasurerdashboard-brand-logo i {
-        font-size: 13px;
-        color: var(--navy);
+      .treasurerdashboard-toggle-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+        transform: scale(1.05);
       }
-      .treasurerdashboard-brand-logo img {
+
+      .treasurerdashboard-toggle-btn i {
+        font-size: 10px;
+        color: var(--navy);
+        transition: transform 0.25s ease;
+      }
+
+      .treasurerdashboard-toggle-wrap.mini .treasurerdashboard-toggle-btn i {
+        transform: rotate(180deg);
+      }
+
+      .treasurerdashboard-identity {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .treasurerdashboard-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .treasurerdashboard-identity-logo img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
-      .treasurerdashboard-brand-name {
-        font-size: 13px;
-        font-weight: 700;
-        color: #fff;
+
+      .treasurerdashboard-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
         line-height: 1.2;
       }
-      .treasurerdashboard-brand-sub {
+
+      .treasurerdashboard-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
         font-size: 11px;
-        color: rgba(255, 255, 255, 0.4);
+        font-weight: 800;
+        line-height: 1;
       }
 
-      .treasurerdashboard-nav-list {
+      .treasurerdashboard-sidebar.mini .treasurerdashboard-identity-name,
+      .treasurerdashboard-sidebar.mini .treasurerdashboard-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .treasurerdashboard-sidebar.mini .treasurerdashboard-identity-logo {
+        margin: 0 auto;
+      }
+
+      .treasurerdashboard-menu {
         flex: 1;
-        padding: 14px 10px;
+        padding: 16px 10px;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 5px;
         overflow-y: auto;
+        overflow-x: hidden;
       }
 
-      .treasurerdashboard-nav-divider {
+      .treasurerdashboard-menu-divider {
         height: 1px;
-        background: rgba(255, 255, 255, 0.07);
-        margin: 7px 8px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
       }
 
-      .treasurerdashboard-nav-link {
+      .treasurerdashboard-menu-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 9px 13px;
-        border-radius: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
         font-size: 13px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.55);
-        text-decoration: none;
-        transition: all 0.15s ease;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
         cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
       }
 
-      .treasurerdashboard-nav-link:hover {
-        background: rgba(255, 255, 255, 0.07);
-        color: #fff;
+      .treasurerdashboard-menu-link:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        transform: translateX(3px);
       }
-      .treasurerdashboard-nav-link.active {
+
+      .treasurerdashboard-menu-link.active {
         background: var(--lime);
         color: var(--navy);
       }
-      .treasurerdashboard-nav-text {
-        flex: 1;
-      }
 
-      .treasurerdashboard-sidebar-bottom {
-        padding: 12px 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
-      }
-
-      .treasurerdashboard-logout-link {
+      .treasurerdashboard-menu-left {
         display: flex;
         align-items: center;
-        gap: 9px;
-        padding: 9px 13px;
-        border-radius: 10px;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .treasurerdashboard-menu-left i {
+        width: 18px;
+        text-align: center;
         font-size: 13px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.4);
+        flex-shrink: 0;
+      }
+
+      .treasurerdashboard-menu-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .treasurerdashboard-sidebar.mini .treasurerdashboard-menu-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .treasurerdashboard-menu-count {
+        font-size: 10px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .treasurerdashboard-menu-link.active .treasurerdashboard-menu-count {
+        background: rgba(5, 22, 80, 0.18);
+        color: var(--navy);
+      }
+
+      .treasurerdashboard-sidebar.mini .treasurerdashboard-menu-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .treasurerdashboard-sidebar-footer {
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .treasurerdashboard-logout {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
         background: transparent;
         border: none;
         cursor: pointer;
         width: 100%;
-        font-family: inherit;
-        text-decoration: none;
-        transition: all 0.15s;
+        text-align: left;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
       }
 
-      .treasurerdashboard-logout-link i {
-        font-size: 12px;
-      }
-      .treasurerdashboard-logout-link:hover {
-        background: rgba(220, 38, 38, 0.12);
+      .treasurerdashboard-logout:hover {
+        background: rgba(239, 68, 68, 0.14);
         color: #fca5a5;
+        transform: translateX(3px);
       }
 
-      /* MAIN */
       .treasurerdashboard-main {
-        margin-left: var(--sidebar-width);
+        margin-left: var(--sidebar-w);
         flex: 1;
-        display: flex;
-        flex-direction: column;
         min-height: 100vh;
         min-width: 0;
+        transition: margin-left 0.25s ease;
       }
 
-      /* TOPBAR */
+      .treasurerdashboard-main.shifted {
+        margin-left: var(--sidebar-mini);
+      }
+
       .treasurerdashboard-topbar {
-        height: var(--topbar-height);
-        background: var(--surface);
-        border-bottom: 1px solid var(--border-color);
+        height: var(--topbar-h);
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
         gap: 14px;
@@ -243,53 +385,34 @@
         position: sticky;
         top: 0;
         z-index: 30;
-        animation: fade-down 0.36s ease both;
-      }
-
-      .treasurerdashboard-topbar-logo {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        background: var(--navy);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        flex-shrink: 0;
-      }
-
-      .treasurerdashboard-topbar-logo i {
-        font-size: 12px;
-        color: var(--lime);
-      }
-      .treasurerdashboard-topbar-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
       }
 
       .treasurerdashboard-topbar-search {
         flex: 1;
-        max-width: 380px;
-        height: 36px;
+        max-width: 390px;
+        height: 38px;
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 0 12px;
-        background: var(--page-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        transition: border-color 0.18s;
+        padding: 0 14px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
       .treasurerdashboard-topbar-search:focus-within {
         border-color: var(--navy);
-        background: var(--surface);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
       }
+
       .treasurerdashboard-topbar-search i {
-        color: var(--text-soft);
+        color: var(--text-muted);
         font-size: 12px;
-        flex-shrink: 0;
       }
 
       .treasurerdashboard-topbar-search input {
@@ -297,13 +420,8 @@
         border: none;
         outline: none;
         background: transparent;
-        font-family: inherit;
         font-size: 13px;
-        color: var(--text-main);
-      }
-
-      .treasurerdashboard-topbar-search input::placeholder {
-        color: var(--text-soft);
+        color: var(--text);
       }
 
       .treasurerdashboard-topbar-right {
@@ -313,747 +431,1140 @@
         gap: 10px;
       }
 
-      .treasurerdashboard-notif-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        background: var(--page-bg);
-        border: 1px solid var(--border-color);
+      .treasurerdashboard-topbar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-soft);
+        color: var(--text-muted);
         font-size: 13px;
         cursor: pointer;
         position: relative;
-        text-decoration: none;
-        transition: all 0.15s;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .treasurerdashboard-notif-btn:hover {
+      .treasurerdashboard-topbar-icon:hover {
         border-color: var(--navy);
         color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
       }
 
-      .treasurerdashboard-notif-dot {
+      .treasurerdashboard-topbar-icon:hover i {
+        animation: treasurerdashboardBellShake 0.55s ease;
+      }
+
+      .treasurerdashboard-notification-count {
         position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 7px;
-        height: 7px;
-        background: var(--green);
-        border-radius: 50%;
-        border: 1.5px solid var(--surface);
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .treasurerdashboard-profile-chip {
+      .treasurerdashboard-profile {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 4px 10px 4px 5px;
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        background: var(--page-bg);
+        padding: 5px 13px 5px 5px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
         cursor: pointer;
-        transition: border-color 0.15s;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .treasurerdashboard-profile-chip:hover {
+      .treasurerdashboard-profile:hover {
         border-color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
       }
 
-      .treasurerdashboard-profile-avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
+      .treasurerdashboard-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
         background: var(--navy);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--lime);
-        overflow: hidden;
         flex-shrink: 0;
       }
 
-      .treasurerdashboard-profile-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
       .treasurerdashboard-profile-name {
         font-size: 13px;
         font-weight: 700;
         color: var(--navy);
         white-space: nowrap;
       }
+
       .treasurerdashboard-profile-role {
         font-size: 11px;
-        color: var(--text-soft);
+        color: var(--text-muted);
         line-height: 1;
       }
 
-      /* BODY */
       .treasurerdashboard-body {
-        padding: 22px 24px 48px;
+        padding: 24px 26px 44px;
+      }
+
+      .treasurerdashboard-hero {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(5, 22, 80, 0.98),
+            rgba(10, 33, 96, 0.95)
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.24),
+            transparent 35%
+          );
+        border-radius: 28px;
+        padding: 26px 30px;
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
         gap: 20px;
-      }
-
-      /* BANNER */
-      .treasurerdashboard-banner {
-        background: var(--navy);
-        border-radius: var(--card-radius);
-        padding: 20px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        animation: fade-up 0.4s 0.14s ease both;
-      }
-
-      .treasurerdashboard-banner-text h2 {
-        font-size: 18px;
-        font-weight: 700;
-        color: #fff;
-        line-height: 1.2;
-      }
-      .treasurerdashboard-banner-text p {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
-        margin-top: 4px;
-      }
-      .treasurerdashboard-banner-actions {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-
-      .treasurerdashboard-btn-lime {
-        min-height: 36px;
-        padding: 0 16px;
-        border-radius: 10px;
-        border: none;
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 13px;
-        font-weight: 700;
-        font-family: inherit;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        transition: background 0.15s;
-      }
-
-      .treasurerdashboard-btn-lime:hover {
-        background: var(--lime-dim);
-      }
-
-      .treasurerdashboard-btn-ghost {
-        min-height: 36px;
-        padding: 0 16px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        color: #fff;
-        font-size: 13px;
-        font-weight: 700;
-        font-family: inherit;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        transition: background 0.15s;
-      }
-
-      .treasurerdashboard-btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.16);
-      }
-
-      /* KPI STRIP */
-      .treasurerdashboard-kpi-strip {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        animation: fade-up 0.4s 0.22s ease both;
-      }
-
-      .treasurerdashboard-kpi-box {
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--card-radius);
-        padding: 16px 18px;
-        border-left: 4px solid transparent;
-        box-shadow: var(--card-shadow);
-        transition:
-          box-shadow 0.18s,
-          transform 0.18s;
-      }
-
-      .treasurerdashboard-kpi-box:hover {
-        box-shadow: var(--card-shadow-lg);
-        transform: translateY(-2px);
-      }
-
-      .treasurerdashboard-kpi-green {
-        border-left-color: var(--green);
-      }
-      .treasurerdashboard-kpi-blue {
-        border-left-color: var(--blue);
-      }
-      .treasurerdashboard-kpi-amber {
-        border-left-color: var(--amber);
-      }
-      .treasurerdashboard-kpi-navy {
-        border-left-color: var(--navy);
-      }
-
-      .treasurerdashboard-kpi-label {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.35px;
-        color: var(--text-soft);
-        display: block;
-        margin-bottom: 6px;
-      }
-
-      .treasurerdashboard-kpi-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--navy);
-        line-height: 1;
-        display: block;
-      }
-
-      .treasurerdashboard-kpi-note {
-        font-size: 11px;
-        color: var(--text-soft);
-        margin-top: 5px;
-        display: block;
-      }
-
-      /* CONTENT GRID */
-      .treasurerdashboard-content-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-        gap: 18px;
-        align-items: start;
-        animation: fade-up 0.4s 0.3s ease both;
-      }
-
-      .treasurerdashboard-left-col {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        min-width: 0;
-      }
-      .treasurerdashboard-right-col {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-
-      /* PANEL */
-      .treasurerdashboard-panel {
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--card-radius);
+        box-shadow: var(--shadow-light);
+        position: relative;
         overflow: hidden;
-        box-shadow: var(--card-shadow);
+        animation: treasurerdashboardFadeUp 0.28s ease both;
+        margin-bottom: 20px;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
-      .treasurerdashboard-panel-head {
+      .treasurerdashboard-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .treasurerdashboard-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -90px;
+        top: -110px;
+        background: rgba(204, 255, 0, 0.12);
+        border-radius: 50%;
+      }
+
+      .treasurerdashboard-hero::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: 90px;
+        bottom: -90px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .treasurerdashboard-hero-text,
+      .treasurerdashboard-hero-actions {
+        position: relative;
+        z-index: 1;
+      }
+
+      .treasurerdashboard-hero-text h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.25;
+        margin-bottom: 0;
+      }
+
+      .treasurerdashboard-hero-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 7px;
+        max-width: 560px;
+        margin-bottom: 0;
+      }
+
+      .treasurerdashboard-hero-actions {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 10px;
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .treasurerdashboard-panel-head h4 {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--navy);
-      }
-
-      .treasurerdashboard-panel-link {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-soft);
-        text-decoration: none;
-        transition: color 0.14s;
-      }
-
-      .treasurerdashboard-panel-link:hover {
-        color: var(--navy);
-      }
-
-      /* BAR CHART */
-      .treasurerdashboard-chart-wrap {
-        padding: 18px 18px 12px;
-      }
-
-      .treasurerdashboard-chart-legend {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 14px;
         flex-wrap: wrap;
       }
 
-      .treasurerdashboard-legend-item {
+      .treasurerdashboard-btn {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurerdashboard-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .treasurerdashboard-btn-primary {
+        background: var(--navy);
+        color: #ffffff;
+      }
+
+      .treasurerdashboard-btn-primary:hover {
+        background: var(--lime);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .treasurerdashboard-btn-lime {
+        background: var(--lime);
+        color: var(--navy);
+      }
+
+      .treasurerdashboard-btn-lime:hover {
+        background: #b7e900;
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .treasurerdashboard-btn-light {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .treasurerdashboard-btn-light:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+      }
+
+      .treasurerdashboard-panel,
+      .treasurerdashboard-side-panel,
+      .treasurerdashboard-transaction-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow-light);
+        animation: treasurerdashboardFadeUp 0.28s ease both;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .treasurerdashboard-panel:hover,
+      .treasurerdashboard-side-panel:hover,
+      .treasurerdashboard-transaction-card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+        border-color: #d7deea;
+      }
+
+      .treasurerdashboard-panel {
+        overflow: hidden;
+      }
+
+      .treasurerdashboard-panel-head {
+        padding: 22px 24px 16px;
+        border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .treasurerdashboard-panel-title h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .treasurerdashboard-panel-title p {
         font-size: 12px;
+        color: var(--text-muted);
         font-weight: 600;
-        color: var(--text-soft);
+        margin-bottom: 0;
       }
 
-      .treasurerdashboard-legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 3px;
-        flex-shrink: 0;
+      .treasurerdashboard-panel-link {
+        min-height: 38px;
+        padding: 0 15px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        color: var(--navy);
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .treasurerdashboard-bar-chart {
+      .treasurerdashboard-panel-link:hover {
+        background: #ffffff;
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .treasurerdashboard-chart-area {
+        padding: 22px 24px 24px;
+      }
+
+      .treasurerdashboard-chart-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .treasurerdashboard-chart-total {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+      }
+
+      .treasurerdashboard-chart-sub {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+
+      .treasurerdashboard-chart-chip {
+        min-height: 34px;
+        padding: 0 13px;
+        border-radius: 999px;
+        background: var(--soft-navy-bg);
+        color: var(--navy);
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+
+      .treasurerdashboard-chart-board {
+        background: linear-gradient(180deg, #fbfcff 0%, #f7f9fd 100%);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 18px 18px 14px;
+      }
+
+      .treasurerdashboard-chart-grid {
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        gap: 12px;
+        min-height: 250px;
+      }
+
+      .treasurerdashboard-chart-y {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding-top: 2px;
+        padding-bottom: 34px;
+      }
+
+      .treasurerdashboard-chart-y span {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .treasurerdashboard-chart-plot {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 0;
+        min-width: 0;
+      }
+
+      .treasurerdashboard-chart-lines {
+        position: absolute;
+        inset: 0 0 34px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+
+      .treasurerdashboard-chart-lines span {
+        display: block;
+        width: 100%;
+        border-top: 1px dashed #d8dfec;
+      }
+
+      .treasurerdashboard-chart-bars {
+        height: 210px;
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: flex-end;
-        gap: 8px;
-        height: 160px;
-        padding: 0 4px;
-        border-bottom: 2px solid var(--border-color);
-        border-left: 2px solid var(--border-color);
+        justify-content: space-between;
+        gap: 18px;
+        padding: 10px 10px 0;
       }
 
-      .treasurerdashboard-bar-group {
+      .treasurerdashboard-chart-group {
+        flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
-        flex: 1;
+        justify-content: flex-end;
+        gap: 10px;
       }
 
-      .treasurerdashboard-bar {
+      .treasurerdashboard-chart-value {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--navy);
+        white-space: nowrap;
+        opacity: 0.9;
+      }
+
+      .treasurerdashboard-chart-bar-wrap {
         width: 100%;
-        border-radius: 5px 5px 0 0;
-        min-width: 18px;
-        cursor: default;
-        transition: opacity 0.15s;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        height: 150px;
       }
 
-      .treasurerdashboard-bar:hover {
-        opacity: 0.82;
+      .treasurerdashboard-chart-bar {
+        width: 42px;
+        max-width: 100%;
+        border-radius: 18px 18px 10px 10px;
+        background: linear-gradient(180deg, #17338a 0%, #051650 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        position: relative;
+        cursor: pointer;
+        transition:
+          transform 0.18s ease,
+          filter 0.18s ease,
+          box-shadow 0.18s ease;
       }
 
-      .treasurerdashboard-bar-label {
-        font-size: 10px;
-        color: var(--text-soft);
-        font-weight: 600;
-        text-align: center;
-        margin-top: 6px;
+      .treasurerdashboard-chart-bar::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 8px;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      .treasurerdashboard-chart-bar:hover {
+        transform: translateY(-5px);
+        filter: brightness(1.08);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.14);
+      }
+
+      .treasurerdashboard-chart-bar.current {
+        background: linear-gradient(180deg, #ccff00 0%, #dff76b 100%);
+        border: 2px solid var(--navy);
+      }
+
+      .treasurerdashboard-chart-bar.current::after {
+        background: rgba(5, 22, 80, 0.18);
+      }
+
+      .treasurerdashboard-chart-month {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
         white-space: nowrap;
       }
 
-      /* TABLE */
+      .treasurerdashboard-filter-bar {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .treasurerdashboard-chip {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurerdashboard-chip:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
+      }
+
+      .treasurerdashboard-chip.on {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: var(--lime);
+      }
+
+      .treasurerdashboard-table-wrap {
+        overflow-x: auto;
+      }
+
       .treasurerdashboard-table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 13px;
       }
 
       .treasurerdashboard-table thead th {
-        text-align: left;
+        background: #fafbfd;
         font-size: 11px;
-        font-weight: 700;
-        color: var(--text-soft);
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.35px;
-        padding: 10px 18px;
-        background: rgba(5, 22, 80, 0.02);
-        border-bottom: 1px solid var(--border-color);
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        text-align: left;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .treasurerdashboard-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurerdashboard-table tbody tr:hover {
+        background: #fbfdff;
+        box-shadow: inset 4px 0 0 var(--lime);
+      }
+
+      .treasurerdashboard-table td {
+        padding: 13px 16px;
+        vertical-align: middle;
+        color: var(--text);
+      }
+
+      .treasurerdashboard-document-name {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
         white-space: nowrap;
       }
 
-      .treasurerdashboard-table tbody td {
-        padding: 12px 18px;
+      .treasurerdashboard-money-text {
         font-size: 13px;
-        color: var(--text-main);
-        border-bottom: 1px solid var(--border-color);
-        vertical-align: middle;
-      }
-
-      .treasurerdashboard-table tbody tr:last-child td {
-        border-bottom: none;
-      }
-      .treasurerdashboard-table tbody tr {
-        transition: background 0.13s;
-      }
-      .treasurerdashboard-table tbody tr:hover {
-        background: rgba(5, 22, 80, 0.02);
-      }
-
-      .treasurerdashboard-doc-name {
-        font-weight: 600;
+        font-weight: 800;
         color: var(--navy);
-      }
-      .treasurerdashboard-revenue-total {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--green-text);
+        white-space: nowrap;
       }
 
       .treasurerdashboard-progress-wrap {
         display: flex;
         align-items: center;
         gap: 8px;
+        min-width: 120px;
       }
 
-      .treasurerdashboard-progress-bar {
+      .treasurerdashboard-progress-track {
+        height: 8px;
         flex: 1;
-        height: 6px;
-        background: rgba(5, 22, 80, 0.08);
+        background: #eaf0f7;
         border-radius: 999px;
         overflow: hidden;
-        min-width: 60px;
       }
 
       .treasurerdashboard-progress-fill {
         height: 100%;
         border-radius: 999px;
-        background: var(--navy);
-        transition: width 0.3s ease;
+        background: linear-gradient(90deg, var(--navy), #254ca8);
       }
 
-      .treasurerdashboard-progress-pct {
+      .treasurerdashboard-progress-text {
         font-size: 11px;
-        font-weight: 700;
-        color: var(--text-soft);
-        white-space: nowrap;
+        font-weight: 800;
+        color: var(--text-muted);
         min-width: 34px;
         text-align: right;
       }
 
-      /* PILLS */
-      .treasurerdashboard-pill {
-        display: inline-flex;
-        align-items: center;
-        height: 22px;
-        padding: 0 9px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.2px;
-        white-space: nowrap;
-      }
-
-      .treasurerdashboard-pill-collected {
-        background: var(--green-bg);
-        color: var(--green-text);
-        border: 1px solid rgba(34, 197, 94, 0.2);
-      }
-      .treasurerdashboard-pill-pending {
-        background: var(--amber-bg);
-        color: var(--amber-text);
-        border: 1px solid rgba(245, 158, 11, 0.22);
-      }
-      .treasurerdashboard-pill-waived {
-        background: var(--blue-bg);
-        color: var(--blue-text);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-      }
-
-      /* TABLE FOOTER */
-      .treasurerdashboard-table-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 18px;
-        border-top: 1px solid var(--border-color);
-        background: rgba(5, 22, 80, 0.015);
-      }
-
-      .treasurerdashboard-table-footer-note {
-        font-size: 12px;
-        color: var(--text-soft);
-      }
-      .treasurerdashboard-table-footer-total {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--navy);
-      }
-
-      /* RIGHT PANELS */
-      .treasurerdashboard-breakdown-row {
+      .treasurerdashboard-table-foot {
+        padding: 15px 22px 18px;
+        border-top: 1px solid var(--border);
+        background: #fafbfd;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 12px 18px;
-        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
       }
 
-      .treasurerdashboard-breakdown-row:last-child {
-        border-bottom: none;
+      .treasurerdashboard-foot-info {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
       }
-      .treasurerdashboard-breakdown-name {
+
+      .treasurerdashboard-foot-total {
         font-size: 13px;
-        color: var(--text-main);
-      }
-      .treasurerdashboard-breakdown-amount {
-        font-size: 13px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--navy);
       }
-      .treasurerdashboard-breakdown-waived {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-soft);
+
+      .treasurerdashboard-transaction-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        padding: 18px;
       }
 
-      /* TRANSACTIONS */
-      .treasurerdashboard-txn-row {
+      .treasurerdashboard-transaction-card {
+        padding: 16px;
+      }
+
+      .treasurerdashboard-transaction-top {
         display: flex;
         align-items: center;
-        gap: 11px;
-        padding: 12px 18px;
-        border-bottom: 1px solid var(--border-color);
-        transition: background 0.13s;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
       }
 
-      .treasurerdashboard-txn-row:last-child {
-        border-bottom: none;
-      }
-      .treasurerdashboard-txn-row:hover {
-        background: rgba(5, 22, 80, 0.02);
+      .treasurerdashboard-transaction-code {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
       }
 
-      .treasurerdashboard-txn-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
+      .treasurerdashboard-transaction-date {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .treasurerdashboard-transaction-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 5px;
+      }
+
+      .treasurerdashboard-transaction-document {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+      }
+
+      .treasurerdashboard-transaction-amount {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: var(--soft-navy-bg);
+        color: var(--navy);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .treasurerdashboard-side-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .treasurerdashboard-side-panel {
+        padding: 20px;
+      }
+
+      .treasurerdashboard-side-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+
+      .treasurerdashboard-side-head h3 {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 0;
+      }
+
+      .treasurerdashboard-side-head span {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .treasurerdashboard-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .treasurerdashboard-summary-card {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: #ffffff;
+        padding: 14px;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .treasurerdashboard-summary-card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+        border-color: #d7deea;
+      }
+
+      .treasurerdashboard-summary-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .treasurerdashboard-summary-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
+        line-height: 1.35;
+      }
+
+      .treasurerdashboard-summary-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
       }
 
-      .treasurerdashboard-txn-dot-green {
-        background: var(--green);
-      }
-      .treasurerdashboard-txn-dot-amber {
-        background: var(--amber);
-      }
-      .treasurerdashboard-txn-dot-blue {
-        background: var(--blue);
-      }
-
-      .treasurerdashboard-txn-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .treasurerdashboard-txn-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--navy);
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .treasurerdashboard-txn-doc {
-        font-size: 11px;
-        color: var(--text-soft);
-      }
-      .treasurerdashboard-txn-amount {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--navy);
-        white-space: nowrap;
-      }
-      .treasurerdashboard-txn-pending {
-        font-size: 12px;
-        color: var(--amber-text);
-        font-weight: 700;
-      }
-      .treasurerdashboard-txn-waived {
-        font-size: 12px;
-        color: var(--text-soft);
-        font-weight: 600;
-      }
-
-      /* QUICK ACTIONS */
-      .treasurerdashboard-action-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        padding: 14px 16px;
-      }
-
-      .treasurerdashboard-action-btn {
-        min-height: 36px;
-        padding: 0 12px;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        background: var(--surface);
-        color: var(--navy);
-        font-size: 12px;
-        font-weight: 700;
-        font-family: inherit;
-        cursor: pointer;
-        text-align: left;
+      .treasurerdashboard-summary-icon i {
+        font-size: 16px;
+        line-height: 1;
         display: flex;
         align-items: center;
-        gap: 7px;
-        transition: all 0.14s;
+        justify-content: center;
       }
 
-      .treasurerdashboard-action-btn:hover {
-        background: rgba(5, 22, 80, 0.04);
-        border-color: var(--navy);
-      }
-
-      .treasurerdashboard-btn-outline-sm {
-        min-height: 28px;
-        padding: 0 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        background: var(--surface);
+      .treasurerdashboard-summary-value {
+        font-size: 20px;
+        font-weight: 800;
         color: var(--navy);
-        font-size: 12px;
-        font-weight: 700;
-        font-family: inherit;
-        cursor: pointer;
-        display: inline-flex;
+        line-height: 1;
+        margin-bottom: 6px;
+        letter-spacing: -0.4px;
+      }
+
+      .treasurerdashboard-summary-note {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .treasurerdashboard-income-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .treasurerdashboard-income-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: transform 0.18s ease;
+      }
+
+      .treasurerdashboard-income-row:hover {
+        transform: translateX(3px);
+      }
+
+      .treasurerdashboard-income-top {
+        display: flex;
         align-items: center;
-        gap: 5px;
-        transition: all 0.14s;
+        justify-content: space-between;
+        gap: 12px;
       }
 
-      .treasurerdashboard-btn-outline-sm:hover {
-        background: rgba(5, 22, 80, 0.04);
-        border-color: var(--navy);
+      .treasurerdashboard-income-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
       }
 
-      /* RESPONSIVE */
-      @media (max-width: 1100px) {
-        .treasurerdashboard-kpi-strip {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .treasurerdashboard-content-grid {
-          grid-template-columns: 1fr;
-        }
+      .treasurerdashboard-income-amount {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
       }
 
-      @media (max-width: 780px) {
-        :root {
-          --sidebar-width: 0px;
-        }
-        .treasurerdashboard-sidebar {
-          display: none;
-        }
-        .treasurerdashboard-main {
-          margin-left: 0;
-        }
+      .treasurerdashboard-bar-track {
+        height: 8px;
+        background: #eaf0f7;
+        border-radius: 999px;
+        overflow: hidden;
       }
 
-      @media (max-width: 560px) {
-        .treasurerdashboard-body {
-          padding: 14px 14px 44px;
-        }
-        .treasurerdashboard-kpi-strip {
+      .treasurerdashboard-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--navy), #254ca8);
+      }
+
+      .treasurerdashboard-note-box {
+        padding: 14px;
+        border-radius: 20px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .treasurerdashboard-note-box:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .treasurerdashboard-note-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 17px;
+        background: var(--navy);
+        color: var(--lime);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+
+      .treasurerdashboard-note-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .treasurerdashboard-note-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 0;
+      }
+
+      @media (max-width: 1200px) {
+        .treasurerdashboard-summary-grid {
           grid-template-columns: 1fr 1fr;
         }
-        .treasurerdashboard-banner {
+      }
+
+      @media (max-width: 992px) {
+        .treasurerdashboard-side-stack {
+          margin-top: 16px;
+        }
+
+        .treasurerdashboard-panel-head {
           flex-direction: column;
           align-items: flex-start;
         }
-        .treasurerdashboard-action-grid {
+
+        .treasurerdashboard-hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .treasurerdashboard-transaction-list {
           grid-template-columns: 1fr;
         }
+
+        .treasurerdashboard-chart-grid {
+          grid-template-columns: 42px 1fr;
+        }
+
+        .treasurerdashboard-chart-bars {
+          gap: 12px;
+          padding: 10px 4px 0;
+        }
+
+        .treasurerdashboard-chart-bar {
+          width: 34px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .treasurerdashboard-sidebar {
+          width: var(--sidebar-mini);
+        }
+
+        .treasurerdashboard-main {
+          margin-left: var(--sidebar-mini);
+        }
+
+        .treasurerdashboard-toggle-wrap {
+          left: var(--sidebar-mini);
+        }
+
+        .treasurerdashboard-identity-name,
+        .treasurerdashboard-identity-chip,
+        .treasurerdashboard-menu-label,
+        .treasurerdashboard-menu-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .treasurerdashboard-body {
+          padding: 18px 14px 36px;
+        }
+
+        .treasurerdashboard-topbar {
+          padding: 0 14px;
+        }
+
+        .treasurerdashboard-profile-name,
+        .treasurerdashboard-profile-role {
+          display: none;
+        }
+
+        .treasurerdashboard-topbar-search {
+          max-width: none;
+        }
+
+        .treasurerdashboard-hero-actions {
+          width: 100%;
+        }
+
+        .treasurerdashboard-hero-actions .treasurerdashboard-btn {
+          flex: 1;
+        }
+
+        .treasurerdashboard-summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .treasurerdashboard-chart-top {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .treasurerdashboard-chart-grid {
+          grid-template-columns: 36px 1fr;
+          gap: 8px;
+        }
+
+        .treasurerdashboard-chart-y span {
+          font-size: 10px;
+        }
+
+        .treasurerdashboard-chart-bars {
+          gap: 8px;
+        }
+
+        .treasurerdashboard-chart-value {
+          font-size: 10px;
+        }
+
+        .treasurerdashboard-chart-bar {
+          width: 28px;
+        }
+
+        .treasurerdashboard-chart-month {
+          font-size: 10px;
+        }
+      }
+      .treasurerdashboard-transaction-icon {
+        margin-right: 6px;
+      }
+
+      .treasurerdashboard-transaction-icon i {
+        transform: translateY(1px);
       }
     </style>
   </head>
 
   <body>
-    <div class="treasurerdashboard-page">
-      <!-- SIDEBAR -->
-      <aside class="treasurerdashboard-sidebar">
-        <div class="treasurerdashboard-brand-row">
-          <div class="treasurerdashboard-brand-logo">
-            <img src="alapan.png" alt="Alapan" />
+    <div
+      class="treasurerdashboard-toggle-wrap"
+      id="treasurerdashboard-toggle-wrap"
+    >
+      <button
+        class="treasurerdashboard-toggle-btn"
+        id="treasurerdashboard-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="treasurerdashboard-container">
+      <aside class="treasurerdashboard-sidebar" id="treasurerdashboard-sidebar">
+        <div class="treasurerdashboard-identity">
+          <div class="treasurerdashboard-identity-logo">
+            <img src="alapan.png" alt="Alapan logo" />
           </div>
+
           <div>
-            <div class="treasurerdashboard-brand-name">Alapan 1-A</div>
-            <div class="treasurerdashboard-brand-sub">BarangayKonek</div>
+            <div class="treasurerdashboard-identity-name">BarangayKonek</div>
+            <span class="treasurerdashboard-identity-chip"
+              >Treasurer Portal</span
+            >
           </div>
         </div>
 
-        <nav class="treasurerdashboard-nav-list">
+        <nav class="treasurerdashboard-menu">
           <a
             href="treasurerdashboard.html"
-            class="treasurerdashboard-nav-link active"
+            class="treasurerdashboard-menu-link active"
           >
-            <span class="treasurerdashboard-nav-text">Dashboard</span>
+            <div class="treasurerdashboard-menu-left">
+              <i class="fa-solid fa-house"></i>
+              <span class="treasurerdashboard-menu-label">Dashboard</span>
+            </div>
           </a>
-
-          <div class="treasurerdashboard-nav-divider"></div>
 
           <a
-            href="treasurercollection.html"
-            class="treasurerdashboard-nav-link"
+            href="treasurertransaction.html"
+            class="treasurerdashboard-menu-link"
           >
-            <span class="treasurerdashboard-nav-text">Collections</span>
-          </a>
-          <a href="treasurerfee.html" class="treasurerdashboard-nav-link">
-            <span class="treasurerdashboard-nav-text">Fee Records</span>
-          </a>
-          <a href="treasurerreport.html" class="treasurerdashboard-nav-link">
-            <span class="treasurerdashboard-nav-text">Financial Reports</span>
+            <div class="treasurerdashboard-menu-left">
+              <i class="fa-solid fa-coins"></i>
+              <span class="treasurerdashboard-menu-label">Transactions</span>
+            </div>
+            <span class="treasurerdashboard-menu-count">8</span>
           </a>
 
-          <div class="treasurerdashboard-nav-divider"></div>
-
-          <a href="treasurercommunity.html" class="treasurerdashboard-nav-link">
-            <span class="treasurerdashboard-nav-text">Community</span>
+          <a href="treasurerhistory.html" class="treasurerdashboard-menu-link">
+            <div class="treasurerdashboard-menu-left">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span class="treasurerdashboard-menu-label"
+                >Transaction History</span
+              >
+            </div>
           </a>
-          <a href="#" class="treasurerdashboard-nav-link">
-            <span class="treasurerdashboard-nav-text">Activity Logs</span>
+
+          <a
+            href="treasurercommunity.html"
+            class="treasurerdashboard-menu-link"
+          >
+            <div class="treasurerdashboard-menu-left">
+              <i class="fa-solid fa-people-group"></i>
+              <span class="treasurerdashboard-menu-label">Community</span>
+            </div>
+          </a>
+
+          <div class="treasurerdashboard-menu-divider"></div>
+
+          <a href="#" class="treasurerdashboard-menu-link">
+            <div class="treasurerdashboard-menu-left">
+              <i class="fa-solid fa-gear"></i>
+              <span class="treasurerdashboard-menu-label">Settings</span>
+            </div>
           </a>
         </nav>
 
-        <div class="treasurerdashboard-sidebar-bottom">
-          <a href="home.html" class="treasurerdashboard-logout-link">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            Logout
-          </a>
+        <div class="treasurerdashboard-sidebar-footer">
+          <button class="treasurerdashboard-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="treasurerdashboard-menu-label">Log Out</span>
+          </button>
         </div>
       </aside>
 
-      <!-- MAIN -->
-      <div class="treasurerdashboard-main">
-        <!-- TOPBAR -->
+      <main class="treasurerdashboard-main" id="treasurerdashboard-main">
         <header class="treasurerdashboard-topbar">
           <div class="treasurerdashboard-topbar-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input
               type="text"
-              placeholder="Search records, residents, transactions…"
+              placeholder="Search residents, transactions, records..."
             />
           </div>
 
           <div class="treasurerdashboard-topbar-right">
-            <a href="#" class="treasurerdashboard-notif-btn">
+            <div class="treasurerdashboard-topbar-icon">
               <i class="fa-solid fa-bell"></i>
-              <span class="treasurerdashboard-notif-dot"></span>
-            </a>
-            <div class="treasurerdashboard-profile-chip">
-              <div class="treasurerdashboard-profile-avatar">LR</div>
+              <span class="treasurerdashboard-notification-count">2</span>
+            </div>
+
+            <div class="treasurerdashboard-profile">
+              <div class="treasurerdashboard-avatar">LR</div>
               <div>
                 <div class="treasurerdashboard-profile-name">Luz Reyes</div>
                 <div class="treasurerdashboard-profile-role">Treasurer</div>
@@ -1062,615 +1573,635 @@
           </div>
         </header>
 
-        <!-- BODY -->
         <div class="treasurerdashboard-body">
-          <!-- BANNER -->
-          <div class="treasurerdashboard-banner">
-            <div class="treasurerdashboard-banner-text">
-              <h2>Financial Overview — April 2026</h2>
+          <section class="treasurerdashboard-hero">
+            <div class="treasurerdashboard-hero-text">
+              <h2>Good morning, Treasurer Luz</h2>
               <p>
-                Track collections, fees, and revenue from document services.
+                Monitor income, review transaction records, and prepare monthly
+                financial summaries for barangay document services.
               </p>
             </div>
-            <div class="treasurerdashboard-banner-actions">
-              <button class="treasurerdashboard-btn-lime">
-                <i class="fa-solid fa-file-export"></i> Export Report
-              </button>
-              <button class="treasurerdashboard-btn-ghost">
-                <i class="fa-solid fa-print"></i> Print
-              </button>
-            </div>
-          </div>
 
-          <!-- KPI STRIP -->
-          <div class="treasurerdashboard-kpi-strip">
-            <div
-              class="treasurerdashboard-kpi-box treasurerdashboard-kpi-green"
-            >
-              <span class="treasurerdashboard-kpi-label">Total Collected</span>
-              <span class="treasurerdashboard-kpi-value">&#8369;13,100</span>
-              <span class="treasurerdashboard-kpi-note"
-                >All documents this month</span
+            <div class="treasurerdashboard-hero-actions">
+              <button
+                class="treasurerdashboard-btn treasurerdashboard-btn-lime"
               >
-            </div>
-            <div class="treasurerdashboard-kpi-box treasurerdashboard-kpi-blue">
-              <span class="treasurerdashboard-kpi-label">Documents Issued</span>
-              <span class="treasurerdashboard-kpi-value">164</span>
-              <span class="treasurerdashboard-kpi-note"
-                >Released in April 2026</span
-              >
-            </div>
-            <div
-              class="treasurerdashboard-kpi-box treasurerdashboard-kpi-amber"
-            >
-              <span class="treasurerdashboard-kpi-label"
-                >Pending Collection</span
-              >
-              <span class="treasurerdashboard-kpi-value">&#8369;1,200</span>
-              <span class="treasurerdashboard-kpi-note"
-                >8 unpaid transactions</span
-              >
-            </div>
-            <div class="treasurerdashboard-kpi-box treasurerdashboard-kpi-navy">
-              <span class="treasurerdashboard-kpi-label">Waivers Granted</span>
-              <span class="treasurerdashboard-kpi-value">22</span>
-              <span class="treasurerdashboard-kpi-note"
-                >Indigency — no fee collected</span
-              >
-            </div>
-          </div>
+                <i class="fa-solid fa-plus"></i>
+                New Transaction
+              </button>
 
-          <!-- CONTENT GRID -->
-          <div class="treasurerdashboard-content-grid">
-            <!-- LEFT -->
-            <div class="treasurerdashboard-left-col">
-              <!-- Monthly Revenue Chart -->
-              <div class="treasurerdashboard-panel">
+              <button
+                class="treasurerdashboard-btn treasurerdashboard-btn-light"
+              >
+                <i class="fa-solid fa-file-export"></i>
+                Export
+              </button>
+            </div>
+          </section>
+
+          <div class="row g-3">
+            <div class="col-lg-8 col-xl-9">
+              <section class="treasurerdashboard-panel">
                 <div class="treasurerdashboard-panel-head">
-                  <h4>Monthly Revenue — 2026</h4>
-                  <a href="#" class="treasurerdashboard-panel-link">View All</a>
-                </div>
-                <div class="treasurerdashboard-chart-wrap">
-                  <div class="treasurerdashboard-chart-legend">
-                    <span class="treasurerdashboard-legend-item">
-                      <span
-                        class="treasurerdashboard-legend-dot"
-                        style="background: var(--navy)"
-                      ></span>
-                      Collected (&#8369;)
-                    </span>
-                    <span class="treasurerdashboard-legend-item">
-                      <span
-                        class="treasurerdashboard-legend-dot"
-                        style="
-                          background: rgba(5, 22, 80, 0.15);
-                          border: 1px dashed #ccc;
-                        "
-                      ></span>
-                      Projected
-                    </span>
+                  <div class="treasurerdashboard-panel-title">
+                    <h3>Monthly Income</h3>
+                    <p>Income movement from document service transactions.</p>
                   </div>
-                  <div class="treasurerdashboard-bar-chart">
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="height: 62px; background: var(--navy)"
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Jan</span>
+
+                  <a
+                    href="treasurerhistory.html"
+                    class="treasurerdashboard-panel-link"
+                  >
+                    View History
+                  </a>
+                </div>
+
+                <div class="treasurerdashboard-chart-area">
+                  <div class="treasurerdashboard-chart-top">
+                    <div>
+                      <div class="treasurerdashboard-chart-total">₱13,100</div>
+                      <div class="treasurerdashboard-chart-sub">
+                        April 2026 income
+                      </div>
                     </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="height: 78px; background: var(--navy)"
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Feb</span>
+
+                    <div class="treasurerdashboard-chart-chip">
+                      Current month
                     </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="height: 70px; background: var(--navy)"
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Mar</span>
+                  </div>
+
+                  <div class="treasurerdashboard-chart-board">
+                    <div class="treasurerdashboard-chart-grid">
+                      <div class="treasurerdashboard-chart-y">
+                        <span>₱15k</span>
+                        <span>₱10k</span>
+                        <span>₱5k</span>
+                        <span>₱0</span>
+                      </div>
+
+                      <div class="treasurerdashboard-chart-plot">
+                        <div class="treasurerdashboard-chart-lines">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+
+                        <div class="treasurerdashboard-chart-bars">
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱6.2k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar"
+                                style="height: 62px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              Jan
+                            </div>
+                          </div>
+
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱8.0k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar"
+                                style="height: 80px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              Feb
+                            </div>
+                          </div>
+
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱7.1k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar"
+                                style="height: 71px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              Mar
+                            </div>
+                          </div>
+
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱13.1k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar current"
+                                style="height: 131px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              Apr
+                            </div>
+                          </div>
+
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱8.4k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar"
+                                style="height: 84px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              May
+                            </div>
+                          </div>
+
+                          <div class="treasurerdashboard-chart-group">
+                            <div class="treasurerdashboard-chart-value">
+                              ₱7.8k
+                            </div>
+                            <div class="treasurerdashboard-chart-bar-wrap">
+                              <div
+                                class="treasurerdashboard-chart-bar"
+                                style="height: 78px"
+                              ></div>
+                            </div>
+                            <div class="treasurerdashboard-chart-month">
+                              Jun
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 148px;
-                          background: var(--lime-dim);
-                          border: 2px solid var(--navy);
-                        "
-                      ></div>
-                      <span
-                        class="treasurerdashboard-bar-label"
-                        style="color: var(--navy); font-weight: 700"
-                        >Apr &#9679;</span
+                  </div>
+                </div>
+              </section>
+
+              <section class="treasurerdashboard-panel mt-3">
+                <div class="treasurerdashboard-panel-head">
+                  <div class="treasurerdashboard-panel-title">
+                    <h3>Income by Document Type</h3>
+                    <p>Summary of document income for this month.</p>
+                  </div>
+
+                  <button
+                    class="treasurerdashboard-btn treasurerdashboard-btn-primary"
+                  >
+                    Export
+                  </button>
+                </div>
+
+                <div class="treasurerdashboard-filter-bar">
+                  <button class="treasurerdashboard-chip on">All</button>
+                  <button class="treasurerdashboard-chip">Clearance</button>
+                  <button class="treasurerdashboard-chip">Residency</button>
+                  <button class="treasurerdashboard-chip">Business</button>
+                </div>
+
+                <div class="treasurerdashboard-table-wrap">
+                  <table class="treasurerdashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Document Type</th>
+                        <th>Fee</th>
+                        <th>Issued</th>
+                        <th>Income</th>
+                        <th>Share</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <td>
+                          <span class="treasurerdashboard-document-name"
+                            >Barangay Clearance</span
+                          >
+                        </td>
+                        <td>₱100</td>
+                        <td>54</td>
+                        <td>
+                          <span class="treasurerdashboard-money-text"
+                            >₱5,400</span
+                          >
+                        </td>
+                        <td>
+                          <div class="treasurerdashboard-progress-wrap">
+                            <div class="treasurerdashboard-progress-track">
+                              <div
+                                class="treasurerdashboard-progress-fill"
+                                style="width: 73%"
+                              ></div>
+                            </div>
+                            <span class="treasurerdashboard-progress-text"
+                              >73%</span
+                            >
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <span class="treasurerdashboard-document-name"
+                            >Business Permit</span
+                          >
+                        </td>
+                        <td>₱200</td>
+                        <td>16</td>
+                        <td>
+                          <span class="treasurerdashboard-money-text"
+                            >₱3,200</span
+                          >
+                        </td>
+                        <td>
+                          <div class="treasurerdashboard-progress-wrap">
+                            <div class="treasurerdashboard-progress-track">
+                              <div
+                                class="treasurerdashboard-progress-fill"
+                                style="width: 43%"
+                              ></div>
+                            </div>
+                            <span class="treasurerdashboard-progress-text"
+                              >43%</span
+                            >
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <span class="treasurerdashboard-document-name"
+                            >Certificate of Residency</span
+                          >
+                        </td>
+                        <td>₱50</td>
+                        <td>38</td>
+                        <td>
+                          <span class="treasurerdashboard-money-text"
+                            >₱1,900</span
+                          >
+                        </td>
+                        <td>
+                          <div class="treasurerdashboard-progress-wrap">
+                            <div class="treasurerdashboard-progress-track">
+                              <div
+                                class="treasurerdashboard-progress-fill"
+                                style="width: 51%"
+                              ></div>
+                            </div>
+                            <span class="treasurerdashboard-progress-text"
+                              >51%</span
+                            >
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>
+                          <span class="treasurerdashboard-document-name"
+                            >Certificate of Good Moral</span
+                          >
+                        </td>
+                        <td>₱100</td>
+                        <td>18</td>
+                        <td>
+                          <span class="treasurerdashboard-money-text"
+                            >₱1,800</span
+                          >
+                        </td>
+                        <td>
+                          <div class="treasurerdashboard-progress-wrap">
+                            <div class="treasurerdashboard-progress-track">
+                              <div
+                                class="treasurerdashboard-progress-fill"
+                                style="width: 24%"
+                              ></div>
+                            </div>
+                            <span class="treasurerdashboard-progress-text"
+                              >24%</span
+                            >
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="treasurerdashboard-table-foot">
+                  <span class="treasurerdashboard-foot-info"
+                    >Showing 4 document income records</span
+                  >
+                  <span class="treasurerdashboard-foot-total"
+                    >Total: ₱13,100</span
+                  >
+                </div>
+              </section>
+
+              <section class="treasurerdashboard-panel mt-3">
+                <div class="treasurerdashboard-panel-head">
+                  <div class="treasurerdashboard-panel-title">
+                    <h3>Transaction History</h3>
+                    <p>Recently recorded payment transactions.</p>
+                  </div>
+
+                  <a
+                    href="treasurerhistory.html"
+                    class="treasurerdashboard-panel-link"
+                  >
+                    View All
+                  </a>
+                </div>
+
+                <div class="treasurerdashboard-transaction-list">
+                  <article class="treasurerdashboard-transaction-card">
+                    <div class="treasurerdashboard-transaction-top">
+                      <span class="treasurerdashboard-transaction-code"
+                        >TRN-2026-041</span
+                      >
+                      <span class="treasurerdashboard-transaction-date"
+                        >Apr 21</span
                       >
                     </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">May</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Jun</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Jul</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Aug</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Sep</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Oct</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Nov</span>
-                    </div>
-                    <div class="treasurerdashboard-bar-group">
-                      <div
-                        class="treasurerdashboard-bar"
-                        style="
-                          height: 34px;
-                          background: rgba(5, 22, 80, 0.1);
-                          border: 1px dashed var(--border-color);
-                        "
-                      ></div>
-                      <span class="treasurerdashboard-bar-label">Dec</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Revenue by Document Type -->
-              <div class="treasurerdashboard-panel">
-                <div class="treasurerdashboard-panel-head">
-                  <h4>Revenue by Document Type</h4>
-                  <button class="treasurerdashboard-btn-outline-sm">
-                    <i class="fa-solid fa-file-export"></i> Export
-                  </button>
-                </div>
+                    <div class="treasurerdashboard-transaction-name">
+                      Ana Lopez
+                    </div>
+                    <div class="treasurerdashboard-transaction-document">
+                      Barangay Clearance
+                    </div>
+                    <span class="treasurerdashboard-transaction-amount"
+                      >₱100</span
+                    >
+                  </article>
 
-                <table class="treasurerdashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Document Type</th>
-                      <th>Fee</th>
-                      <th>Issued</th>
-                      <th>Revenue</th>
-                      <th>Share</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Barangay Clearance</span
-                        >
-                      </td>
-                      <td>&#8369;100</td>
-                      <td>54</td>
-                      <td>
-                        <span class="treasurerdashboard-revenue-total"
-                          >&#8369;5,400</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 73%"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >73%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-collected"
-                          >Collected</span
-                        >
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Business Permit</span
-                        >
-                      </td>
-                      <td>&#8369;200</td>
-                      <td>16</td>
-                      <td>
-                        <span class="treasurerdashboard-revenue-total"
-                          >&#8369;3,200</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 43%"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >43%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-collected"
-                          >Collected</span
-                        >
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Certificate of Residency</span
-                        >
-                      </td>
-                      <td>&#8369;50</td>
-                      <td>38</td>
-                      <td>
-                        <span class="treasurerdashboard-revenue-total"
-                          >&#8369;1,900</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 51%"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >51%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-collected"
-                          >Collected</span
-                        >
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Certificate of Good Moral</span
-                        >
-                      </td>
-                      <td>&#8369;100</td>
-                      <td>18</td>
-                      <td>
-                        <span class="treasurerdashboard-revenue-total"
-                          >&#8369;1,800</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 24%"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >24%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-pending"
-                          >Partial</span
-                        >
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Barangay ID</span
-                        >
-                      </td>
-                      <td>&#8369;50</td>
-                      <td>16</td>
-                      <td>
-                        <span class="treasurerdashboard-revenue-total"
-                          >&#8369;800</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 11%"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >11%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-collected"
-                          >Collected</span
-                        >
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <span class="treasurerdashboard-doc-name"
-                          >Barangay Indigency</span
-                        >
-                      </td>
-                      <td>&#8369;0</td>
-                      <td>22</td>
-                      <td>
-                        <span style="font-size: 13px; color: var(--text-soft)"
-                          >&#8212;</span
-                        >
-                      </td>
-                      <td>
-                        <div class="treasurerdashboard-progress-wrap">
-                          <div class="treasurerdashboard-progress-bar">
-                            <div
-                              class="treasurerdashboard-progress-fill"
-                              style="width: 0%; background: var(--blue)"
-                            ></div>
-                          </div>
-                          <span class="treasurerdashboard-progress-pct"
-                            >0%</span
-                          >
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          class="treasurerdashboard-pill treasurerdashboard-pill-waived"
-                          >Waived</span
-                        >
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                  <article class="treasurerdashboard-transaction-card">
+                    <div class="treasurerdashboard-transaction-top">
+                      <span class="treasurerdashboard-transaction-code"
+                        >TRN-2026-040</span
+                      >
+                      <span class="treasurerdashboard-transaction-date"
+                        >Apr 20</span
+                      >
+                    </div>
 
-                <div class="treasurerdashboard-table-footer">
-                  <span class="treasurerdashboard-table-footer-note"
-                    >6 document types &middot; 164 total issued</span
-                  >
-                  <span class="treasurerdashboard-table-footer-total"
-                    >Total: &#8369;13,100</span
-                  >
+                    <div class="treasurerdashboard-transaction-name">
+                      Ryan Gomez
+                    </div>
+                    <div class="treasurerdashboard-transaction-document">
+                      Certificate of Residency
+                    </div>
+                    <span class="treasurerdashboard-transaction-amount"
+                      >₱50</span
+                    >
+                  </article>
+
+                  <article class="treasurerdashboard-transaction-card">
+                    <div class="treasurerdashboard-transaction-top">
+                      <span class="treasurerdashboard-transaction-code"
+                        >TRN-2026-039</span
+                      >
+                      <span class="treasurerdashboard-transaction-date"
+                        >Apr 19</span
+                      >
+                    </div>
+
+                    <div class="treasurerdashboard-transaction-name">
+                      Mark Rivera
+                    </div>
+                    <div class="treasurerdashboard-transaction-document">
+                      Business Permit
+                    </div>
+                    <span class="treasurerdashboard-transaction-amount"
+                      >₱200</span
+                    >
+                  </article>
                 </div>
-              </div>
+              </section>
             </div>
 
-            <!-- RIGHT -->
-            <div class="treasurerdashboard-right-col">
-              <!-- Quick Actions -->
-              <div class="treasurerdashboard-panel">
-                <div class="treasurerdashboard-panel-head">
-                  <h4>Quick Actions</h4>
-                </div>
-                <div class="treasurerdashboard-action-grid">
-                  <button class="treasurerdashboard-action-btn">
-                    Record Payment
-                  </button>
-                  <button class="treasurerdashboard-action-btn">
-                    Issue Receipt
-                  </button>
-                  <button class="treasurerdashboard-action-btn">
-                    Add Expense
-                  </button>
-                  <button class="treasurerdashboard-action-btn">
-                    Monthly Report
-                  </button>
-                  <button class="treasurerdashboard-action-btn">
-                    Grant Waiver
-                  </button>
-                  <button class="treasurerdashboard-action-btn">
-                    View Logs
-                  </button>
-                </div>
-              </div>
+            <div class="col-lg-4 col-xl-3">
+              <div class="treasurerdashboard-side-stack">
+                <section class="treasurerdashboard-side-panel">
+                  <div class="treasurerdashboard-side-head">
+                    <h3>Quick Summary</h3>
+                    <span>Today</span>
+                  </div>
 
-              <!-- Collected this month -->
-              <div class="treasurerdashboard-panel">
-                <div class="treasurerdashboard-panel-head">
-                  <h4>Collected This Month</h4>
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Barangay Clearance</span
-                  >
-                  <span class="treasurerdashboard-breakdown-amount"
-                    >&#8369;5,400</span
-                  >
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Business Permit</span
-                  >
-                  <span class="treasurerdashboard-breakdown-amount"
-                    >&#8369;3,200</span
-                  >
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Cert. of Residency</span
-                  >
-                  <span class="treasurerdashboard-breakdown-amount"
-                    >&#8369;1,900</span
-                  >
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Good Moral Cert.</span
-                  >
-                  <span class="treasurerdashboard-breakdown-amount"
-                    >&#8369;1,800</span
-                  >
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Barangay ID</span
-                  >
-                  <span class="treasurerdashboard-breakdown-amount"
-                    >&#8369;800</span
-                  >
-                </div>
-                <div class="treasurerdashboard-breakdown-row">
-                  <span class="treasurerdashboard-breakdown-name"
-                    >Barangay Indigency</span
-                  >
-                  <span class="treasurerdashboard-breakdown-waived"
-                    >Waived</span
-                  >
-                </div>
-              </div>
+                  <div class="treasurerdashboard-summary-grid">
+                    <div class="treasurerdashboard-summary-card">
+                      <div class="treasurerdashboard-summary-top">
+                        <div class="treasurerdashboard-summary-label">
+                          Total Income
+                        </div>
+                      </div>
+                      <div class="treasurerdashboard-summary-value">₱13.1K</div>
+                      <div class="treasurerdashboard-summary-note">
+                        This month
+                      </div>
+                    </div>
 
-              <!-- Recent Transactions -->
-              <div class="treasurerdashboard-panel">
-                <div class="treasurerdashboard-panel-head">
-                  <h4>Recent Transactions</h4>
-                  <a href="#" class="treasurerdashboard-panel-link">View All</a>
-                </div>
-                <div class="treasurerdashboard-txn-row">
-                  <span
-                    class="treasurerdashboard-txn-dot treasurerdashboard-txn-dot-green"
-                  ></span>
-                  <div class="treasurerdashboard-txn-info">
-                    <span class="treasurerdashboard-txn-name">Ana Lopez</span>
-                    <span class="treasurerdashboard-txn-doc"
-                      >Barangay Clearance</span
-                    >
+                    <div class="treasurerdashboard-summary-card">
+                      <div class="treasurerdashboard-summary-top">
+                        <div class="treasurerdashboard-summary-label">
+                          Transactions
+                        </div>
+                      </div>
+                      <div class="treasurerdashboard-summary-value">86</div>
+                      <div class="treasurerdashboard-summary-note">
+                        Paid records
+                      </div>
+                    </div>
+
+                    <div class="treasurerdashboard-summary-card">
+                      <div class="treasurerdashboard-summary-top">
+                        <div class="treasurerdashboard-summary-label">
+                          Pending Payment
+                        </div>
+                      </div>
+                      <div class="treasurerdashboard-summary-value">₱1.2K</div>
+                      <div class="treasurerdashboard-summary-note">
+                        Needs checking
+                      </div>
+                    </div>
+
+                    <div class="treasurerdashboard-summary-card">
+                      <div class="treasurerdashboard-summary-top">
+                        <div class="treasurerdashboard-summary-label">
+                          Waived Records
+                        </div>
+                      </div>
+                      <div class="treasurerdashboard-summary-value">22</div>
+                      <div class="treasurerdashboard-summary-note">
+                        No payment
+                      </div>
+                    </div>
                   </div>
-                  <span class="treasurerdashboard-txn-amount">&#8369;100</span>
-                </div>
-                <div class="treasurerdashboard-txn-row">
-                  <span
-                    class="treasurerdashboard-txn-dot treasurerdashboard-txn-dot-green"
-                  ></span>
-                  <div class="treasurerdashboard-txn-info">
-                    <span class="treasurerdashboard-txn-name">Ryan Gomez</span>
-                    <span class="treasurerdashboard-txn-doc"
-                      >Certificate of Residency</span
-                    >
+                </section>
+
+                <section class="treasurerdashboard-side-panel">
+                  <div class="treasurerdashboard-side-head">
+                    <h3>Income Sources</h3>
+                    <span>This month</span>
                   </div>
-                  <span class="treasurerdashboard-txn-amount">&#8369;50</span>
-                </div>
-                <div class="treasurerdashboard-txn-row">
-                  <span
-                    class="treasurerdashboard-txn-dot treasurerdashboard-txn-dot-green"
-                  ></span>
-                  <div class="treasurerdashboard-txn-info">
-                    <span class="treasurerdashboard-txn-name"
-                      >Daniel Reyes</span
-                    >
-                    <span class="treasurerdashboard-txn-doc"
-                      >Business Permit</span
-                    >
+
+                  <div class="treasurerdashboard-income-list">
+                    <div class="treasurerdashboard-income-row">
+                      <div class="treasurerdashboard-income-top">
+                        <span class="treasurerdashboard-income-name"
+                          >Barangay Clearance</span
+                        >
+                        <span class="treasurerdashboard-income-amount"
+                          >₱5,400</span
+                        >
+                      </div>
+                      <div class="treasurerdashboard-bar-track">
+                        <div
+                          class="treasurerdashboard-bar-fill"
+                          style="width: 75%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div class="treasurerdashboard-income-row">
+                      <div class="treasurerdashboard-income-top">
+                        <span class="treasurerdashboard-income-name"
+                          >Business Permit</span
+                        >
+                        <span class="treasurerdashboard-income-amount"
+                          >₱3,200</span
+                        >
+                      </div>
+                      <div class="treasurerdashboard-bar-track">
+                        <div
+                          class="treasurerdashboard-bar-fill"
+                          style="width: 60%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div class="treasurerdashboard-income-row">
+                      <div class="treasurerdashboard-income-top">
+                        <span class="treasurerdashboard-income-name"
+                          >Certificate of Residency</span
+                        >
+                        <span class="treasurerdashboard-income-amount"
+                          >₱1,900</span
+                        >
+                      </div>
+                      <div class="treasurerdashboard-bar-track">
+                        <div
+                          class="treasurerdashboard-bar-fill"
+                          style="width: 45%"
+                        ></div>
+                      </div>
+                    </div>
                   </div>
-                  <span class="treasurerdashboard-txn-amount">&#8369;200</span>
-                </div>
-                <div class="treasurerdashboard-txn-row">
-                  <span
-                    class="treasurerdashboard-txn-dot treasurerdashboard-txn-dot-blue"
-                  ></span>
-                  <div class="treasurerdashboard-txn-info">
-                    <span class="treasurerdashboard-txn-name">Elena Reyes</span>
-                    <span class="treasurerdashboard-txn-doc"
-                      >Barangay Indigency</span
-                    >
+                </section>
+
+                <section class="treasurerdashboard-side-panel">
+                  <div class="treasurerdashboard-side-head">
+                    <h3>Transaction Notes</h3>
+                    <span>Today</span>
                   </div>
-                  <span class="treasurerdashboard-txn-waived">Waived</span>
-                </div>
-                <div class="treasurerdashboard-txn-row">
-                  <span
-                    class="treasurerdashboard-txn-dot treasurerdashboard-txn-dot-amber"
-                  ></span>
-                  <div class="treasurerdashboard-txn-info">
-                    <span class="treasurerdashboard-txn-name"
-                      >Jose Panganiban</span
-                    >
-                    <span class="treasurerdashboard-txn-doc"
-                      >Barangay Clearance</span
-                    >
+
+                  <div class="treasurerdashboard-note-box">
+                    <div class="treasurerdashboard-note-icon">
+                      <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div class="treasurerdashboard-note-title">
+                      8 transactions need checking
+                    </div>
+                    <p class="treasurerdashboard-note-text">
+                      Review pending payments before closing the daily report.
+                    </p>
                   </div>
-                  <span class="treasurerdashboard-txn-pending">Pending</span>
-                </div>
+                </section>
+
+                <section class="treasurerdashboard-side-panel">
+                  <div class="treasurerdashboard-side-head">
+                    <h3>Community</h3>
+                    <span>3 new</span>
+                  </div>
+
+                  <div class="treasurerdashboard-note-box">
+                    <div class="treasurerdashboard-note-icon">
+                      <i class="fa-solid fa-people-group"></i>
+                    </div>
+                    <div class="treasurerdashboard-note-title">
+                      Barangay Community Board
+                    </div>
+                    <p class="treasurerdashboard-note-text">
+                      View resident posts, barangay updates, and community
+                      activity from one place.
+                    </p>
+                  </div>
+
+                  <button
+                    class="treasurerdashboard-btn treasurerdashboard-btn-primary w-100 mt-3"
+                  >
+                    Open Community
+                  </button>
+                </section>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      var treasurerdashboardSidebar = document.getElementById(
+        "treasurerdashboard-sidebar",
+      );
+      var treasurerdashboardMainArea = document.getElementById(
+        "treasurerdashboard-main",
+      );
+      var treasurerdashboardToggleWrap = document.getElementById(
+        "treasurerdashboard-toggle-wrap",
+      );
+      var treasurerdashboardToggleButton = document.getElementById(
+        "treasurerdashboard-toggle-button",
+      );
+
+      treasurerdashboardToggleButton.addEventListener("click", function () {
+        var treasurerdashboardIsSidebarMini =
+          treasurerdashboardSidebar.classList.toggle("mini");
+        treasurerdashboardMainArea.classList.toggle(
+          "shifted",
+          treasurerdashboardIsSidebarMini,
+        );
+        treasurerdashboardToggleWrap.classList.toggle(
+          "mini",
+          treasurerdashboardIsSidebarMini,
+        );
+      });
+
+      var treasurerdashboardFilterButtons = document.querySelectorAll(
+        ".treasurerdashboard-chip",
+      );
+
+      treasurerdashboardFilterButtons.forEach(
+        function (treasurerdashboardButton) {
+          treasurerdashboardButton.addEventListener("click", function () {
+            treasurerdashboardFilterButtons.forEach(
+              function (treasurerdashboardOtherButton) {
+                treasurerdashboardOtherButton.classList.remove("on");
+              },
+            );
+
+            treasurerdashboardButton.classList.add("on");
+          });
+        },
+      );
+    </script>
   </body>
 </html>

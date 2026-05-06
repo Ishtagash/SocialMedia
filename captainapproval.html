@@ -1,0 +1,2112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Captain Approvals — BarangayKonek</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+
+    <style>
+      :root {
+        --captainapproval-navy: #051650;
+        --captainapproval-navy-light: #0a2160;
+        --captainapproval-lime: #ccff00;
+
+        --captainapproval-white: #ffffff;
+        --captainapproval-page: #f4f7fb;
+        --captainapproval-soft: #f8fafc;
+        --captainapproval-border: #e3e7f0;
+
+        --captainapproval-text: #1a2240;
+        --captainapproval-muted: #7a869a;
+
+        --captainapproval-yellow-bg: #fffbeb;
+        --captainapproval-yellow-text: #92400e;
+
+        --captainapproval-blue-bg: #eff6ff;
+        --captainapproval-blue-text: #1e40af;
+
+        --captainapproval-green-bg: #f0fdf4;
+        --captainapproval-green-text: #166534;
+
+        --captainapproval-red-bg: #fef2f2;
+        --captainapproval-red-text: #991b1b;
+
+        --captainapproval-sidebar-width: 228px;
+        --captainapproval-sidebar-small: 64px;
+        --captainapproval-topbar-height: 62px;
+
+        --captainapproval-shadow-soft: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --captainapproval-shadow-hover: 0 16px 34px rgba(5, 22, 80, 0.13);
+        --captainapproval-shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", sans-serif;
+        color: var(--captainapproval-text);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
+        overflow-x: hidden;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      @keyframes captainapprovalFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes captainapprovalBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(14deg);
+        }
+
+        40% {
+          transform: rotate(-12deg);
+        }
+
+        60% {
+          transform: rotate(8deg);
+        }
+
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      @keyframes captainapprovalProgressGrow {
+        from {
+          width: 0;
+        }
+      }
+
+      .captainapproval-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .captainapproval-sidebar {
+        width: var(--captainapproval-sidebar-width);
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--captainapproval-shadow-sidebar);
+        transition: width 0.25s ease;
+      }
+
+      .captainapproval-sidebar.mini {
+        width: var(--captainapproval-sidebar-small);
+      }
+
+      .captainapproval-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--captainapproval-sidebar-width);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .captainapproval-toggle-wrap.mini {
+        left: var(--captainapproval-sidebar-small);
+      }
+
+      .captainapproval-toggle-button {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid var(--captainapproval-border);
+        background: var(--captainapproval-white);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-toggle-button:hover {
+        background: var(--captainapproval-lime);
+        border-color: var(--captainapproval-lime);
+        transform: scale(1.05);
+      }
+
+      .captainapproval-toggle-button i {
+        font-size: 10px;
+        color: var(--captainapproval-navy);
+        transition: transform 0.25s ease;
+      }
+
+      .captainapproval-toggle-wrap.mini .captainapproval-toggle-button i {
+        transform: rotate(180deg);
+      }
+
+      .captainapproval-identity {
+        height: var(--captainapproval-topbar-height);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .captainapproval-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+      }
+
+      .captainapproval-identity-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .captainapproval-identity-placeholder {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--captainapproval-lime);
+      }
+
+      .captainapproval-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+
+      .captainapproval-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--captainapproval-lime);
+        color: var(--captainapproval-navy);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .captainapproval-sidebar.mini .captainapproval-identity-name,
+      .captainapproval-sidebar.mini .captainapproval-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .captainapproval-sidebar.mini .captainapproval-identity-logo {
+        margin: 0 auto;
+      }
+
+      .captainapproval-menu {
+        flex: 1;
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .captainapproval-menu::-webkit-scrollbar {
+        display: none;
+      }
+
+      .captainapproval-menu-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
+      }
+
+      .captainapproval-menu-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-menu-link:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        transform: translateX(3px);
+      }
+
+      .captainapproval-menu-link.active {
+        background: var(--captainapproval-lime);
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-menu-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .captainapproval-menu-left i {
+        width: 18px;
+        text-align: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .captainapproval-menu-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .captainapproval-sidebar.mini .captainapproval-menu-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .captainapproval-menu-count {
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .captainapproval-menu-link.active .captainapproval-menu-count {
+        background: rgba(5, 22, 80, 0.18);
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-sidebar.mini .captainapproval-menu-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .captainapproval-sidebar-footer {
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .captainapproval-logout {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-logout:hover {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fca5a5;
+        transform: translateX(3px);
+      }
+
+      .captainapproval-main {
+        margin-left: var(--captainapproval-sidebar-width);
+        flex: 1;
+        min-height: 100vh;
+        min-width: 0;
+        transition: margin-left 0.25s ease;
+      }
+
+      .captainapproval-main.shifted {
+        margin-left: var(--captainapproval-sidebar-small);
+      }
+
+      .captainapproval-topbar {
+        height: var(--captainapproval-topbar-height);
+        background: #ffffff;
+        border-bottom: 1px solid var(--captainapproval-border);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+
+      .captainapproval-topbar-search {
+        flex: 1;
+        max-width: 390px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: var(--captainapproval-soft);
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captainapproval-topbar-search:focus-within {
+        border-color: var(--captainapproval-navy);
+        background: #ffffff;
+      }
+
+      .captainapproval-topbar-search i {
+        color: var(--captainapproval-muted);
+        font-size: 12px;
+      }
+
+      .captainapproval-topbar-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--captainapproval-text);
+      }
+
+      .captainapproval-topbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .captainapproval-topbar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--captainapproval-soft);
+        border: 1px solid var(--captainapproval-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--captainapproval-muted);
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-topbar-icon:hover {
+        border-color: var(--captainapproval-navy);
+        color: var(--captainapproval-navy);
+        transform: translateY(-1px);
+      }
+
+      .captainapproval-topbar-icon:hover i {
+        animation: captainapprovalBellShake 0.55s ease;
+      }
+
+      .captainapproval-notification-count {
+        position: absolute;
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--captainapproval-lime);
+        color: var(--captainapproval-navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .captainapproval-profile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 13px 5px 5px;
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 999px;
+        background: var(--captainapproval-soft);
+        cursor: pointer;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-profile:hover {
+        border-color: var(--captainapproval-navy);
+        transform: translateY(-1px);
+      }
+
+      .captainapproval-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--captainapproval-navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--captainapproval-lime);
+        flex-shrink: 0;
+      }
+
+      .captainapproval-profile-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--captainapproval-navy);
+        white-space: nowrap;
+      }
+
+      .captainapproval-profile-role {
+        font-size: 11px;
+        color: var(--captainapproval-muted);
+        line-height: 1;
+      }
+
+      .captainapproval-body {
+        padding: 24px 26px 44px;
+      }
+
+      .captainapproval-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 28px;
+        margin-bottom: 18px;
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.24),
+            transparent 34%
+          ),
+          linear-gradient(
+            135deg,
+            var(--captainapproval-navy) 0%,
+            #0a2160 60%,
+            #04103e 100%
+          );
+        box-shadow: var(--captainapproval-shadow-soft);
+        animation: captainapprovalFadeUp 0.32s ease both;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .captainapproval-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--captainapproval-shadow-hover);
+      }
+
+      .captainapproval-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        top: -100px;
+        right: -70px;
+        background: rgba(204, 255, 0, 0.14);
+        border-radius: 50%;
+      }
+
+      .captainapproval-hero::after {
+        content: "";
+        position: absolute;
+        width: 160px;
+        height: 160px;
+        bottom: -85px;
+        right: 130px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .captainapproval-hero-content {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1.45fr 0.9fr;
+        gap: 22px;
+        align-items: center;
+      }
+
+      .captainapproval-hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--captainapproval-lime);
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 12px;
+      }
+
+      .captainapproval-hero-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      .captainapproval-hero-text {
+        max-width: 580px;
+        margin: 10px 0 0;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 13.5px;
+        line-height: 1.65;
+        font-weight: 500;
+      }
+
+      .captainapproval-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 18px;
+      }
+
+      .captainapproval-hero-button {
+        min-height: 40px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-hero-button:hover {
+        background: var(--captainapproval-lime);
+        color: var(--captainapproval-navy);
+        transform: translateY(-1px);
+      }
+
+      .captainapproval-hero-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .captainapproval-hero-metric {
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        backdrop-filter: blur(8px);
+        transition:
+          background 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-hero-metric:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+      }
+
+      .captainapproval-hero-number {
+        font-size: 27px;
+        font-weight: 800;
+        color: var(--captainapproval-lime);
+        line-height: 1;
+      }
+
+      .captainapproval-hero-label {
+        margin-top: 7px;
+        font-size: 11.5px;
+        color: rgba(255, 255, 255, 0.68);
+        font-weight: 700;
+      }
+
+      .captainapproval-toolbar {
+        background: var(--captainapproval-white);
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 26px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: var(--captainapproval-shadow-soft);
+        animation: captainapprovalFadeUp 0.36s ease both;
+      }
+
+      .captainapproval-toolbar-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .captainapproval-search-field {
+        flex: 1 1 300px;
+        height: 42px;
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 999px;
+        background: var(--captainapproval-soft);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0 15px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captainapproval-search-field:focus-within {
+        background: #ffffff;
+        border-color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-search-field i {
+        font-size: 12px;
+        color: var(--captainapproval-muted);
+      }
+
+      .captainapproval-search-field input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--captainapproval-text);
+      }
+
+      .captainapproval-select {
+        height: 42px;
+        min-width: 185px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--captainapproval-border);
+        background: var(--captainapproval-soft);
+        color: var(--captainapproval-text);
+        font-size: 13px;
+        font-weight: 700;
+        outline: none;
+      }
+
+      .captainapproval-chip-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 13px;
+      }
+
+      .captainapproval-chip {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--captainapproval-border);
+        background: var(--captainapproval-soft);
+        color: var(--captainapproval-muted);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captainapproval-chip:hover {
+        color: var(--captainapproval-navy);
+        border-color: var(--captainapproval-navy);
+        transform: translateY(-1px);
+      }
+
+      .captainapproval-chip.active {
+        background: var(--captainapproval-navy);
+        border-color: var(--captainapproval-navy);
+        color: var(--captainapproval-lime);
+      }
+
+      .captainapproval-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 310px;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .captainapproval-queue-panel,
+      .captainapproval-side-card {
+        background: #ffffff;
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 28px;
+        box-shadow: var(--captainapproval-shadow-soft);
+        animation: captainapprovalFadeUp 0.4s ease both;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .captainapproval-queue-panel:hover,
+      .captainapproval-side-card:hover {
+        box-shadow: var(--captainapproval-shadow-hover);
+        transform: translateY(-3px);
+        border-color: #d7deea;
+      }
+
+      .captainapproval-panel-head {
+        padding: 21px 23px 15px;
+        border-bottom: 1px solid var(--captainapproval-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .captainapproval-panel-title h3,
+      .captainapproval-side-head h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+        margin: 0;
+      }
+
+      .captainapproval-panel-title p,
+      .captainapproval-side-head span {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--captainapproval-muted);
+        margin: 4px 0 0;
+      }
+
+      .captainapproval-queue-list {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .captainapproval-request-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) 150px 140px 160px;
+        gap: 14px;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid var(--captainapproval-border);
+        background: var(--captainapproval-soft);
+        border-radius: 22px;
+        transition:
+          background 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captainapproval-request-card:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captainapproval-request-main {
+        min-width: 0;
+      }
+
+      .captainapproval-reference {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: var(--captainapproval-muted);
+        margin-bottom: 5px;
+      }
+
+      .captainapproval-resident-name {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+        margin-bottom: 3px;
+      }
+
+      .captainapproval-request-note {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--captainapproval-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .captainapproval-document-type {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--captainapproval-text);
+      }
+
+      .captainapproval-request-date {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--captainapproval-muted);
+        margin-top: 3px;
+      }
+
+      .captainapproval-status {
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11.5px;
+        font-weight: 800;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+
+      .captainapproval-status.pending {
+        background: var(--captainapproval-yellow-bg);
+        color: var(--captainapproval-yellow-text);
+        border-color: rgba(146, 64, 14, 0.12);
+      }
+
+      .captainapproval-status.review {
+        background: var(--captainapproval-blue-bg);
+        color: var(--captainapproval-blue-text);
+        border-color: rgba(30, 64, 175, 0.12);
+      }
+
+      .captainapproval-status.approved {
+        background: var(--captainapproval-green-bg);
+        color: var(--captainapproval-green-text);
+        border-color: rgba(22, 101, 52, 0.12);
+      }
+
+      .captainapproval-action-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 7px;
+      }
+
+      .captainapproval-button {
+        min-height: 36px;
+        padding: 0 13px;
+        border-radius: 999px;
+        border: none;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captainapproval-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .captainapproval-button-navy {
+        background: var(--captainapproval-navy);
+        color: #ffffff;
+      }
+
+      .captainapproval-button-navy:hover {
+        background: var(--captainapproval-lime);
+        color: var(--captainapproval-navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .captainapproval-button-soft {
+        background: #ffffff;
+        color: var(--captainapproval-muted);
+        border: 1px solid var(--captainapproval-border);
+      }
+
+      .captainapproval-button-soft:hover {
+        color: var(--captainapproval-navy);
+        border-color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-table-footer {
+        border-top: 1px solid var(--captainapproval-border);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fafbfd;
+        flex-wrap: wrap;
+      }
+
+      .captainapproval-footer-text {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--captainapproval-muted);
+      }
+
+      .captainapproval-pagination {
+        display: flex;
+        gap: 5px;
+      }
+
+      .captainapproval-page-button {
+        width: 31px;
+        height: 31px;
+        border-radius: 12px;
+        border: 1px solid var(--captainapproval-border);
+        background: #ffffff;
+        color: var(--captainapproval-muted);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          color 0.18s ease,
+          border-color 0.18s ease,
+          background 0.18s ease;
+      }
+
+      .captainapproval-page-button:hover,
+      .captainapproval-page-button.active {
+        background: var(--captainapproval-navy);
+        color: var(--captainapproval-lime);
+        border-color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-side-column {
+        position: sticky;
+        top: calc(var(--captainapproval-topbar-height) + 18px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .captainapproval-side-card {
+        padding: 20px;
+      }
+
+      .captainapproval-side-head {
+        margin-bottom: 15px;
+      }
+
+      .captainapproval-summary-list,
+      .captainapproval-document-list,
+      .captainapproval-reminder-list {
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+
+      .captainapproval-summary-row,
+      .captainapproval-reminder-row {
+        padding: 13px;
+        border-radius: 18px;
+        background: var(--captainapproval-soft);
+        border: 1px solid var(--captainapproval-border);
+        transition:
+          background 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captainapproval-summary-row:hover,
+      .captainapproval-reminder-row:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captainapproval-summary-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .captainapproval-summary-name,
+      .captainapproval-reminder-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-summary-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-summary-note,
+      .captainapproval-reminder-sub {
+        margin-top: 3px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--captainapproval-muted);
+      }
+
+      .captainapproval-document-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .captainapproval-document-name {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: var(--captainapproval-text);
+      }
+
+      .captainapproval-document-count {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-progress-track {
+        height: 8px;
+        background: #eaf0f7;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .captainapproval-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--captainapproval-navy);
+        animation: captainapprovalProgressGrow 0.8s ease both;
+      }
+
+      .captainapproval-detail-box {
+        background: var(--captainapproval-soft);
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 18px;
+        padding: 14px;
+      }
+
+      .captainapproval-detail-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--captainapproval-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.35px;
+        margin-bottom: 5px;
+      }
+
+      .captainapproval-detail-value {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--captainapproval-navy);
+      }
+
+      .captainapproval-detail-note {
+        background: var(--captainapproval-soft);
+        border: 1px solid var(--captainapproval-border);
+        border-radius: 18px;
+        padding: 14px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--captainapproval-text);
+      }
+
+      .captainapproval-modal-content {
+        border: none;
+        border-radius: 28px;
+        overflow: hidden;
+      }
+
+      .captainapproval-modal-header {
+        border-bottom: 1px solid var(--captainapproval-border);
+      }
+
+      @media (max-width: 1180px) {
+        .captainapproval-hero-content {
+          grid-template-columns: 1fr;
+        }
+
+        .captainapproval-workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .captainapproval-side-column {
+          position: static;
+        }
+
+        .captainapproval-request-card {
+          grid-template-columns: minmax(0, 1fr) 150px 140px;
+        }
+
+        .captainapproval-action-buttons {
+          grid-column: 1 / -1;
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .captainapproval-sidebar {
+          width: var(--captainapproval-sidebar-small);
+        }
+
+        .captainapproval-main {
+          margin-left: var(--captainapproval-sidebar-small);
+        }
+
+        .captainapproval-toggle-wrap {
+          left: var(--captainapproval-sidebar-small);
+        }
+
+        .captainapproval-identity-name,
+        .captainapproval-identity-chip,
+        .captainapproval-menu-label,
+        .captainapproval-menu-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .captainapproval-body {
+          padding: 18px 14px 36px;
+        }
+
+        .captainapproval-topbar {
+          padding: 0 14px;
+        }
+
+        .captainapproval-profile-name,
+        .captainapproval-profile-role {
+          display: none;
+        }
+
+        .captainapproval-topbar-search {
+          max-width: none;
+        }
+
+        .captainapproval-hero {
+          padding: 22px;
+          border-radius: 26px;
+        }
+
+        .captainapproval-hero-title {
+          font-size: 23px;
+        }
+
+        .captainapproval-hero-metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .captainapproval-request-card {
+          grid-template-columns: 1fr;
+        }
+
+        .captainapproval-action-buttons {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="captainapproval-toggle-wrap" id="captainapproval-toggle-wrap">
+      <button
+        class="captainapproval-toggle-button"
+        id="captainapproval-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="captainapproval-container">
+      <aside class="captainapproval-sidebar" id="captainapproval-sidebar">
+        <div class="captainapproval-identity">
+          <div class="captainapproval-identity-logo">
+            <span class="captainapproval-identity-placeholder">B</span>
+          </div>
+
+          <div>
+            <div class="captainapproval-identity-name">BarangayKonek</div>
+            <span class="captainapproval-identity-chip">Captain Portal</span>
+          </div>
+        </div>
+
+        <nav class="captainapproval-menu">
+          <a href="captaindashboard.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-house"></i>
+              <span class="captainapproval-menu-label">Dashboard</span>
+            </div>
+          </a>
+
+          <a
+            href="captainapprovals.html"
+            class="captainapproval-menu-link active"
+          >
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-circle-check"></i>
+              <span class="captainapproval-menu-label">Approvals</span>
+            </div>
+
+            <span class="captainapproval-menu-count">5</span>
+          </a>
+
+          <a href="captainannouncements.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span class="captainapproval-menu-label">Announcements</span>
+            </div>
+          </a>
+
+          <div class="captainapproval-menu-divider"></div>
+
+          <a href="captainoverview.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span class="captainapproval-menu-label">System Overview</span>
+            </div>
+          </a>
+
+          <a href="captainconcerns.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span class="captainapproval-menu-label">Concerns</span>
+            </div>
+
+            <span class="captainapproval-menu-count">18</span>
+          </a>
+
+          <a href="captainreports.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-file-lines"></i>
+              <span class="captainapproval-menu-label">Reports</span>
+            </div>
+          </a>
+
+          <div class="captainapproval-menu-divider"></div>
+
+          <a href="captaincommunity.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-people-group"></i>
+              <span class="captainapproval-menu-label">Community Board</span>
+            </div>
+          </a>
+
+          <a href="captainsettings.html" class="captainapproval-menu-link">
+            <div class="captainapproval-menu-left">
+              <i class="fa-solid fa-gear"></i>
+              <span class="captainapproval-menu-label">Settings</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="captainapproval-sidebar-footer">
+          <a href="home.html" class="captainapproval-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="captainapproval-menu-label">Log Out</span>
+          </a>
+        </div>
+      </aside>
+
+      <main class="captainapproval-main" id="captainapproval-main">
+        <header class="captainapproval-topbar">
+          <div class="captainapproval-topbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              placeholder="Search approvals, residents, document types..."
+            />
+          </div>
+
+          <div class="captainapproval-topbar-right">
+            <div class="captainapproval-topbar-icon">
+              <i class="fa-solid fa-bell"></i>
+              <span class="captainapproval-notification-count">5</span>
+            </div>
+
+            <div class="captainapproval-profile">
+              <div class="captainapproval-avatar">RD</div>
+
+              <div>
+                <div class="captainapproval-profile-name">
+                  Roberto Dela Cruz
+                </div>
+                <div class="captainapproval-profile-role">Punong Barangay</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="captainapproval-body">
+          <section class="captainapproval-hero">
+            <div class="captainapproval-hero-content">
+              <div>
+                <div class="captainapproval-hero-kicker">
+                  <i class="fa-solid fa-file-signature"></i>
+                  Captain Approval Workspace
+                </div>
+
+                <h1 class="captainapproval-hero-title">
+                  Review final document approvals without clutter.
+                </h1>
+
+                <p class="captainapproval-hero-text">
+                  Check prepared requests, add official remarks, approve valid
+                  documents, or return requests that need correction from staff.
+                </p>
+
+                <div class="captainapproval-hero-actions">
+                  <a href="#" class="captainapproval-hero-button">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Review Pending
+                  </a>
+
+                  <a href="#" class="captainapproval-hero-button">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    View History
+                  </a>
+
+                  <a href="#" class="captainapproval-hero-button">
+                    <i class="fa-solid fa-download"></i>
+                    Export List
+                  </a>
+                </div>
+              </div>
+
+              <div class="captainapproval-hero-metrics">
+                <div class="captainapproval-hero-metric">
+                  <div class="captainapproval-hero-number">5</div>
+                  <div class="captainapproval-hero-label">Pending approval</div>
+                </div>
+
+                <div class="captainapproval-hero-metric">
+                  <div class="captainapproval-hero-number">12</div>
+                  <div class="captainapproval-hero-label">
+                    Approved this week
+                  </div>
+                </div>
+
+                <div class="captainapproval-hero-metric">
+                  <div class="captainapproval-hero-number">2</div>
+                  <div class="captainapproval-hero-label">
+                    Returned requests
+                  </div>
+                </div>
+
+                <div class="captainapproval-hero-metric">
+                  <div class="captainapproval-hero-number">18</div>
+                  <div class="captainapproval-hero-label">Total records</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="captainapproval-toolbar">
+            <div class="captainapproval-toolbar-row">
+              <div class="captainapproval-search-field">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  type="text"
+                  placeholder="Search by resident, reference number, or document..."
+                />
+              </div>
+
+              <select class="captainapproval-select">
+                <option>All Document Types</option>
+                <option>Barangay Clearance</option>
+                <option>Certificate of Indigency</option>
+                <option>Business Permit</option>
+                <option>Certificate of Residency</option>
+              </select>
+
+              <select class="captainapproval-select">
+                <option>Newest First</option>
+                <option>Oldest First</option>
+                <option>Urgent First</option>
+              </select>
+            </div>
+
+            <div class="captainapproval-chip-row">
+              <button class="captainapproval-chip active">All</button>
+              <button class="captainapproval-chip">Pending</button>
+              <button class="captainapproval-chip">For Review</button>
+              <button class="captainapproval-chip">Approved</button>
+              <button class="captainapproval-chip">Returned</button>
+            </div>
+          </section>
+
+          <div class="captainapproval-workspace">
+            <section class="captainapproval-queue-panel">
+              <div class="captainapproval-panel-head">
+                <div class="captainapproval-panel-title">
+                  <h3>Approval Queue</h3>
+                  <p>
+                    Requests prepared by staff and waiting for final action.
+                  </p>
+                </div>
+
+                <button
+                  class="captainapproval-button captainapproval-button-soft"
+                >
+                  Refresh
+                  <i class="fa-solid fa-rotate-right"></i>
+                </button>
+              </div>
+
+              <div class="captainapproval-queue-list">
+                <article class="captainapproval-request-card">
+                  <div class="captainapproval-request-main">
+                    <div class="captainapproval-reference">APR-2026-051</div>
+                    <div class="captainapproval-resident-name">Ana Lopez</div>
+                    <div class="captainapproval-request-note">
+                      Business renewal request from Sitio A, Purok 2.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-type">
+                      Business Permit
+                    </div>
+                    <div class="captainapproval-request-date">Apr 30, 2026</div>
+                  </div>
+
+                  <div>
+                    <span class="captainapproval-status pending">Pending</span>
+                  </div>
+
+                  <div class="captainapproval-action-buttons">
+                    <button
+                      class="captainapproval-button captainapproval-button-navy"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="captainapproval-button captainapproval-button-soft"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+
+                <article class="captainapproval-request-card">
+                  <div class="captainapproval-request-main">
+                    <div class="captainapproval-reference">APR-2026-050</div>
+                    <div class="captainapproval-resident-name">Jose Reyes</div>
+                    <div class="captainapproval-request-note">
+                      Clearance request verified by the secretary.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-type">
+                      Barangay Clearance
+                    </div>
+                    <div class="captainapproval-request-date">Apr 30, 2026</div>
+                  </div>
+
+                  <div>
+                    <span class="captainapproval-status review"
+                      >For Review</span
+                    >
+                  </div>
+
+                  <div class="captainapproval-action-buttons">
+                    <button
+                      class="captainapproval-button captainapproval-button-navy"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="captainapproval-button captainapproval-button-soft"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+
+                <article class="captainapproval-request-card">
+                  <div class="captainapproval-request-main">
+                    <div class="captainapproval-reference">APR-2026-049</div>
+                    <div class="captainapproval-resident-name">
+                      Maria Santos
+                    </div>
+                    <div class="captainapproval-request-note">
+                      Indigency request for scholarship assistance.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-type">
+                      Certificate of Indigency
+                    </div>
+                    <div class="captainapproval-request-date">Apr 29, 2026</div>
+                  </div>
+
+                  <div>
+                    <span class="captainapproval-status pending">Pending</span>
+                  </div>
+
+                  <div class="captainapproval-action-buttons">
+                    <button
+                      class="captainapproval-button captainapproval-button-navy"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="captainapproval-button captainapproval-button-soft"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+
+                <article class="captainapproval-request-card">
+                  <div class="captainapproval-request-main">
+                    <div class="captainapproval-reference">APR-2026-048</div>
+                    <div class="captainapproval-resident-name">Ramon Cruz</div>
+                    <div class="captainapproval-request-note">
+                      Clearance request with complete resident record.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-type">
+                      Barangay Clearance
+                    </div>
+                    <div class="captainapproval-request-date">Apr 29, 2026</div>
+                  </div>
+
+                  <div>
+                    <span class="captainapproval-status review"
+                      >For Review</span
+                    >
+                  </div>
+
+                  <div class="captainapproval-action-buttons">
+                    <button
+                      class="captainapproval-button captainapproval-button-navy"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="captainapproval-button captainapproval-button-soft"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+
+                <article class="captainapproval-request-card">
+                  <div class="captainapproval-request-main">
+                    <div class="captainapproval-reference">APR-2026-047</div>
+                    <div class="captainapproval-resident-name">
+                      Lorna Bautista
+                    </div>
+                    <div class="captainapproval-request-note">
+                      Residency certificate for employment requirement.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-type">
+                      Certificate of Residency
+                    </div>
+                    <div class="captainapproval-request-date">Apr 28, 2026</div>
+                  </div>
+
+                  <div>
+                    <span class="captainapproval-status pending">Pending</span>
+                  </div>
+
+                  <div class="captainapproval-action-buttons">
+                    <button
+                      class="captainapproval-button captainapproval-button-navy"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      Review
+                    </button>
+                    <button
+                      class="captainapproval-button captainapproval-button-soft"
+                      data-bs-toggle="modal"
+                      data-bs-target="#captainapprovalReviewModal"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              </div>
+
+              <div class="captainapproval-table-footer">
+                <div class="captainapproval-footer-text">
+                  Showing 5 of 18 approval records
+                </div>
+
+                <div class="captainapproval-pagination">
+                  <button class="captainapproval-page-button">
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button class="captainapproval-page-button active">1</button>
+                  <button class="captainapproval-page-button">2</button>
+                  <button class="captainapproval-page-button">3</button>
+                  <button class="captainapproval-page-button">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <aside class="captainapproval-side-column">
+              <section class="captainapproval-side-card">
+                <div class="captainapproval-side-head">
+                  <h3>Approval Summary</h3>
+                  <span>Today</span>
+                </div>
+
+                <div class="captainapproval-summary-list">
+                  <div class="captainapproval-summary-row">
+                    <div class="captainapproval-summary-top">
+                      <div class="captainapproval-summary-name">Pending</div>
+                      <div class="captainapproval-summary-value">5</div>
+                    </div>
+                    <div class="captainapproval-summary-note">
+                      Waiting for final decision
+                    </div>
+                  </div>
+
+                  <div class="captainapproval-summary-row">
+                    <div class="captainapproval-summary-top">
+                      <div class="captainapproval-summary-name">Approved</div>
+                      <div class="captainapproval-summary-value">12</div>
+                    </div>
+                    <div class="captainapproval-summary-note">
+                      Approved this week
+                    </div>
+                  </div>
+
+                  <div class="captainapproval-summary-row">
+                    <div class="captainapproval-summary-top">
+                      <div class="captainapproval-summary-name">Returned</div>
+                      <div class="captainapproval-summary-value">2</div>
+                    </div>
+                    <div class="captainapproval-summary-note">
+                      Sent back for correction
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="captainapproval-side-card">
+                <div class="captainapproval-side-head">
+                  <h3>Document Types</h3>
+                  <span>This month</span>
+                </div>
+
+                <div class="captainapproval-document-list">
+                  <div>
+                    <div class="captainapproval-document-top">
+                      <span class="captainapproval-document-name">
+                        Barangay Clearance
+                      </span>
+                      <span class="captainapproval-document-count">9</span>
+                    </div>
+                    <div class="captainapproval-progress-track">
+                      <div
+                        class="captainapproval-progress-fill"
+                        style="width: 80%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-top">
+                      <span class="captainapproval-document-name">
+                        Certificate of Indigency
+                      </span>
+                      <span class="captainapproval-document-count">5</span>
+                    </div>
+                    <div class="captainapproval-progress-track">
+                      <div
+                        class="captainapproval-progress-fill"
+                        style="width: 55%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-top">
+                      <span class="captainapproval-document-name">
+                        Business Permit
+                      </span>
+                      <span class="captainapproval-document-count">3</span>
+                    </div>
+                    <div class="captainapproval-progress-track">
+                      <div
+                        class="captainapproval-progress-fill"
+                        style="width: 35%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="captainapproval-document-top">
+                      <span class="captainapproval-document-name">
+                        Residency
+                      </span>
+                      <span class="captainapproval-document-count">2</span>
+                    </div>
+                    <div class="captainapproval-progress-track">
+                      <div
+                        class="captainapproval-progress-fill"
+                        style="width: 25%"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="captainapproval-side-card">
+                <div class="captainapproval-side-head">
+                  <h3>Review Notes</h3>
+                  <span>Guide</span>
+                </div>
+
+                <div class="captainapproval-reminder-list">
+                  <div class="captainapproval-reminder-row">
+                    <div class="captainapproval-reminder-title">
+                      Check overdue requests
+                    </div>
+                    <div class="captainapproval-reminder-sub">
+                      2 requests have been waiting for more than 2 days.
+                    </div>
+                  </div>
+
+                  <div class="captainapproval-reminder-row">
+                    <div class="captainapproval-reminder-title">
+                      Verify business permits
+                    </div>
+                    <div class="captainapproval-reminder-sub">
+                      Confirm business details before approval.
+                    </div>
+                  </div>
+
+                  <div class="captainapproval-reminder-row">
+                    <div class="captainapproval-reminder-title">
+                      Add clear remarks
+                    </div>
+                    <div class="captainapproval-reminder-sub">
+                      Remarks help staff track rejected or returned requests.
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="captainapprovalReviewModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content captainapproval-modal-content">
+          <div class="modal-header captainapproval-modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Review Document Approval
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label">Reference</span>
+                  <p class="captainapproval-detail-value">APR-2026-051</p>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label">Status</span>
+                  <p class="captainapproval-detail-value">Pending Approval</p>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label">Resident</span>
+                  <p class="captainapproval-detail-value">Ana Lopez</p>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label"
+                    >Document Type</span
+                  >
+                  <p class="captainapproval-detail-value">Business Permit</p>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label">Prepared By</span>
+                  <p class="captainapproval-detail-value">Secretary</p>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="captainapproval-detail-box">
+                  <span class="captainapproval-detail-label">Submitted</span>
+                  <p class="captainapproval-detail-value">Apr 30, 2026</p>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <span class="captainapproval-detail-label">Purpose</span>
+                <div class="captainapproval-detail-note">
+                  The resident is requesting a business permit clearance for
+                  renewal of business operations located at Sitio A, Purok 2.
+                </div>
+              </div>
+
+              <div class="col-12">
+                <span class="captainapproval-detail-label">Staff Remarks</span>
+                <div class="captainapproval-detail-note">
+                  Required documents were checked by the secretary. Request is
+                  ready for captain review and final decision.
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <span class="captainapproval-detail-label">Decision</span>
+                <select class="form-select rounded-pill mt-1">
+                  <option>Pending Review</option>
+                  <option>Approved</option>
+                  <option>Rejected</option>
+                  <option>Return for Revision</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <span class="captainapproval-detail-label">
+                  Captain Remarks
+                </span>
+                <textarea
+                  class="form-control rounded-4 mt-1"
+                  rows="3"
+                  placeholder="Add official remarks or reason for decision..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="captainapproval-button captainapproval-button-soft"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="captainapproval-button captainapproval-button-soft"
+            >
+              Return Request
+            </button>
+
+            <button
+              type="button"
+              class="captainapproval-button captainapproval-button-navy"
+            >
+              <i class="fa-solid fa-circle-check"></i>
+              Save Decision
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      var captainapprovalSidebar = document.getElementById(
+        "captainapproval-sidebar",
+      );
+
+      var captainapprovalMainArea = document.getElementById(
+        "captainapproval-main",
+      );
+
+      var captainapprovalToggleWrap = document.getElementById(
+        "captainapproval-toggle-wrap",
+      );
+
+      var captainapprovalToggleButton = document.getElementById(
+        "captainapproval-toggle-button",
+      );
+
+      captainapprovalToggleButton.addEventListener("click", function () {
+        var captainapprovalIsMini =
+          captainapprovalSidebar.classList.toggle("mini");
+
+        captainapprovalMainArea.classList.toggle(
+          "shifted",
+          captainapprovalIsMini,
+        );
+
+        captainapprovalToggleWrap.classList.toggle(
+          "mini",
+          captainapprovalIsMini,
+        );
+      });
+
+      var captainapprovalChipButtons = document.querySelectorAll(
+        ".captainapproval-chip",
+      );
+
+      captainapprovalChipButtons.forEach(function (captainapprovalButton) {
+        captainapprovalButton.addEventListener("click", function () {
+          captainapprovalChipButtons.forEach(
+            function (captainapprovalOtherButton) {
+              captainapprovalOtherButton.classList.remove("active");
+            },
+          );
+
+          captainapprovalButton.classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

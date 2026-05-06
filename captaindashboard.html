@@ -1,0 +1,2131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Captain Dashboard — BarangayKonek</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+
+    <style>
+      :root {
+        --navy: #051650;
+        --navy-mid: #0a2160;
+        --lime: #ccff00;
+
+        --surface: #ffffff;
+        --bg: #f4f7fb;
+        --soft-bg: #f8fafc;
+        --border: #e3e7f0;
+
+        --text: #1a2240;
+        --text-muted: #7a869a;
+
+        --sidebar-w: 228px;
+        --sidebar-mini: 64px;
+        --topbar-h: 62px;
+
+        --amber-bg: #fffbeb;
+        --amber-text: #92400e;
+
+        --blue-bg: #eff6ff;
+        --blue-text: #1e40af;
+
+        --green-bg: #f0fdf4;
+        --green-text: #166534;
+
+        --gray-bg: #f1f5f9;
+        --gray-text: #475569;
+
+        --red-bg: #fef2f2;
+        --red-text: #991b1b;
+
+        --shadow-light: 0 6px 18px rgba(5, 22, 80, 0.08);
+        --shadow-hover: 0 14px 30px rgba(5, 22, 80, 0.13);
+        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "DM Sans", sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.1),
+            transparent 32%
+          ),
+          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      @keyframes captaindashboardFadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes captaindashboardBellShake {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(14deg);
+        }
+
+        40% {
+          transform: rotate(-12deg);
+        }
+
+        60% {
+          transform: rotate(8deg);
+        }
+
+        80% {
+          transform: rotate(-6deg);
+        }
+      }
+
+      @keyframes captaindashboardBarGrow {
+        from {
+          width: 0;
+        }
+      }
+
+      .captaindashboard-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .captaindashboard-sidebar {
+        width: var(--sidebar-w);
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 40;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(204, 255, 0, 0.14),
+            transparent 28%
+          ),
+          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
+        box-shadow: var(--shadow-sidebar);
+        transition: width 0.25s ease;
+      }
+
+      .captaindashboard-sidebar.mini {
+        width: var(--sidebar-mini);
+      }
+
+      .captaindashboard-toggle-wrap {
+        position: fixed;
+        top: 50%;
+        left: var(--sidebar-w);
+        transform: translate(-50%, -50%);
+        z-index: 200;
+        transition: left 0.25s ease;
+      }
+
+      .captaindashboard-toggle-wrap.mini {
+        left: var(--sidebar-mini);
+      }
+
+      .captaindashboard-toggle-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captaindashboard-toggle-btn:hover {
+        background: var(--lime);
+        border-color: var(--lime);
+      }
+
+      .captaindashboard-toggle-btn i {
+        font-size: 10px;
+        color: var(--navy);
+        transition: transform 0.25s ease;
+      }
+
+      .captaindashboard-toggle-wrap.mini .captaindashboard-toggle-btn i {
+        transform: rotate(180deg);
+      }
+
+      .captaindashboard-identity {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .captaindashboard-identity-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .captaindashboard-identity-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .captaindashboard-identity-logo-placeholder {
+        font-size: 18px;
+        color: var(--lime);
+        font-weight: 800;
+      }
+
+      .captaindashboard-identity-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+
+      .captaindashboard-identity-chip {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-identity-name,
+      .captaindashboard-sidebar.mini .captaindashboard-identity-chip {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-identity-logo {
+        margin: 0 auto;
+      }
+
+      .captaindashboard-menu {
+        flex: 1;
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .captaindashboard-menu::-webkit-scrollbar {
+        display: none;
+      }
+
+      .captaindashboard-menu-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 8px;
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-menu-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.66);
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease;
+      }
+
+      .captaindashboard-menu-link:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+      }
+
+      .captaindashboard-menu-link.active {
+        background: var(--lime);
+        color: var(--navy);
+      }
+
+      .captaindashboard-menu-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .captaindashboard-menu-left i {
+        width: 18px;
+        text-align: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-menu-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-menu-label {
+        opacity: 0;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .captaindashboard-menu-count {
+        font-size: 10px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-menu-link.active .captaindashboard-menu-count {
+        background: rgba(5, 22, 80, 0.18);
+        color: var(--navy);
+      }
+
+      .captaindashboard-sidebar.mini .captaindashboard-menu-count {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .captaindashboard-sidebar-footer {
+        padding: 13px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .captaindashboard-logout {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.46);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease;
+      }
+
+      .captaindashboard-logout:hover {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fca5a5;
+      }
+
+      .captaindashboard-main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        min-height: 100vh;
+        min-width: 0;
+        transition: margin-left 0.25s ease;
+      }
+
+      .captaindashboard-main.shifted {
+        margin-left: var(--sidebar-mini);
+      }
+
+      .captaindashboard-topbar {
+        height: var(--topbar-h);
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+
+      .captaindashboard-topbar-search {
+        flex: 1;
+        max-width: 390px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+
+      .captaindashboard-topbar-search:focus-within {
+        border-color: var(--navy);
+        background: #ffffff;
+      }
+
+      .captaindashboard-topbar-search i {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .captaindashboard-topbar-search input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .captaindashboard-topbar-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .captaindashboard-topbar-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.18s ease,
+          color 0.18s ease;
+      }
+
+      .captaindashboard-topbar-icon:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+      }
+
+      .captaindashboard-topbar-icon:hover i {
+        animation: captaindashboardBellShake 0.55s ease;
+      }
+
+      .captaindashboard-notification-count {
+        position: absolute;
+        top: -6px;
+        right: -5px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 10px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .captaindashboard-profile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 13px 5px 5px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--soft-bg);
+        cursor: pointer;
+        transition: border-color 0.18s ease;
+      }
+
+      .captaindashboard-profile:hover {
+        border-color: var(--navy);
+      }
+
+      .captaindashboard-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--lime);
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-profile-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+        white-space: nowrap;
+      }
+
+      .captaindashboard-profile-role {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1;
+      }
+
+      .captaindashboard-body {
+        padding: 24px 26px 44px;
+      }
+
+      .captaindashboard-hero {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(5, 22, 80, 0.98),
+            rgba(10, 33, 96, 0.95)
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(204, 255, 0, 0.26),
+            transparent 35%
+          );
+        border-radius: 28px;
+        padding: 26px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        box-shadow: var(--shadow-light);
+        position: relative;
+        overflow: hidden;
+        animation: captaindashboardFadeUp 0.28s ease both;
+        margin-bottom: 20px;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .captaindashboard-hero:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .captaindashboard-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -90px;
+        top: -110px;
+        background: rgba(204, 255, 0, 0.14);
+        border-radius: 50%;
+      }
+
+      .captaindashboard-hero::after {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        right: 90px;
+        bottom: -90px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .captaindashboard-hero-text,
+      .captaindashboard-hero-actions {
+        position: relative;
+        z-index: 1;
+      }
+
+      .captaindashboard-hero-text h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.25;
+        margin-bottom: 0;
+      }
+
+      .captaindashboard-hero-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.68);
+        margin-top: 7px;
+        max-width: 560px;
+        margin-bottom: 0;
+      }
+
+      .captaindashboard-hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .captaindashboard-hero-chip {
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .captaindashboard-hero-chip:hover {
+        background: var(--lime);
+        color: var(--navy);
+        transform: translateY(-1px);
+      }
+
+      .captaindashboard-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .captaindashboard-card,
+      .captaindashboard-panel,
+      .captaindashboard-side-panel,
+      .captaindashboard-stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow-light);
+        animation: captaindashboardFadeUp 0.32s ease both;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .captaindashboard-card:hover,
+      .captaindashboard-panel:hover,
+      .captaindashboard-side-panel:hover,
+      .captaindashboard-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+        border-color: #d7deea;
+      }
+
+      .captaindashboard-stat-card {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .captaindashboard-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .captaindashboard-stat-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-muted);
+      }
+
+      .captaindashboard-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: var(--soft-bg);
+        color: var(--navy);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+
+      .captaindashboard-stat-value {
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+      }
+
+      .captaindashboard-stat-note {
+        margin-top: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+
+      .captaindashboard-panel {
+        overflow: hidden;
+      }
+
+      .captaindashboard-panel-head {
+        padding: 22px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .captaindashboard-panel-title h3,
+      .captaindashboard-side-head h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+
+      .captaindashboard-panel-title p,
+      .captaindashboard-side-head span {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 0;
+      }
+
+      .captaindashboard-btn {
+        min-height: 38px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border: none;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captaindashboard-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .captaindashboard-btn-navy {
+        background: var(--navy);
+        color: #ffffff;
+      }
+
+      .captaindashboard-btn-navy:hover {
+        background: var(--lime);
+        color: var(--navy);
+        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
+      }
+
+      .captaindashboard-btn-ghost {
+        background: var(--soft-bg);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+      }
+
+      .captaindashboard-btn-ghost:hover {
+        border-color: var(--navy);
+        color: var(--navy);
+        background: #ffffff;
+      }
+
+      .captaindashboard-table-wrap {
+        overflow-x: auto;
+      }
+
+      .captaindashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .captaindashboard-table thead th {
+        background: #fafbfd;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        text-align: left;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .captaindashboard-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captaindashboard-table tbody tr:hover {
+        background: #fbfdff;
+        box-shadow: inset 4px 0 0 var(--lime);
+      }
+
+      .captaindashboard-table td {
+        padding: 13px 16px;
+        vertical-align: middle;
+        color: var(--text);
+      }
+
+      .captaindashboard-table-ref {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .captaindashboard-table-name {
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .captaindashboard-status-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 800;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+
+      .captaindashboard-status-chip.pending {
+        background: var(--amber-bg);
+        color: var(--amber-text);
+        border-color: rgba(146, 64, 14, 0.12);
+      }
+
+      .captaindashboard-status-chip.review {
+        background: var(--blue-bg);
+        color: var(--blue-text);
+        border-color: rgba(30, 64, 175, 0.12);
+      }
+
+      .captaindashboard-status-chip.approved {
+        background: var(--green-bg);
+        color: var(--green-text);
+        border-color: rgba(22, 101, 52, 0.12);
+      }
+
+      .captaindashboard-status-chip.draft {
+        background: var(--gray-bg);
+        color: var(--gray-text);
+        border-color: rgba(71, 85, 105, 0.12);
+      }
+
+      .captaindashboard-action-cell {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .captaindashboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px;
+      }
+
+      .captaindashboard-list-card {
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+        cursor: pointer;
+      }
+
+      .captaindashboard-list-card:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captaindashboard-list-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: #ffffff;
+        color: var(--navy);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+
+      .captaindashboard-list-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .captaindashboard-list-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .captaindashboard-list-meta {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+
+      .captaindashboard-side-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .captaindashboard-side-panel {
+        padding: 20px;
+      }
+
+      .captaindashboard-side-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+
+      .captaindashboard-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .captaindashboard-action-card {
+        min-height: 94px;
+        padding: 14px 10px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--soft-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captaindashboard-action-card:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captaindashboard-action-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .captaindashboard-action-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1.3;
+      }
+
+      .captaindashboard-staff-list,
+      .captaindashboard-notice-list,
+      .captaindashboard-bar-list {
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+
+      .captaindashboard-staff-row,
+      .captaindashboard-notice-row {
+        padding: 12px;
+        border-radius: 18px;
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .captaindashboard-staff-row:hover,
+      .captaindashboard-notice-row:hover {
+        background: #ffffff;
+        border-color: #d7deea;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
+      }
+
+      .captaindashboard-staff-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .captaindashboard-staff-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .captaindashboard-staff-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        background: var(--navy);
+        color: var(--lime);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .captaindashboard-staff-name,
+      .captaindashboard-notice-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1.2;
+      }
+
+      .captaindashboard-staff-role,
+      .captaindashboard-notice-sub {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      .captaindashboard-staff-count {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 9px;
+        white-space: nowrap;
+      }
+
+      .captaindashboard-bar-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .captaindashboard-bar-name {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .captaindashboard-bar-value {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+
+      .captaindashboard-bar-track {
+        height: 8px;
+        background: #eaf0f7;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .captaindashboard-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--navy);
+        animation: captaindashboardBarGrow 0.8s ease both;
+      }
+
+      .captaindashboard-modal-content {
+        border: none;
+        border-radius: 28px;
+        overflow: hidden;
+      }
+
+      .captaindashboard-modal-header {
+        border-bottom: 1px solid var(--border);
+      }
+
+      @media (max-width: 1180px) {
+        .captaindashboard-stat-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 992px) {
+        .captaindashboard-hero {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .captaindashboard-hero-actions {
+          justify-content: flex-start;
+        }
+
+        .captaindashboard-side-stack {
+          margin-top: 16px;
+        }
+
+        .captaindashboard-panel-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .captaindashboard-sidebar {
+          width: var(--sidebar-mini);
+        }
+
+        .captaindashboard-main {
+          margin-left: var(--sidebar-mini);
+        }
+
+        .captaindashboard-toggle-wrap {
+          left: var(--sidebar-mini);
+        }
+
+        .captaindashboard-identity-name,
+        .captaindashboard-identity-chip,
+        .captaindashboard-menu-label,
+        .captaindashboard-menu-count {
+          opacity: 0;
+          width: 0;
+          pointer-events: none;
+        }
+
+        .captaindashboard-body {
+          padding: 18px 14px 36px;
+        }
+
+        .captaindashboard-topbar {
+          padding: 0 14px;
+        }
+
+        .captaindashboard-profile-name,
+        .captaindashboard-profile-role {
+          display: none;
+        }
+
+        .captaindashboard-topbar-search {
+          max-width: none;
+        }
+
+        .captaindashboard-stat-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .captaindashboard-action-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="captaindashboard-toggle-wrap" id="captaindashboard-toggle-wrap">
+      <button
+        class="captaindashboard-toggle-btn"
+        id="captaindashboard-toggle-button"
+        title="Collapse / Expand"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="captaindashboard-container">
+      <aside class="captaindashboard-sidebar" id="captaindashboard-sidebar">
+        <div class="captaindashboard-identity">
+          <div class="captaindashboard-identity-logo">
+            <span class="captaindashboard-identity-logo-placeholder">B</span>
+          </div>
+
+          <div>
+            <div class="captaindashboard-identity-name">BarangayKonek</div>
+            <span class="captaindashboard-identity-chip"> Captain Portal </span>
+          </div>
+        </div>
+
+        <nav class="captaindashboard-menu">
+          <a
+            href="captaindashboard.html"
+            class="captaindashboard-menu-link active"
+          >
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-house"></i>
+              <span class="captaindashboard-menu-label">Dashboard</span>
+            </div>
+          </a>
+
+          <a href="captainapprovals.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-circle-check"></i>
+              <span class="captaindashboard-menu-label">Approvals</span>
+            </div>
+
+            <span class="captaindashboard-menu-count">5</span>
+          </a>
+
+          <a
+            href="captainannouncements.html"
+            class="captaindashboard-menu-link"
+          >
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span class="captaindashboard-menu-label">Announcements</span>
+            </div>
+          </a>
+
+          <div class="captaindashboard-menu-divider"></div>
+
+          <a href="captainoverview.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span class="captaindashboard-menu-label">System Overview</span>
+            </div>
+          </a>
+
+          <a href="captainconcerns.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span class="captaindashboard-menu-label">Concerns</span>
+            </div>
+
+            <span class="captaindashboard-menu-count">18</span>
+          </a>
+
+          <a href="captainreports.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-file-lines"></i>
+              <span class="captaindashboard-menu-label">Reports</span>
+            </div>
+          </a>
+
+          <div class="captaindashboard-menu-divider"></div>
+
+          <a href="captaincommunity.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-people-group"></i>
+              <span class="captaindashboard-menu-label">Community Board</span>
+            </div>
+          </a>
+
+          <a href="captainsettings.html" class="captaindashboard-menu-link">
+            <div class="captaindashboard-menu-left">
+              <i class="fa-solid fa-gear"></i>
+              <span class="captaindashboard-menu-label">Settings</span>
+            </div>
+          </a>
+        </nav>
+
+        <div class="captaindashboard-sidebar-footer">
+          <a href="home.html" class="captaindashboard-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="captaindashboard-menu-label">Log Out</span>
+          </a>
+        </div>
+      </aside>
+
+      <main class="captaindashboard-main" id="captaindashboard-main">
+        <header class="captaindashboard-topbar">
+          <div class="captaindashboard-topbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              placeholder="Search approvals, concerns, reports..."
+            />
+          </div>
+
+          <div class="captaindashboard-topbar-right">
+            <div class="captaindashboard-topbar-icon">
+              <i class="fa-solid fa-bell"></i>
+              <span class="captaindashboard-notification-count">5</span>
+            </div>
+
+            <div class="captaindashboard-profile">
+              <div class="captaindashboard-avatar">RD</div>
+
+              <div>
+                <div class="captaindashboard-profile-name">
+                  Roberto Dela Cruz
+                </div>
+                <div class="captaindashboard-profile-role">Punong Barangay</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="captaindashboard-body">
+          <section class="captaindashboard-hero">
+            <div class="captaindashboard-hero-text">
+              <h2>Captain Dashboard</h2>
+              <p>
+                Monitor approvals, announcements, concerns, staff activity, and
+                barangay reports in one place.
+              </p>
+            </div>
+
+            <div class="captaindashboard-hero-actions">
+              <a
+                href="captainapprovals.html"
+                class="captaindashboard-hero-chip"
+              >
+                <i class="fa-solid fa-circle-check"></i>
+                5 Pending Approvals
+              </a>
+
+              <a
+                href="captainannouncements.html"
+                class="captaindashboard-hero-chip"
+              >
+                <i class="fa-solid fa-bullhorn"></i>
+                New Announcement
+              </a>
+
+              <a href="captainreports.html" class="captaindashboard-hero-chip">
+                <i class="fa-solid fa-file-lines"></i>
+                View Reports
+              </a>
+            </div>
+          </section>
+
+          <section class="captaindashboard-stat-grid">
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">
+                  Pending Approvals
+                </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-clock"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">5</div>
+              <div class="captaindashboard-stat-note">
+                2 more than yesterday
+              </div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label"> Announcements </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-bullhorn"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">12</div>
+              <div class="captaindashboard-stat-note">Posted this month</div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">Open Concerns</span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">18</div>
+              <div class="captaindashboard-stat-note">
+                3 fewer than last week
+              </div>
+            </div>
+
+            <div class="captaindashboard-stat-card">
+              <div class="captaindashboard-stat-top">
+                <span class="captaindashboard-stat-label">
+                  Documents Released
+                </span>
+                <div class="captaindashboard-stat-icon">
+                  <i class="fa-solid fa-file-circle-check"></i>
+                </div>
+              </div>
+
+              <div class="captaindashboard-stat-value">94</div>
+              <div class="captaindashboard-stat-note">
+                11 released this week
+              </div>
+            </div>
+          </section>
+
+          <div class="row g-3">
+            <div class="col-lg-8 col-xl-9">
+              <section class="captaindashboard-panel mb-3">
+                <div class="captaindashboard-panel-head">
+                  <div class="captaindashboard-panel-title">
+                    <h3>Pending Approvals</h3>
+                    <p>Requests waiting for your decision.</p>
+                  </div>
+
+                  <a href="captainapprovals.html">
+                    <button
+                      class="captaindashboard-btn captaindashboard-btn-ghost"
+                    >
+                      View All
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                  </a>
+                </div>
+
+                <div class="captaindashboard-table-wrap">
+                  <table class="captaindashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Reference</th>
+                        <th>Resident</th>
+                        <th>Type</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
+                        <td>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-051
+                          </div>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-table-name">
+                            Ana Lopez
+                          </div>
+                        </td>
+                        <td>Business Permit</td>
+                        <td>Apr 30, 2026</td>
+                        <td>
+                          <span class="captaindashboard-status-chip pending">
+                            Pending
+                          </span>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-action-cell">
+                            <button
+                              class="captaindashboard-btn captaindashboard-btn-navy"
+                            >
+                              Review
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
+                        <td>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-050
+                          </div>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-table-name">
+                            Jose Reyes
+                          </div>
+                        </td>
+                        <td>Barangay Clearance</td>
+                        <td>Apr 30, 2026</td>
+                        <td>
+                          <span class="captaindashboard-status-chip review">
+                            For Review
+                          </span>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-action-cell">
+                            <button
+                              class="captaindashboard-btn captaindashboard-btn-navy"
+                            >
+                              Review
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
+                        <td>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-049
+                          </div>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-table-name">
+                            Maria Santos
+                          </div>
+                        </td>
+                        <td>Certificate of Indigency</td>
+                        <td>Apr 29, 2026</td>
+                        <td>
+                          <span class="captaindashboard-status-chip pending">
+                            Pending
+                          </span>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-action-cell">
+                            <button
+                              class="captaindashboard-btn captaindashboard-btn-navy"
+                            >
+                              Review
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr
+                        data-bs-toggle="modal"
+                        data-bs-target="#captaindashboardApprovalModal"
+                      >
+                        <td>
+                          <div class="captaindashboard-table-ref">
+                            APR-2026-048
+                          </div>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-table-name">
+                            Ramon Cruz
+                          </div>
+                        </td>
+                        <td>Barangay Clearance</td>
+                        <td>Apr 29, 2026</td>
+                        <td>
+                          <span class="captaindashboard-status-chip review">
+                            For Review
+                          </span>
+                        </td>
+                        <td>
+                          <div class="captaindashboard-action-cell">
+                            <button
+                              class="captaindashboard-btn captaindashboard-btn-navy"
+                            >
+                              Review
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="captaindashboard-panel mb-3">
+                <div class="captaindashboard-panel-head">
+                  <div class="captaindashboard-panel-title">
+                    <h3>Recent Announcements</h3>
+                    <p>Latest posts published by the barangay office.</p>
+                  </div>
+
+                  <a href="captainannouncements.html">
+                    <button
+                      class="captaindashboard-btn captaindashboard-btn-ghost"
+                    >
+                      Manage
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                  </a>
+                </div>
+
+                <div class="captaindashboard-list">
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Community Clean-Up Drive — May 3, 2026
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Posted Apr 30, 2026 · Pinned
+                      </div>
+                    </div>
+
+                    <span class="captaindashboard-status-chip approved">
+                      Published
+                    </span>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-droplet"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Water Interruption Notice — Zone 3 & 4
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Posted Apr 28, 2026
+                      </div>
+                    </div>
+
+                    <span class="captaindashboard-status-chip approved">
+                      Published
+                    </span>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Barangay Assembly — May 10, 2026
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Draft created Apr 27, 2026
+                      </div>
+                    </div>
+
+                    <span class="captaindashboard-status-chip draft">
+                      Draft
+                    </span>
+                  </div>
+
+                  <button
+                    class="captaindashboard-btn captaindashboard-btn-navy"
+                  >
+                    <i class="fa-solid fa-plus"></i>
+                    Post New Announcement
+                  </button>
+                </div>
+              </section>
+
+              <section class="captaindashboard-panel">
+                <div class="captaindashboard-panel-head">
+                  <div class="captaindashboard-panel-title">
+                    <h3>Recent Activity</h3>
+                    <p>Newest barangay system actions today.</p>
+                  </div>
+                </div>
+
+                <div class="captaindashboard-list">
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-check"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        APR-2026-046 was approved
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Barangay Clearance for Carla Mendoza · 8:42 AM
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        New concern submitted by Maria Lopez
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Flooding / Drainage near Sitio B · 8:15 AM
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-list-card">
+                    <div class="captaindashboard-list-icon">
+                      <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+
+                    <div class="captaindashboard-list-body">
+                      <div class="captaindashboard-list-title">
+                        Water Interruption Notice was published
+                      </div>
+                      <div class="captaindashboard-list-meta">
+                        Sent to residents · Yesterday
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="col-lg-4 col-xl-3">
+              <div class="captaindashboard-side-stack">
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <h3>Quick Actions</h3>
+                  </div>
+
+                  <div class="captaindashboard-action-grid">
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                      </div>
+                      <div class="captaindashboard-action-label">
+                        Review Approvals
+                      </div>
+                    </div>
+
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-bullhorn"></i>
+                      </div>
+                      <div class="captaindashboard-action-label">
+                        Post Announcement
+                      </div>
+                    </div>
+
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                      </div>
+                      <div class="captaindashboard-action-label">
+                        View Concerns
+                      </div>
+                    </div>
+
+                    <div class="captaindashboard-action-card">
+                      <div class="captaindashboard-action-icon">
+                        <i class="fa-solid fa-chart-pie"></i>
+                      </div>
+                      <div class="captaindashboard-action-label">
+                        System Reports
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <div>
+                      <h3>Important Notices</h3>
+                      <span>For you</span>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-notice-list">
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        5 approvals overdue
+                      </div>
+                      <div class="captaindashboard-notice-sub">
+                        Waiting for your signature.
+                      </div>
+                    </div>
+
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        Assembly on May 10
+                      </div>
+                      <div class="captaindashboard-notice-sub">
+                        Finalize agenda this week.
+                      </div>
+                    </div>
+
+                    <div class="captaindashboard-notice-row">
+                      <div class="captaindashboard-notice-title">
+                        April report ready
+                      </div>
+                      <div class="captaindashboard-notice-sub">
+                        Treasurer submitted summary.
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <div>
+                      <h3>Staff Overview</h3>
+                      <span>Active today</span>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-staff-list">
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">SC</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Sec. Clara Abad
+                          </div>
+                          <div class="captaindashboard-staff-role">
+                            Secretary
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">8 requests</div>
+                    </div>
+
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">TR</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Treas. Rosa Navarro
+                          </div>
+                          <div class="captaindashboard-staff-role">
+                            Treasurer
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">₱3.2K</div>
+                    </div>
+
+                    <div class="captaindashboard-staff-row">
+                      <div class="captaindashboard-staff-left">
+                        <div class="captaindashboard-staff-avatar">KM</div>
+                        <div>
+                          <div class="captaindashboard-staff-name">
+                            Kgd. Mario Tan
+                          </div>
+                          <div class="captaindashboard-staff-role">Kagawad</div>
+                        </div>
+                      </div>
+
+                      <div class="captaindashboard-staff-count">6 concerns</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="captaindashboard-side-panel">
+                  <div class="captaindashboard-side-head">
+                    <div>
+                      <h3>Concerns by Type</h3>
+                      <span>This month</span>
+                    </div>
+                  </div>
+
+                  <div class="captaindashboard-bar-list">
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Flooding / Drainage
+                        </span>
+                        <span class="captaindashboard-bar-value">10</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 85%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Garbage / Sanitation
+                        </span>
+                        <span class="captaindashboard-bar-value">7</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 65%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Road Damage
+                        </span>
+                        <span class="captaindashboard-bar-value">5</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 50%"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="captaindashboard-bar-top">
+                        <span class="captaindashboard-bar-name">
+                          Noise Complaint
+                        </span>
+                        <span class="captaindashboard-bar-value">3</span>
+                      </div>
+                      <div class="captaindashboard-bar-track">
+                        <div
+                          class="captaindashboard-bar-fill"
+                          style="width: 30%"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="captaindashboardApprovalModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content captaindashboard-modal-content">
+          <div class="modal-header captaindashboard-modal-header">
+            <h5 class="modal-title fw-bold text-primary-emphasis">
+              Review Approval
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <small class="text-muted fw-bold">Reference</small>
+                <p class="mb-0 fw-semibold">APR-2026-051</p>
+              </div>
+
+              <div class="col-6">
+                <small class="text-muted fw-bold">Resident</small>
+                <p class="mb-0 fw-semibold">Ana Lopez</p>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Request Type</small>
+                <p class="mb-0 fw-semibold">Business Permit Clearance</p>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Purpose</small>
+                <div
+                  class="p-3 rounded-4 mt-1"
+                  style="background: #f8fafc; font-size: 13.5px"
+                >
+                  Required for renewal of business operations at Sitio A, Purok
+                  2.
+                </div>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Decision</small>
+                <select
+                  class="form-select rounded-pill mt-1"
+                  style="font-size: 13.5px"
+                >
+                  <option>Pending Review</option>
+                  <option>Approved</option>
+                  <option>Rejected</option>
+                  <option>Return for Revision</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <small class="text-muted fw-bold">Captain's Remarks</small>
+                <textarea
+                  class="form-control rounded-4 mt-1"
+                  rows="3"
+                  style="font-size: 13.5px"
+                  placeholder="Add official remarks or reason for decision..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="captaindashboard-btn captaindashboard-btn-ghost"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="captaindashboard-btn captaindashboard-btn-navy"
+            >
+              <i class="fa-solid fa-circle-check"></i>
+              Save Decision
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      var captaindashboardSidebar = document.getElementById(
+        "captaindashboard-sidebar",
+      );
+
+      var captaindashboardMainArea = document.getElementById(
+        "captaindashboard-main",
+      );
+
+      var captaindashboardToggleWrap = document.getElementById(
+        "captaindashboard-toggle-wrap",
+      );
+
+      var captaindashboardToggleButton = document.getElementById(
+        "captaindashboard-toggle-button",
+      );
+
+      captaindashboardToggleButton.addEventListener("click", function () {
+        var captaindashboardIsMini =
+          captaindashboardSidebar.classList.toggle("mini");
+
+        captaindashboardMainArea.classList.toggle(
+          "shifted",
+          captaindashboardIsMini,
+        );
+
+        captaindashboardToggleWrap.classList.toggle(
+          "mini",
+          captaindashboardIsMini,
+        );
+      });
+    </script>
+  </body>
+</html>
