@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Captain Dashboard — BarangayKonek</title>
+    <title>Captain Dashboard</title>
 
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
@@ -204,7 +204,7 @@
         transform: rotate(180deg);
       }
 
-      .captaindashboard-identity {
+      .captaindashboard-brand {
         height: var(--topbar-h);
         display: flex;
         align-items: center;
@@ -215,7 +215,7 @@
         overflow: hidden;
       }
 
-      .captaindashboard-identity-logo {
+      .captaindashboard-brand-logo {
         width: 38px;
         height: 38px;
         border-radius: 14px;
@@ -227,26 +227,20 @@
         justify-content: center;
       }
 
-      .captaindashboard-identity-logo img {
+      .captaindashboard-brand-logo img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
 
-      .captaindashboard-identity-logo-placeholder {
-        font-size: 18px;
-        color: var(--lime);
-        font-weight: 800;
-      }
-
-      .captaindashboard-identity-name {
+      .captaindashboard-brand-name {
         font-size: 14px;
         font-weight: 800;
         color: #ffffff;
         line-height: 1.2;
       }
 
-      .captaindashboard-identity-chip {
+      .captaindashboard-brand-chip {
         display: inline-flex;
         align-items: center;
         margin-top: 5px;
@@ -259,14 +253,14 @@
         line-height: 1;
       }
 
-      .captaindashboard-sidebar.mini .captaindashboard-identity-name,
-      .captaindashboard-sidebar.mini .captaindashboard-identity-chip {
+      .captaindashboard-sidebar.mini .captaindashboard-brand-name,
+      .captaindashboard-sidebar.mini .captaindashboard-brand-chip {
         opacity: 0;
         width: 0;
         pointer-events: none;
       }
 
-      .captaindashboard-sidebar.mini .captaindashboard-identity-logo {
+      .captaindashboard-sidebar.mini .captaindashboard-brand-logo {
         margin: 0 auto;
       }
 
@@ -1217,8 +1211,8 @@
           left: var(--sidebar-mini);
         }
 
-        .captaindashboard-identity-name,
-        .captaindashboard-identity-chip,
+        .captaindashboard-brand-name,
+        .captaindashboard-brand-chip,
         .captaindashboard-menu-label,
         .captaindashboard-menu-count {
           opacity: 0;
@@ -1267,14 +1261,14 @@
 
     <div class="captaindashboard-container">
       <aside class="captaindashboard-sidebar" id="captaindashboard-sidebar">
-        <div class="captaindashboard-identity">
-          <div class="captaindashboard-identity-logo">
-            <span class="captaindashboard-identity-logo-placeholder">B</span>
+        <div class="captaindashboard-brand">
+          <div class="captaindashboard-brand-logo">
+            <img src="alapan.png" alt="Alapan logo" />
           </div>
 
           <div>
-            <div class="captaindashboard-identity-name">BarangayKonek</div>
-            <span class="captaindashboard-identity-chip"> Captain Portal </span>
+            <div class="captaindashboard-brand-name">BarangayKonek</div>
+            <span class="captaindashboard-brand-chip"> Captain Portal </span>
           </div>
         </div>
 
@@ -1289,7 +1283,7 @@
             </div>
           </a>
 
-          <a href="captainapprovals.html" class="captaindashboard-menu-link">
+          <a href="captainapproval.html" class="captaindashboard-menu-link">
             <div class="captaindashboard-menu-left">
               <i class="fa-solid fa-circle-check"></i>
               <span class="captaindashboard-menu-label">Approvals</span>

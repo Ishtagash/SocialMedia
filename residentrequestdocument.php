@@ -14,7 +14,116 @@ if ($conn === false) {
     die("Connection failed: " . print_r(sqlsrv_errors(), true));
 }
 
+include "paymongo_config.php";
+
 $userId = $_SESSION['user_id'];
+
+function getDocumentFee($documentType) {
+    $fees = array(
+        "Barangay Clearance" => 50,
+        "Certificate of Indigency" => 0,
+        "Certificate of Residency" => 30,
+        "Business Permit Clearance" => 200,
+        "Barangay ID" => 100,
+        "Certificate of Good Moral" => 30,
+        "Solo Parent Certificate" => 0,
+        "Senior Citizen Certificate" => 0
+    );
+
+    if (isset($fees[$documentType])) {
+        return $fees[$documentType];
+    }
+
+    return 0;
+}
+
+function createPaymongoCheckout($paymongoSecretKey, $paymongoCheckoutUrl, $baseUrl, $paymentId, $requestId, $userId, $documentType, $amount, $paymentMethod) {
+    if (!function_exists('curl_init')) {
+        return array(
+            "success" => false,
+            "error" => "cURL is not enabled in your PHP setup."
+        );
+    }
+
+    $amountCentavos = intval($amount * 100);
+
+    $paymongoMethod = "gcash";
+
+    if ($paymentMethod === "maya") {
+        $paymongoMethod = "paymaya";
+    }
+
+    $successUrl = $baseUrl . "/payment_success.php?payment_id=" . $paymentId;
+    $cancelUrl = $baseUrl . "/payment_cancel.php?payment_id=" . $paymentId;
+
+    $paymentData = array(
+        "data" => array(
+            "attributes" => array(
+                "send_email_receipt" => true,
+                "show_description" => true,
+                "show_line_items" => true,
+                "description" => "BarangayKonek Document Payment",
+                "success_url" => $successUrl,
+                "cancel_url" => $cancelUrl,
+                "payment_method_types" => array($paymongoMethod),
+                "line_items" => array(
+                    array(
+                        "currency" => "PHP",
+                        "amount" => $amountCentavos,
+                        "name" => $documentType,
+                        "quantity" => 1
+                    )
+                ),
+                "metadata" => array(
+                    "payment_id" => strval($paymentId),
+                    "request_id" => strval($requestId),
+                    "user_id" => strval($userId),
+                    "document_type" => $documentType
+                )
+            )
+        )
+    );
+
+    $encodedKey = base64_encode($paymongoSecretKey . ":");
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $paymongoCheckoutUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "Content-Type: application/json",
+        "Authorization: Basic " . $encodedKey
+    ));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($paymentData));
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+
+    curl_close($ch);
+
+    if ($curlError) {
+        return array(
+            "success" => false,
+            "error" => $curlError
+        );
+    }
+
+    $responseData = json_decode($response, true);
+
+    if (isset($responseData["data"]["id"]) && isset($responseData["data"]["attributes"]["checkout_url"])) {
+        return array(
+            "success" => true,
+            "checkout_session_id" => $responseData["data"]["id"],
+            "checkout_url" => $responseData["data"]["attributes"]["checkout_url"]
+        );
+    }
+
+    return array(
+        "success" => false,
+        "error" => $responseData
+    );
+}
 
 $regSql  = "SELECT FIRST_NAME, LAST_NAME, GENDER, PROFILE_PICTURE, ADDRESS, MOBILE_NUMBER FROM REGISTRATION WHERE USER_ID = ?";
 $regStmt = sqlsrv_query($conn, $regSql, [$userId]);
@@ -77,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         exit();
     }
+
     if ($_POST['action'] === 'mark_all_read') {
         sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE USER_ID = ?", [$userId]);
         header("Location: residentrequestdocument.php");
@@ -89,6 +199,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $documentType   = trim($_POST['document_type'] ?? '');
         $notes          = trim($_POST['notes'] ?? '');
         $deliveryMethod = trim($_POST['delivery_method'] ?? '');
+        $paymentMethod  = trim($_POST['payment_method'] ?? '');
+
+        $documentFee = getDocumentFee($documentType);
+        $deliveryFee = 0;
+
+        if ($deliveryMethod === "delivery") {
+            $deliveryFee = 50;
+        }
+
+        $totalAmount = $documentFee + $deliveryFee;
 
         if (empty($documentType) || empty($deliveryMethod)) {
             echo json_encode(['success' => false, 'error' => 'Please complete all required fields.']);
@@ -171,12 +291,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
 
-        echo json_encode([
-            'success'     => true,
-            'request_id'  => $newId,
+        if ($totalAmount > 0 && ($paymentMethod === "gcash" || $paymentMethod === "maya")) {
+            $paymentSql = "
+                INSERT INTO PAYMENTS
+                (REQUEST_ID, USER_ID, DOCUMENT_TYPE, PAYMENT_METHOD, AMOUNT, PAYMENT_STATUS)
+                OUTPUT INSERTED.PAYMENT_ID
+                VALUES (?, ?, ?, ?, ?, 'PENDING')
+            ";
+
+            $paymentParams = array(
+                $newId,
+                $userId,
+                $documentType,
+                $paymentMethod,
+                $totalAmount
+            );
+
+            $paymentStmt = sqlsrv_query($conn, $paymentSql, $paymentParams);
+
+            if ($paymentStmt === false) {
+                echo json_encode(array(
+                    'success' => false,
+                    'error' => 'Request was saved, but payment record failed. ' . print_r(sqlsrv_errors(), true)
+                ));
+                exit();
+            }
+
+            $paymentRow = sqlsrv_fetch_array($paymentStmt, SQLSRV_FETCH_ASSOC);
+            $paymentId = $paymentRow ? (int)$paymentRow['PAYMENT_ID'] : 0;
+
+            $checkoutResult = createPaymongoCheckout(
+                $paymongoSecretKey,
+                $paymongoCheckoutUrl,
+                $baseUrl,
+                $paymentId,
+                $newId,
+                $userId,
+                $documentType,
+                $totalAmount,
+                $paymentMethod
+            );
+
+            if ($checkoutResult["success"]) {
+                $updatePaymentSql = "
+                    UPDATE PAYMENTS
+                    SET CHECKOUT_SESSION_ID = ?
+                    WHERE PAYMENT_ID = ?
+                ";
+
+                sqlsrv_query($conn, $updatePaymentSql, array(
+                    $checkoutResult["checkout_session_id"],
+                    $paymentId
+                ));
+
+                echo json_encode(array(
+                    'success' => true,
+                    'request_id' => $newId,
+                    'payment_required' => true,
+                    'checkout_url' => $checkoutResult["checkout_url"],
+                    'files_saved' => $fileCount ?? 0,
+                    'file_errors' => $fileErrors ?? array()
+                ));
+                exit();
+            }
+
+            echo json_encode(array(
+                'success' => false,
+                'error' => 'Request was saved, but PayMongo checkout failed.',
+                'paymongo_error' => $checkoutResult["error"]
+            ));
+            exit();
+        }
+
+        echo json_encode(array(
+            'success' => true,
+            'request_id' => $newId,
+            'payment_required' => false,
             'files_saved' => $fileCount ?? 0,
-            'file_errors' => $fileErrors ?? [],
-        ]);
+            'file_errors' => $fileErrors ?? array()
+        ));
         exit();
     }
 }
@@ -930,11 +1123,22 @@ function submitRequest() {
     .then(function(res) { return res.json(); })
     .then(function(res) {
       if (res.success) {
+        if (res.payment_required && res.checkout_url) {
+          window.location.href = res.checkout_url;
+          return;
+        }
+
         document.getElementById('requestIdDisplay').textContent = res.request_id;
         document.getElementById('formScreen').style.display    = 'none';
         document.getElementById('successState').classList.add('visible');
       } else {
-        alert('Error: ' + res.error);
+        let errorMessage = 'Error: ' + res.error;
+
+        if (res.paymongo_error) {
+          console.log(res.paymongo_error);
+        }
+
+        alert(errorMessage);
         nextBtn.disabled  = false;
         nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
       }
