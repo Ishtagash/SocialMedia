@@ -2,7 +2,7 @@
 session_start();
 
 $client_id = "638015427637-v5s87krev2c9nqlai1ko56ou8fen9847.apps.googleusercontent.com";
-$redirect_uri = "http://localhost/SocialMedia/google-callback.php";
+$redirect_uri = "http://localhost/google-callback.php";
 
 $scope = urlencode("openid email profile");
 

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$serverName = "MSI\\SQLEXPRESS";
+$serverName = "LAPTOP-8KOIBQER\\SQLEXPRESS";
 
 $connectionOptions = [
     "Database" => "SocialMedia",
@@ -17,7 +17,7 @@ if ($conn == false) {
 
 $client_id = "638015427637-v5s87krev2c9nqlai1ko56ou8fen9847.apps.googleusercontent.com";
 $client_secret = "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";
-$redirect_uri = "http://localhost/SocialMedia/google-callback.php";
+$redirect_uri = "http://localhost/google-callback.php";
 
 if (!isset($_GET["code"])) {
     header("Location: login.php?error=google");

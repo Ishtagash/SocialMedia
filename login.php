@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (rtrim($user['STATUS']) === 'PENDING') {
             $error = "Your account is pending verification by the admin.";
-        } elseif (password_verify($password, $user['PASSWORD'])) {
+        } elseif ($password === rtrim($user['PASSWORD'])) {
             $_SESSION['user_id'] = $user['USER_ID'];
             $_SESSION['username'] = $user['USERNAME'];
             $_SESSION['role'] = strtolower(trim($user['ROLE']));
