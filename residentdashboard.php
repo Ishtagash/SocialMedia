@@ -75,20 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-$pendingStmt = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS WHERE USER_ID = ? AND STATUS = 'PENDING'", [$userId]);
-$pendingRow  = $pendingStmt ? sqlsrv_fetch_array($pendingStmt, SQLSRV_FETCH_ASSOC) : null;
+$pendingStmt  = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS WHERE USER_ID = ? AND STATUS = 'PENDING'", [$userId]);
+$pendingRow   = $pendingStmt ? sqlsrv_fetch_array($pendingStmt, SQLSRV_FETCH_ASSOC) : null;
 $pendingCount = $pendingRow ? (int)$pendingRow['CNT'] : 0;
 
-$annStmt = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1");
-$annRow  = $annStmt ? sqlsrv_fetch_array($annStmt, SQLSRV_FETCH_ASSOC) : null;
+$annStmt           = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1");
+$annRow            = $annStmt ? sqlsrv_fetch_array($annStmt, SQLSRV_FETCH_ASSOC) : null;
 $announcementCount = $annRow ? (int)$annRow['CNT'] : 0;
 
-$concernStmt = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM CONCERNS WHERE USER_ID = ? AND STATUS = 'OPEN'", [$userId]);
-$concernRow  = $concernStmt ? sqlsrv_fetch_array($concernStmt, SQLSRV_FETCH_ASSOC) : null;
+$concernStmt  = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM CONCERNS WHERE USER_ID = ? AND STATUS = 'OPEN'", [$userId]);
+$concernRow   = $concernStmt ? sqlsrv_fetch_array($concernStmt, SQLSRV_FETCH_ASSOC) : null;
 $openConcerns = $concernRow ? (int)$concernRow['CNT'] : 0;
 
-$completedStmt = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS WHERE USER_ID = ? AND STATUS = 'COMPLETED'", [$userId]);
-$completedRow  = $completedStmt ? sqlsrv_fetch_array($completedStmt, SQLSRV_FETCH_ASSOC) : null;
+$completedStmt  = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS WHERE USER_ID = ? AND STATUS = 'COMPLETED'", [$userId]);
+$completedRow   = $completedStmt ? sqlsrv_fetch_array($completedStmt, SQLSRV_FETCH_ASSOC) : null;
 $completedCount = $completedRow ? (int)$completedRow['CNT'] : 0;
 
 $latestAnnStmt = sqlsrv_query($conn, "SELECT TOP 3 TITLE, BODY FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1 ORDER BY CREATED_AT DESC");
@@ -148,7 +148,71 @@ $dotColors = ['dot--yellow', 'dot--blue', 'dot--green'];
     .btn-logout-confirm { background:#051650; color:#ccff00; border:none; padding:11px 28px; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
     .btn-logout-cancel  { background:transparent; color:#051650; border:1px solid rgba(5,22,80,0.25); padding:11px 28px; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
 
-    .card-icon { font-size:20px; margin-bottom:14px; opacity:0.85; color:var(--navy); }
+    .residentdashboard-action-banner {
+      position:relative; min-height:150px; margin:18px 0 22px; padding:26px 28px;
+      border-radius:28px;
+      background: radial-gradient(circle at top right, rgba(204,255,0,0.28), transparent 34%),
+                  linear-gradient(135deg, #051650 0%, #0a2160 60%, #071346 100%);
+      box-shadow:0 18px 42px rgba(5,22,80,0.18); overflow:visible;
+      display:flex; align-items:center; justify-content:space-between; gap:24px;
+    }
+    .residentdashboard-action-banner::after {
+      content:""; position:absolute; width:190px; height:190px;
+      right:-80px; bottom:-110px; border-radius:50%;
+      background:rgba(255,255,255,0.07); pointer-events:none;
+    }
+    .residentdashboard-action-content { position:relative; z-index:2; max-width:720px; }
+    .residentdashboard-action-label {
+      width:fit-content; display:inline-flex; align-items:center; gap:8px;
+      padding:7px 12px; margin-bottom:10px; border-radius:999px;
+      background:rgba(255,255,255,0.12); color:var(--lime);
+      font-size:12px; font-weight:800; letter-spacing:0.2px;
+    }
+    .residentdashboard-action-content h2 { margin:0; color:#fff; font-size:clamp(22px,3vw,30px); font-weight:800; letter-spacing:-0.04em; }
+    .residentdashboard-action-content p  { max-width:620px; margin:8px 0 18px; color:rgba(255,255,255,0.72); font-size:14px; line-height:1.6; }
+    .residentdashboard-action-buttons { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .residentdashboard-action-btn {
+      min-height:40px; padding:0 16px; border-radius:999px;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      font-size:13px; font-weight:800; text-decoration:none;
+      transition:transform 0.2s,box-shadow 0.2s,background 0.2s,color 0.2s;
+    }
+    .residentdashboard-action-btn-primary  { background:var(--lime); color:var(--navy); box-shadow:0 10px 22px rgba(204,255,0,0.22); }
+    .residentdashboard-action-btn-secondary { background:#fff; color:var(--navy); }
+    .residentdashboard-action-btn-ghost    { background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.18); }
+    .residentdashboard-action-btn:hover                { transform:translateY(-2px); }
+    .residentdashboard-action-btn-primary:hover        { background:#fff; color:var(--navy); }
+    .residentdashboard-action-btn-secondary:hover      { background:var(--lime); color:var(--navy); }
+    .residentdashboard-action-btn-ghost:hover          { background:rgba(255,255,255,0.2); }
+    .residentdashboard-action-visual {
+      position:relative; z-index:5; width:150px; height:130px; flex:0 0 150px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .residentdashboard-action-glow { position:absolute; inset:8px; border-radius:50%; background:rgba(204,255,0,0.16); filter:blur(12px); }
+    .residentdashboard-logo-notification-wrap { position:relative; width:108px; height:108px; display:flex; align-items:center; justify-content:center; }
+    .residentdashboard-logo-circle {
+      width:96px; height:96px; border-radius:50%; background:#fff; padding:8px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 18px 34px rgba(0,0,0,0.18), 0 0 0 6px rgba(255,255,255,0.08); overflow:hidden;
+    }
+    .residentdashboard-logo-circle img { width:100%; height:100%; object-fit:contain; border-radius:50%; }
+    .residentdashboard-banner-bell { position:absolute; top:-8px; right:-8px; z-index:50; }
+    .residentdashboard-banner-bell #bellBtn { width:38px!important; height:38px!important; background:#fff!important; border:1px solid rgba(5,22,80,0.12)!important; box-shadow:0 12px 26px rgba(0,0,0,0.22)!important; }
+    .residentdashboard-banner-bell #bellBtn:hover { transform:translateY(-2px); background:var(--lime)!important; }
+    .residentdashboard-banner-bell .notif-dropdown { top:calc(100% + 12px); right:0; color:#333; z-index:9999; }
+
+    @media (max-width:900px) {
+      .residentdashboard-action-banner { align-items:flex-start; padding-right:76px; }
+      .residentdashboard-action-visual { position:absolute; top:20px; right:20px; width:42px; height:42px; flex:unset; }
+      .residentdashboard-logo-circle, .residentdashboard-action-glow { display:none; }
+      .residentdashboard-logo-notification-wrap { width:42px; height:42px; }
+      .residentdashboard-banner-bell { position:static; }
+    }
+    @media (max-width:560px) {
+      .residentdashboard-action-banner { padding:22px; border-radius:24px; }
+      .residentdashboard-action-buttons { flex-direction:column; align-items:stretch; }
+      .residentdashboard-action-btn { width:100%; }
+    }
   </style>
 </head>
 <body>
@@ -194,15 +258,42 @@ $dotColors = ['dot--yellow', 'dot--blue', 'dot--green'];
   </aside>
 
   <main class="content">
-    <div class="content-inner">
-      <div class="topbar">
-        <div class="greeting-block">
-          <h1>Welcome back, <span style="color:var(--navy);"><?= $firstName ?></span></h1>
-          <p class="subtitle">Here are your latest updates and quick actions.</p>
+    <div class="topbar">
+      <div class="greeting-block">
+        <h1>Resident <span style="color:var(--navy);">Dashboard</span></h1>
+        <p class="subtitle">Welcome back, <?= $firstName ?>. Here's what's happening in your barangay.</p>
+      </div>
+    </div>
+
+    <div class="residentdashboard-action-banner">
+      <div class="residentdashboard-action-content">
+        <div class="residentdashboard-action-label">
+          <i class="fa-solid fa-location-dot"></i>
+          Resident Service Desk
         </div>
-        <div class="topbar-right">
-          <div class="bell-wrap-pos">
-            <button type="button" id="bellBtn" class="community-header-icon community-bell-link" onclick="toggleNotif()"
+        <h2>What do you need today, <?= $firstName ?>?</h2>
+        <p>Access barangay services, report community concerns, or connect with your neighbors in Alapan I-A.</p>
+        <div class="residentdashboard-action-buttons">
+          <a href="residentrequestdocument.php" class="residentdashboard-action-btn residentdashboard-action-btn-primary">
+            <i class="fa-solid fa-file-lines"></i> Request Document
+          </a>
+          <a href="residentconcern.php" class="residentdashboard-action-btn residentdashboard-action-btn-secondary">
+            <i class="fa-solid fa-circle-exclamation"></i> Report Concern
+          </a>
+          <a href="residentcommunity.php" class="residentdashboard-action-btn residentdashboard-action-btn-ghost">
+            <i class="fa-solid fa-users"></i> Visit Community
+          </a>
+        </div>
+      </div>
+
+      <div class="residentdashboard-action-visual">
+        <div class="residentdashboard-action-glow"></div>
+        <div class="residentdashboard-logo-notification-wrap">
+          <div class="residentdashboard-logo-circle">
+            <img src="alapan.png" alt="Barangay Alapan Logo" />
+          </div>
+          <div class="bell-wrap-pos residentdashboard-banner-bell">
+            <button type="button" id="bellBtn" onclick="toggleNotif()"
               style="width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:all 0.2s ease;position:relative;">
               <i class="fa-regular fa-bell" style="font-size:17px;color:var(--navy);"></i>
               <?php if ($unreadCount > 0): ?>
@@ -248,94 +339,76 @@ $dotColors = ['dot--yellow', 'dot--blue', 'dot--green'];
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="card-grid">
-        <div class="card card--yellow">
-          <p class="card-label">Pending Requests</p>
-          <p class="number"><?= $pendingCount ?></p>
+    <div class="card-grid">
+      <div class="card card--yellow">
+        <p class="card-label">Pending Requests</p>
+        <p class="number"><?= $pendingCount ?></p>
+      </div>
+      <div class="card card--blue">
+        <p class="card-label">New Announcements</p>
+        <p class="number"><?= $announcementCount ?></p>
+      </div>
+      <div class="card card--red">
+        <p class="card-label">Open Concerns</p>
+        <p class="number"><?= $openConcerns ?></p>
+      </div>
+      <div class="card card--green">
+        <p class="card-label">Completed Requests</p>
+        <p class="number"><?= $completedCount ?></p>
+      </div>
+    </div>
+
+    <div class="main-panels">
+      <div class="panel announcements">
+        <div class="panel-header">
+          <h2>Latest Announcements</h2>
+          <?php if ($announcementCount > 0): ?>
+          <span class="badge"><?= $announcementCount ?> NEW</span>
+          <?php endif; ?>
         </div>
-        <div class="card card--blue">
-          <p class="card-label">New Announcements</p>
-          <p class="number"><?= $announcementCount ?></p>
-        </div>
-        <div class="card card--red">
-          <p class="card-label">Open Concerns</p>
-          <p class="number"><?= $openConcerns ?></p>
-        </div>
-        <div class="card card--green">
-          <p class="card-label">Completed Requests</p>
-          <p class="number"><?= $completedCount ?></p>
-        </div>
+        <ul>
+          <?php if (empty($announcements)): ?>
+          <li>
+            <div class="announcement-dot dot--blue"></div>
+            <div><strong>No announcements yet</strong><p>Check back later for updates.</p></div>
+          </li>
+          <?php else: ?>
+          <?php foreach ($announcements as $i => $ann): ?>
+          <li>
+            <div class="announcement-dot <?= $dotColors[$i % 3] ?>"></div>
+            <div>
+              <strong><?= htmlspecialchars(rtrim($ann['TITLE'])) ?></strong>
+              <p><?= htmlspecialchars(mb_strimwidth(rtrim($ann['BODY']), 0, 80, '...')) ?></p>
+            </div>
+          </li>
+          <?php endforeach; ?>
+          <?php endif; ?>
+        </ul>
       </div>
 
-      <div class="main-panels">
-        <div class="panel announcements">
-          <div class="panel-header">
-            <h2>Latest Announcements</h2>
-            <?php if ($announcementCount > 0): ?>
-            <span class="badge"><?= $announcementCount ?> NEW</span>
-            <?php endif; ?>
-          </div>
-          <ul>
-            <?php if (empty($announcements)): ?>
-            <li>
-              <div class="announcement-dot dot--blue"></div>
-              <div>
-                <strong>No announcements yet</strong>
-                <p>Check back later for updates.</p>
-              </div>
-            </li>
-            <?php else: ?>
-            <?php foreach ($announcements as $i => $ann): ?>
-            <li>
-              <div class="announcement-dot <?= $dotColors[$i % 3] ?>"></div>
-              <div>
-                <strong><?= htmlspecialchars(rtrim($ann['TITLE'])) ?></strong>
-                <p><?= htmlspecialchars(mb_strimwidth(rtrim($ann['BODY']), 0, 80, '...')) ?></p>
-              </div>
-            </li>
-            <?php endforeach; ?>
-            <?php endif; ?>
-          </ul>
-        </div>
-
-        <div class="panel contacts">
-          <div class="panel-header">
-            <h2>Emergency Contacts</h2>
-          </div>
-          <ul>
-            <li>
-              <div class="contact-icon"><i class="fa-solid fa-landmark"></i></div>
-              <div>
-                <span class="contact-label">Barangay Hall</span>
-                <strong>046-471-0000</strong>
-              </div>
-            </li>
-            <li>
-              <div class="contact-icon"><i class="fa-solid fa-shield-halved"></i></div>
-              <div>
-                <span class="contact-label">Tanod Hotline</span>
-                <strong>0912-345-6789</strong>
-              </div>
-            </li>
-            <li>
-              <div class="contact-icon"><i class="fa-solid fa-kit-medical"></i></div>
-              <div>
-                <span class="contact-label">Medical Response</span>
-                <strong>0917-555-1122</strong>
-              </div>
-            </li>
-            <li>
-              <div class="contact-icon"><i class="fa-solid fa-fire-extinguisher"></i></div>
-              <div>
-                <span class="contact-label">Fire Station (BFP)</span>
-                <strong>160</strong>
-              </div>
-            </li>
-          </ul>
-        </div>
+      <div class="panel contacts">
+        <div class="panel-header"><h2>Emergency Contacts</h2></div>
+        <ul>
+          <li>
+            <div class="contact-icon"><i class="fa-solid fa-landmark"></i></div>
+            <div><span class="contact-label">Barangay Hall</span><strong>046-471-0000</strong></div>
+          </li>
+          <li>
+            <div class="contact-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div><span class="contact-label">Tanod Hotline</span><strong>0912-345-6789</strong></div>
+          </li>
+          <li>
+            <div class="contact-icon"><i class="fa-solid fa-kit-medical"></i></div>
+            <div><span class="contact-label">Medical Response</span><strong>0917-555-1122</strong></div>
+          </li>
+          <li>
+            <div class="contact-icon"><i class="fa-solid fa-fire-extinguisher"></i></div>
+            <div><span class="contact-label">Fire Station (BFP)</span><strong>160</strong></div>
+          </li>
+        </ul>
       </div>
-
     </div>
   </main>
 </div>
@@ -349,10 +422,9 @@ document.addEventListener('click', function(e) {
 });
 function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
 function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
-document.getElementById('logoutModal').addEventListener('click', e => {
+document.getElementById('logoutModal').addEventListener('click', function(e) {
   if (e.target === document.getElementById('logoutModal')) closeLogout();
 });
-
 function handleNotifClick(notifId, refId, typeKey, btn) {
   if (btn.classList.contains('unread')) {
     btn.classList.remove('unread');

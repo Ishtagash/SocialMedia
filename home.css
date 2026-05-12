@@ -563,3 +563,1009 @@ body {
     display: none;
   }
 }
+/* =========================
+   ANIMATIONS ONLY
+========================= */
+
+/* Smooth page entrance */
+body {
+  animation: pageFadeIn 0.6s ease-in-out;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Navbar entrance */
+.site-nav {
+  animation: navSlideDown 0.7s ease both;
+}
+
+@keyframes navSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo subtle hover */
+.nav-seal {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.nav-seal:hover {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+/* Nav links hover animation */
+.nav-link {
+  position: relative;
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.nav-link:hover {
+  transform: translateY(-2px);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 20px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s ease;
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Button hover animations */
+.btn-nav-login,
+.btn-nav-cta,
+.btn-hero,
+.btn-modal-primary,
+.btn-modal-secondary {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.25s ease;
+}
+
+.btn-nav-login:hover,
+.btn-nav-cta:hover,
+.btn-hero:hover,
+.btn-modal-primary:hover,
+.btn-modal-secondary:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.03);
+}
+
+.btn-nav-login:active,
+.btn-nav-cta:active,
+.btn-hero:active,
+.btn-modal-primary:active,
+.btn-modal-secondary:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Hero content entrance */
+.hero-tag {
+  animation: fadeUp 0.7s ease 0.1s both;
+}
+
+.hero-section h1 {
+  animation: fadeUp 0.7s ease 0.2s both;
+}
+
+.hero-sub {
+  animation: fadeUp 0.7s ease 0.3s both;
+}
+
+.btn-hero {
+  animation: fadeUp 0.7s ease 0.4s both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero stat cards staggered entrance */
+.hero-stat-card {
+  animation: fadeLeft 0.75s ease both;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.hero-stat-card:nth-child(1) {
+  animation-delay: 0.25s;
+}
+
+.hero-stat-card:nth-child(2) {
+  animation-delay: 0.38s;
+}
+
+.hero-stat-card:nth-child(3) {
+  animation-delay: 0.51s;
+}
+
+.hero-stat-card:hover {
+  transform: translateY(-6px);
+}
+
+@keyframes fadeLeft {
+  from {
+    opacity: 0;
+    transform: translateX(35px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Service cards hover animation */
+.service-card {
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-8px);
+}
+
+.service-icon-wrap {
+  transition: transform 0.28s ease;
+}
+
+.service-card:hover .service-icon-wrap {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.service-arrow {
+  transition: transform 0.25s ease;
+}
+
+.service-card:hover .service-arrow {
+  transform: translateX(4px);
+}
+
+/* Officials card animation */
+.official-card {
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+
+.official-card:hover {
+  transform: translateY(-7px);
+}
+
+.official-avatar {
+  transition: transform 0.25s ease;
+}
+
+.official-card:hover .official-avatar {
+  transform: scale(1.07) rotate(-3deg);
+}
+
+/* Footer links animation */
+.footer-col-list a {
+  transition:
+    transform 0.25s ease,
+    color 0.25s ease;
+}
+
+.footer-col-list a:hover {
+  transform: translateX(5px);
+}
+
+/* Modal entrance animation */
+.modal-gate.active {
+  animation: modalFadeIn 0.25s ease both;
+}
+
+.modal-gate.active .modal-gate-box {
+  animation: modalPop 0.32s ease both;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal close button animation */
+.modal-gate-close {
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.modal-gate-close:hover {
+  transform: rotate(90deg) scale(1.05);
+}
+
+/* Section reveal animation */
+.section-label,
+.section-title,
+.login-notice,
+.service-card,
+.official-card {
+  animation: softReveal linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 25%;
+}
+
+@keyframes softReveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle icon pulse */
+.modal-gate-icon,
+.hero-stat-icon {
+  animation: iconPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* Better accessibility for users who disable motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* =========================
+   INTERMEDIATE ANIMATIONS
+   Add this at the bottom of home.css
+========================= */
+
+/* 1. Smooth floating effect for hero cards */
+.hero-stat-card {
+  animation:
+    heroCardEnter 0.8s ease both,
+    softFloat 4s ease-in-out infinite;
+}
+
+.hero-stat-card:nth-child(1) {
+  animation-delay: 0.15s, 1s;
+}
+
+.hero-stat-card:nth-child(2) {
+  animation-delay: 0.3s, 1.4s;
+}
+
+.hero-stat-card:nth-child(3) {
+  animation-delay: 0.45s, 1.8s;
+}
+
+@keyframes heroCardEnter {
+  from {
+    opacity: 0;
+    transform: translateX(45px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes softFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+/* 2. Button shine animation */
+.btn-nav-login,
+.btn-nav-cta,
+.btn-hero,
+.btn-modal-primary,
+.btn-modal-secondary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-nav-login::before,
+.btn-nav-cta::before,
+.btn-hero::before,
+.btn-modal-primary::before,
+.btn-modal-secondary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transition: left 0.65s ease;
+}
+
+.btn-nav-login:hover::before,
+.btn-nav-cta:hover::before,
+.btn-hero:hover::before,
+.btn-modal-primary:hover::before,
+.btn-modal-secondary:hover::before {
+  left: 130%;
+}
+
+/* 3. Service card glow sweep */
+.service-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(204, 255, 0, 0.18),
+    transparent 35%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.service-card:hover::after {
+  opacity: 1;
+}
+
+/* 4. Service icon bounce on hover */
+.service-card:hover .service-icon-wrap {
+  animation: iconBounce 0.45s ease;
+}
+
+@keyframes iconBounce {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  40% {
+    transform: scale(1.15) rotate(-5deg);
+  }
+
+  70% {
+    transform: scale(0.96) rotate(2deg);
+  }
+
+  100% {
+    transform: scale(1.08) rotate(-4deg);
+  }
+}
+
+/* 5. Staggered service card entrance */
+.service-card {
+  animation: cardReveal 0.75s ease both;
+}
+
+.service-card:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.service-card:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.service-card:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.service-card:nth-child(4) {
+  animation-delay: 0.32s;
+}
+
+.service-card:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.service-card:nth-child(6) {
+  animation-delay: 0.48s;
+}
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 6. Official card lift with avatar reaction */
+.official-card {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.official-card:hover {
+  transform: translateY(-8px) scale(1.015);
+}
+
+.official-card:hover .official-avatar {
+  animation: avatarPop 0.45s ease;
+}
+
+@keyframes avatarPop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.16) rotate(-4deg);
+  }
+
+  75% {
+    transform: scale(0.96) rotate(2deg);
+  }
+
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+/* 7. Modal smoother pop animation */
+.modal-gate.active {
+  animation: modalBackdrop 0.3s ease both;
+}
+
+.modal-gate.active .modal-gate-box {
+  animation: modalSpring 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modalBackdrop {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes modalSpring {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.9);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 8. Footer links slide animation */
+.footer-col-list a {
+  position: relative;
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer-col-list a:hover {
+  transform: translateX(6px);
+}
+
+/* 9. Hero text cinematic entrance */
+.hero-tag,
+.hero-section h1,
+.hero-sub,
+.btn-hero {
+  animation: cinematicFade 0.8s ease both;
+}
+
+.hero-tag {
+  animation-delay: 0.1s;
+}
+
+.hero-section h1 {
+  animation-delay: 0.22s;
+}
+
+.hero-sub {
+  animation-delay: 0.34s;
+}
+
+.btn-hero {
+  animation-delay: 0.46s;
+}
+
+@keyframes cinematicFade {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* 10. Respect reduced motion setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* =========================
+   SCROLL CINEMATIC ANIMATION
+   Barangay Services Only
+========================= */
+
+.services-section {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Default hidden state before scrolling to services */
+.services-section.services-cinematic-ready .section-label,
+.services-section.services-cinematic-ready .section-title,
+.services-section.services-cinematic-ready .text-muted,
+.services-section.services-cinematic-ready .login-notice,
+.services-section.services-cinematic-ready .service-card {
+  opacity: 0;
+  filter: blur(8px);
+}
+
+/* Header text starting positions */
+.services-section.services-cinematic-ready .section-label {
+  transform: translateY(20px) scale(0.96);
+}
+
+.services-section.services-cinematic-ready .section-title {
+  transform: translateY(34px);
+}
+
+.services-section.services-cinematic-ready .text-muted {
+  transform: translateX(28px);
+}
+
+.services-section.services-cinematic-ready .login-notice {
+  transform: translateY(28px) scale(0.97);
+}
+
+/* Service card starting position */
+.services-section.services-cinematic-ready .service-card {
+  transform: translateY(48px) scale(0.94);
+}
+
+/* Animate when section becomes visible */
+.services-section.services-cinematic-show .section-label {
+  animation: serviceLabelIn 0.65s ease both;
+}
+
+.services-section.services-cinematic-show .section-title {
+  animation: serviceTitleIn 0.75s ease 0.08s both;
+}
+
+.services-section.services-cinematic-show .text-muted {
+  animation: serviceTextIn 0.75s ease 0.16s both;
+}
+
+.services-section.services-cinematic-show .login-notice {
+  animation: serviceNoticeIn 0.75s ease 0.24s both;
+}
+
+/* Staggered cards */
+.services-section.services-cinematic-show .service-card {
+  animation: serviceCardIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(1) {
+  animation-delay: 0.32s;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(2) {
+  animation-delay: 0.42s;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(3) {
+  animation-delay: 0.52s;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(4) {
+  animation-delay: 0.62s;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(5) {
+  animation-delay: 0.72s;
+}
+
+.services-section.services-cinematic-show .service-card:nth-child(6) {
+  animation-delay: 0.82s;
+}
+
+/* Keyframes */
+@keyframes serviceLabelIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes serviceTitleIn {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes serviceTextIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes serviceNoticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes serviceCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.94);
+    filter: blur(10px);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.01);
+    filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Hover animation after reveal */
+.service-card {
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-9px) scale(1.015);
+}
+
+.service-card:hover .service-icon-wrap {
+  animation: serviceIconPop 0.45s ease both;
+}
+
+@keyframes serviceIconPop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  45% {
+    transform: scale(1.16) rotate(-5deg);
+  }
+
+  75% {
+    transform: scale(0.96) rotate(2deg);
+  }
+
+  100% {
+    transform: scale(1.07) rotate(-3deg);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .services-section,
+  .services-section *,
+  .services-section *::before,
+  .services-section *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* =========================
+   SOFT NAV CLICK ANIMATION
+   Services + Officials
+========================= */
+
+#services,
+#officials {
+  scroll-margin-top: 95px;
+}
+
+.section-click-animate {
+  animation: sectionSoftFade 0.45s ease both;
+}
+
+@keyframes sectionSoftFade {
+  from {
+    opacity: 0.96;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Soft header animation */
+.section-click-animate .section-label,
+.section-click-animate .section-title,
+.section-click-animate .text-muted {
+  animation: softTextIn 0.45s ease both;
+}
+
+.section-click-animate .section-title {
+  animation-delay: 0.05s;
+}
+
+.section-click-animate .text-muted {
+  animation-delay: 0.08s;
+}
+
+@keyframes softTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Services softer reveal */
+#services.section-click-animate .login-notice {
+  animation: softItemIn 0.45s ease 0.08s both;
+}
+
+#services.section-click-animate .service-card {
+  animation: softItemIn 0.5s ease both;
+}
+
+#services.section-click-animate .service-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+#services.section-click-animate .service-card:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+#services.section-click-animate .service-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+#services.section-click-animate .service-card:nth-child(4) {
+  animation-delay: 0.25s;
+}
+
+#services.section-click-animate .service-card:nth-child(5) {
+  animation-delay: 0.3s;
+}
+
+#services.section-click-animate .service-card:nth-child(6) {
+  animation-delay: 0.35s;
+}
+
+/* Officials softer reveal */
+#officials.section-click-animate .official-card {
+  animation: softItemIn 0.5s ease both;
+}
+
+#officials.section-click-animate .official-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+#officials.section-click-animate .official-card:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+#officials.section-click-animate .official-card:nth-child(3) {
+  animation-delay: 0.18s;
+}
+
+#officials.section-click-animate .official-card:nth-child(4) {
+  animation-delay: 0.22s;
+}
+
+#officials.section-click-animate .official-card:nth-child(5) {
+  animation-delay: 0.26s;
+}
+
+#officials.section-click-animate .official-card:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+#officials.section-click-animate .official-card:nth-child(7) {
+  animation-delay: 0.34s;
+}
+
+#officials.section-click-animate .official-card:nth-child(8) {
+  animation-delay: 0.38s;
+}
+
+#officials.section-click-animate .official-card:nth-child(9) {
+  animation-delay: 0.42s;
+}
+
+#officials.section-click-animate .official-card:nth-child(10) {
+  animation-delay: 0.46s;
+}
+
+#officials.section-click-animate .official-card:nth-child(11) {
+  animation-delay: 0.5s;
+}
+
+@keyframes softItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Softer hover only */
+.service-card,
+.official-card {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.service-card:hover,
+.official-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Remove strong blur/line effects */
+.section-click-animate .section-title::after {
+  display: none;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .section-click-animate,
+  .section-click-animate *,
+  .section-click-animate *::before,
+  .section-click-animate *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

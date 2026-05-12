@@ -9,8 +9,6 @@ if ($conn === false) {
     die("Connection failed: " . print_r(sqlsrv_errors(), true));
 }
 
-$FIREBASE_API_KEY = "AIzaSyCwXnvovYNhm5QuohqBOQ1JAhu6wTT03hI";
-
 $error = '';
 
 $fname = $lname = $mname = $suffix = $dob = $gender = '';
@@ -61,54 +59,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Email already registered. Please use a different email.';
             } else {
 
-                $ch = curl_init(
-                    'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' . $FIREBASE_API_KEY
-                );
-                curl_setopt_array($ch, [
-                    CURLOPT_POST           => true,
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-                    CURLOPT_POSTFIELDS     => json_encode([
-                        'email'             => $email,
-                        'password'          => $password,
-                        'returnSecureToken' => true
-                    ]),
-                ]);
-                $fbResponse = json_decode(curl_exec($ch), true);
-                curl_close($ch);
+                $uploadDir = 'uploads/ids/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                $ext         = pathinfo($_FILES['idPhoto']['name'], PATHINFO_EXTENSION);
+                $idPhotoPath = $uploadDir . uniqid('id_') . '.' . $ext;
+                move_uploaded_file($_FILES['idPhoto']['tmp_name'], $idPhotoPath);
 
-                if (isset($fbResponse['error'])) {
-                    $fbMsg = $fbResponse['error']['message'] ?? 'Unknown error';
-                    $error = $fbMsg === 'EMAIL_EXISTS'
-                        ? 'This email is already registered.'
-                        : 'Account creation failed: ' . $fbMsg;
-                } else {
-                    $uploadDir = 'uploads/ids/';
-                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                    $ext         = pathinfo($_FILES['idPhoto']['name'], PATHINFO_EXTENSION);
-                    $idPhotoPath = $uploadDir . uniqid('id_') . '.' . $ext;
-                    move_uploaded_file($_FILES['idPhoto']['tmp_name'], $idPhotoPath);
+                $_SESSION['reg'] = [
+                    'username' => $username,
+                    'email'    => $email,
+                    'password' => $password,
+                    'fname'    => $fname,
+                    'lname'    => $lname,
+                    'mname'    => $mname,
+                    'suffix'   => $suffix,
+                    'dob'      => $dob,
+                    'gender'   => $gender,
+                    'mobile'   => $mobile,
+                    'address'  => $address,
+                    'idtype'   => $idtype,
+                    'id_photo' => $idPhotoPath,
+                ];
 
-                    $_SESSION['reg'] = [
-                        'username'    => $username,
-                        'email'       => $email,
-                        'password'    => $password,
-                        'fname'       => $fname,
-                        'lname'       => $lname,
-                        'mname'       => $mname,
-                        'suffix'      => $suffix,
-                        'dob'         => $dob,
-                        'gender'      => $gender,
-                        'mobile'      => $mobile,
-                        'address'     => $address,
-                        'idtype'      => $idtype,
-                        'id_photo'    => $idPhotoPath,
-                        'firebase_uid'=> $fbResponse['localId'],
-                    ];
-
-                    header('Location: verify_email.php');
-                    exit;
-                }
+                header('Location: verify_email.php');
+                exit;
             }
         }
     }

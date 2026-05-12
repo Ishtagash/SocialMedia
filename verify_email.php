@@ -14,60 +14,99 @@ if (empty($_SESSION['reg'])) {
     exit;
 }
 
-$reg   = $_SESSION['reg'];
-$email = $reg['email'];
+require_once 'email_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_mark_verified'])) {
-    header('Content-Type: application/json');
+$reg       = $_SESSION['reg'];
+$email     = $reg['email'];
+$firstName = $reg['fname'];
 
-    if (empty($_SESSION['reg'])) {
-        echo json_encode(['ok' => false, 'error' => 'Session expired.']);
-        exit;
+$maskedEmail = preg_replace_callback('/^(.{2})(.+?)(@.+)$/', function($m) {
+    return $m[1] . str_repeat('*', strlen($m[2])) . $m[3];
+}, $email);
+
+$errorMsg   = '';
+$successMsg = '';
+
+if (!isset($_SESSION['reg_otp'])) {
+    $otp     = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+    $_SESSION['reg_otp']         = $otp;
+    $_SESSION['reg_otp_expires'] = $expires;
+    $sent = sendOtpEmail($email, $firstName, $otp, 'register');
+    if (!$sent) {
+        $errorMsg = 'Could not send verification email. Please go back and try again.';
+        unset($_SESSION['reg_otp'], $_SESSION['reg_otp_expires']);
     }
-
-    $r = $_SESSION['reg'];
-
-    $sql1  = "INSERT INTO USERS
-                (USERNAME, EMAIL, PASSWORD, ROLE, STATUS, EMAIL_VERIFIED, CREATED_AT)
-              VALUES (?, ?, ?, 'resident', 'PENDING', 1, GETDATE())";
-    $stmt1 = sqlsrv_query($conn, $sql1, [
-        $r['username'], $r['email'], $r['password']
-    ]);
-
-    if ($stmt1 === false) {
-        echo json_encode(['ok' => false, 'error' => 'User insert failed: ' . print_r(sqlsrv_errors(), true)]);
-        exit;
-    }
-
-    $idRow = sqlsrv_fetch_array(
-        sqlsrv_query($conn, "SELECT TOP 1 USER_ID FROM USERS WHERE USERNAME = ?", [$r['username']]),
-        SQLSRV_FETCH_ASSOC
-    );
-    $newUserId = $idRow['USER_ID'];
-
-    $sql2  = "INSERT INTO REGISTRATION
-                (USER_ID, FIRST_NAME, MIDDLE_NAME, LAST_NAME, SUFFIX,
-                 BIRTHDATE, GENDER, MOBILE_NUMBER, ID_TYPE, ID_PHOTO_PATH,
-                 ADDRESS, CREATED_AT)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())";
-    $stmt2 = sqlsrv_query($conn, $sql2, [
-        $newUserId,
-        $r['fname'], $r['mname'], $r['lname'], $r['suffix'],
-        $r['dob'],   $r['gender'], $r['mobile'],
-        $r['idtype'], $r['id_photo'], $r['address']
-    ]);
-
-    if ($stmt2 === false) {
-        echo json_encode(['ok' => false, 'error' => 'Registration insert failed: ' . print_r(sqlsrv_errors(), true)]);
-        exit;
-    }
-
-    unset($_SESSION['reg']);
-    echo json_encode(['ok' => true]);
-    exit;
 }
 
-$tempPw = $reg['password'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'verify') {
+        $entered = trim($_POST['otp'] ?? '');
+
+        if (empty($_SESSION['reg_otp'])) {
+            $errorMsg = 'Session expired. Please go back and register again.';
+        } elseif (strtotime($_SESSION['reg_otp_expires']) < time()) {
+            $errorMsg = 'Your code has expired. Please resend.';
+        } elseif ($entered !== $_SESSION['reg_otp']) {
+            $errorMsg = 'Incorrect code. Please try again.';
+        } else {
+            $r = $_SESSION['reg'];
+
+            $stmt1 = sqlsrv_query($conn,
+                "INSERT INTO USERS (USERNAME, EMAIL, PASSWORD, ROLE, STATUS, EMAIL_VERIFIED, CREATED_AT)
+                 VALUES (?, ?, ?, 'resident', 'PENDING', 1, GETDATE())",
+                [$r['username'], $r['email'], $r['password']]
+            );
+
+            if ($stmt1 === false) {
+                $errorMsg = 'Registration failed. Please try again.';
+            } else {
+                $idRow = sqlsrv_fetch_array(
+                    sqlsrv_query($conn, "SELECT TOP 1 USER_ID FROM USERS WHERE USERNAME = ?", [$r['username']]),
+                    SQLSRV_FETCH_ASSOC
+                );
+                $newUserId = $idRow['USER_ID'];
+
+                $stmt2 = sqlsrv_query($conn,
+                    "INSERT INTO REGISTRATION
+                        (USER_ID, FIRST_NAME, MIDDLE_NAME, LAST_NAME, SUFFIX,
+                         BIRTHDATE, GENDER, MOBILE_NUMBER, ID_TYPE, ID_PHOTO_PATH,
+                         ADDRESS, CREATED_AT)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())",
+                    [
+                        $newUserId,
+                        $r['fname'], $r['mname'], $r['lname'], $r['suffix'],
+                        $r['dob'],   $r['gender'], $r['mobile'],
+                        $r['idtype'], $r['id_photo'], $r['address']
+                    ]
+                );
+
+                if ($stmt2 === false) {
+                    $errorMsg = 'Registration failed. Please try again.';
+                } else {
+                    unset($_SESSION['reg'], $_SESSION['reg_otp'], $_SESSION['reg_otp_expires']);
+                    header('Location: login.php?registered=1');
+                    exit;
+                }
+            }
+        }
+    }
+
+    if ($action === 'resend') {
+        $otp     = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        $_SESSION['reg_otp']         = $otp;
+        $_SESSION['reg_otp_expires'] = $expires;
+        $sent = sendOtpEmail($email, $firstName, $otp, 'register');
+        if ($sent) {
+            $successMsg = 'A new code was sent to your email.';
+        } else {
+            $errorMsg = 'Could not resend the code. Please try again.';
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,288 +114,104 @@ $tempPw = $reg['password'];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verify Email — Barangay Alapan I-A</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="base.css">
 <style>
-  :root {
-    --dark:       #051650;
-    --dark-hover: #0a2470;
-    --lime:       #ccff00;
-    --white:      #ffffff;
-    --red:        #e03030;
-    --green:      #2e7d32;
-    --border:     rgba(5,22,80,0.14);
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); }
+  .card {
+    background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-lg);
+    border:1px solid var(--border); width:100%; max-width:460px; padding:40px 36px;
+    animation:fadeUp .45s ease both;
   }
-  body { font-family: Arial, sans-serif; background: #eef0f8; color: var(--dark); min-height: 100vh; }
-  .site-nav { background: var(--dark); border-bottom: 3px solid var(--lime); padding: 10px 0; }
-  .nav-seal { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
-  .nav-seal img { width: 100%; height: 100%; object-fit: cover; }
-  .nav-brgy { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lime); display: block; line-height: 1.2; }
-  .nav-name  { font-size: 17px; font-weight: 700; color: var(--white); line-height: 1.2; }
-  .verify-card {
-    background: var(--white); border: 1px solid var(--border);
-    border-top: 4px solid var(--dark); border-radius: 10px;
-    padding: 48px 44px; box-shadow: 0 6px 30px rgba(5,22,80,.09);
-    max-width: 460px; margin: 60px auto; text-align: center;
+  .card-icon {
+    width:54px; height:54px; border-radius:50%; background:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--lime); font-size:22px; margin-bottom:20px;
   }
-  .verify-icon {
-    width: 72px; height: 72px; border-radius: 50%;
-    background: #eef0f8; color: var(--dark);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 30px; margin: 0 auto 22px; border: 2px solid var(--border);
+  h1 { font-size:22px; font-weight:800; color:var(--navy); margin-bottom:6px; }
+  .sub { font-size:13px; color:var(--text-muted); margin-bottom:28px; line-height:1.6; }
+  .sub strong { color:var(--navy); }
+  .email-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(204,255,0,.18); border:1px solid rgba(204,255,0,.5);
+    border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700;
+    color:var(--navy); margin-bottom:24px;
   }
-  .verify-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .verify-sub   { font-size: 14px; color: #666; margin-bottom: 28px; line-height: 1.6; }
-  .verify-sub strong { color: var(--dark); }
-  .spinner {
-    width: 40px; height: 40px; border: 3px solid #e0e0e0;
-    border-top-color: var(--dark); border-radius: 50%;
-    animation: spin .7s linear infinite; margin: 0 auto 14px;
+  .field-group { display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
+  .field-group label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); }
+  .otp-input {
+    background:var(--surface); border:2px solid var(--border); border-radius:10px;
+    padding:14px; font-family:'Space Mono',monospace; font-size:26px; font-weight:700;
+    color:var(--navy); letter-spacing:10px; text-align:center;
+    outline:none; transition:border-color .2s, box-shadow .2s; width:100%;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .otp-input:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(5,22,80,.08); }
   .alert-err {
-    display: flex; align-items: flex-start; gap: 10px;
-    background: #fff0f0; border: 1px solid #f5c0c0; border-left: 4px solid var(--red);
-    border-radius: 6px; padding: 11px 14px; font-size: 14px; color: var(--red);
-    margin-bottom: 20px; text-align: left;
+    display:flex; align-items:flex-start; gap:10px;
+    background:rgba(255,77,77,.08); border:1px solid rgba(255,77,77,.25);
+    border-left:4px solid var(--red); border-radius:10px;
+    padding:12px 16px; font-size:13px; color:var(--red); margin-bottom:20px;
   }
-  .btn-verify {
-    width: 100%; background: var(--dark); color: var(--white); border: none;
-    padding: 14px; border-radius: 6px; font-size: 15px; font-weight: 700;
-    cursor: pointer; font-family: Arial, sans-serif; transition: background .2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px;
+  .alert-ok {
+    display:flex; align-items:flex-start; gap:10px;
+    background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3);
+    border-left:4px solid var(--green); border-radius:10px;
+    padding:12px 16px; font-size:13px; color:#15803d; margin-bottom:20px;
   }
-  .btn-verify:hover { background: var(--dark-hover); }
-  .btn-verify:disabled { opacity: .6; pointer-events: none; }
-  .btn-resend {
-    background: none; border: none; color: var(--dark); font-weight: 700;
-    font-size: 14px; cursor: pointer; text-decoration: underline; padding: 0;
-  }
-  .btn-resend:hover { color: var(--dark-hover); }
-  .btn-resend:disabled { opacity: .5; pointer-events: none; text-decoration: none; }
-  .success-icon-wrap {
-    width: 72px; height: 72px; border-radius: 50%;
-    background: var(--lime); color: var(--dark);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; margin: 0 auto 18px;
-  }
-  .success-title { font-size: 24px; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
-  .success-body  { font-size: 14px; color: #555; line-height: 1.7; margin-bottom: 24px; }
-  .btn-go-login {
-    display: inline-flex; align-items: center; gap: 9px;
-    background: var(--dark); color: var(--white);
-    padding: 13px 34px; border-radius: 6px; font-size: 15px; font-weight: 700;
-    text-decoration: none; transition: background .2s;
-  }
-  .btn-go-login:hover { background: var(--dark-hover); color: var(--white); }
-  .auth-note { font-size: 12px; color: #bbb; text-align: center; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .hint-txt { font-size: 12px; color: #999; margin-top: 10px; }
-  #loadingState, #errorState, #verifyView, #successView { display: none; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; border:none; font-family:inherit; }
+  .btn--primary { background:var(--navy); color:#fff; transition:background .2s; }
+  .btn--primary:hover { background:#0a2470; color:#fff; }
+  .btn--ghost { background:none; color:var(--text-muted); font-size:13px; font-weight:500; margin-top:10px; }
+  .btn--ghost:hover { color:var(--navy); }
+  .back-link { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); text-decoration:none; margin-top:16px; justify-content:center; }
+  .back-link:hover { color:var(--navy); }
 </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
+<div class="card">
 
-<nav class="site-nav">
-  <div class="container">
-    <div class="d-flex align-items-center">
-      <a href="home.php" class="d-flex align-items-center gap-2 text-decoration-none">
-        <div class="nav-seal"><img src="alapan.png" alt="Barangay Alapan I-A Logo"></div>
-        <div>
-          <span class="nav-brgy">Barangay</span>
-          <span class="nav-name">Alapan I-A</span>
-        </div>
-      </a>
-    </div>
+  <div class="card-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+  <h1>Verify Your Email</h1>
+  <p class="sub">We sent a 6-digit code to your email address. Enter it below to activate your account.</p>
+  <div class="email-chip"><i class="fa-solid fa-envelope"></i> <?= htmlspecialchars($maskedEmail) ?></div>
+
+  <?php if ($errorMsg): ?>
+  <div class="alert-err">
+    <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px;flex-shrink:0;"></i>
+    <span><?= htmlspecialchars($errorMsg) ?></span>
   </div>
-</nav>
+  <?php endif; ?>
 
-<div class="flex-grow-1">
-  <div class="container">
-    <div class="verify-card">
-
-      <div id="loadingState">
-        <div class="spinner"></div>
-        <p style="color:#999;font-size:14px;margin:0;">Sending verification email…</p>
-      </div>
-
-      <div id="errorState">
-        <div class="verify-icon" style="background:#fff0f0;border-color:#f5c0c0;">
-          <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);"></i>
-        </div>
-        <div class="verify-title" style="color:var(--red);">Something went wrong</div>
-        <p id="errorStateMsg" style="font-size:14px;color:#666;margin-bottom:20px;line-height:1.6;"></p>
-        <a href="register.php" style="color:var(--dark);font-weight:700;font-size:14px;">
-          <i class="fa-solid fa-arrow-left me-1"></i>Back to Register
-        </a>
-      </div>
-
-      <div id="verifyView">
-        <div class="verify-icon">
-          <i class="fa-solid fa-envelope-open-text"></i>
-        </div>
-        <div class="verify-title">Check Your Email</div>
-        <div class="verify-sub">
-          A verification link was sent to<br>
-          <strong><?= htmlspecialchars($email) ?></strong><br>
-          Click the link in your inbox, then press the button below.
-        </div>
-
-        <div id="inlineErrorBox" class="alert-err" style="display:none;">
-          <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
-          <span id="inlineErrorMsg"></span>
-        </div>
-
-        <button class="btn-verify" id="checkBtn" onclick="checkVerification()">
-          <i class="fa-solid fa-shield-check"></i>
-          I've Verified My Email
-        </button>
-
-        <button class="btn-resend" id="resendBtn" onclick="resendEmail()">
-          Resend verification email
-        </button>
-        <div class="hint-txt" id="resendTimer"></div>
-      </div>
-
-      <div id="successView">
-        <div class="success-icon-wrap"><i class="fa-solid fa-check"></i></div>
-        <div class="success-title">Email Verified!</div>
-        <div class="success-body">
-          Your account has been created successfully.<br>
-          It is pending barangay staff review.<br>
-          You will be notified once it is approved.
-        </div>
-        <a href="login.php" class="btn-go-login">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i>Go to Login
-        </a>
-      </div>
-
-    </div>
-    <div class="auth-note">
-      <i class="fa-solid fa-shield-halved"></i>
-      Barangay Alapan I-A &middot; Imus, Cavite &middot; Official Portal &middot; 2026
-    </div>
+  <?php if ($successMsg): ?>
+  <div class="alert-ok">
+    <i class="fa-solid fa-circle-check" style="margin-top:2px;flex-shrink:0;"></i>
+    <span><?= htmlspecialchars($successMsg) ?></span>
   </div>
+  <?php endif; ?>
+
+  <form method="POST" action="verify_email.php">
+    <input type="hidden" name="action" value="verify">
+    <div class="field-group">
+      <label>Verification Code</label>
+      <input type="text" name="otp" class="otp-input" maxlength="6" placeholder="000000" autocomplete="one-time-code" required autofocus>
+    </div>
+    <button type="submit" class="btn btn--primary">
+      <i class="fa-solid fa-check"></i> Verify &amp; Create Account
+    </button>
+  </form>
+
+  <form method="POST" action="verify_email.php">
+    <input type="hidden" name="action" value="resend">
+    <button type="submit" class="btn btn--ghost">
+      <i class="fa-solid fa-rotate-right"></i> Resend code
+    </button>
+  </form>
+
+  <a href="register.php" class="back-link">
+    <i class="fa-solid fa-arrow-left"></i> Back to Register
+  </a>
+
 </div>
-
-<script type="module">
-  import { initializeApp }                       from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  import { getAuth, sendEmailVerification,
-           reload, signInWithEmailAndPassword,
-           signOut }                             from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey:            "AIzaSyCwXnvovYNhm5QuohqBOQ1JAhu6wTT03hI",
-    authDomain:        "barangaykonek-fcb6b.firebaseapp.com",
-    projectId:         "barangaykonek-fcb6b",
-    storageBucket:     "barangaykonek-fcb6b.firebasestorage.app",
-    messagingSenderId: "346298718713",
-    appId:             "1:346298718713:web:4372068ab0819104648528",
-    measurementId:     "G-TXH6H6GQN9"
-  };
-
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  const EMAIL   = <?= json_encode($email) ?>;
-  const TEMP_PW = <?= json_encode($tempPw) ?>;
-
-  let firebaseUser     = null;
-  let resendOnCooldown = false;
-
-  function show(id) {
-    ['loadingState','errorState','verifyView','successView']
-      .forEach(s => document.getElementById(s).style.display = s === id ? 'block' : 'none');
-  }
-
-  function showInlineError(msg) {
-    document.getElementById('inlineErrorMsg').textContent = msg;
-    document.getElementById('inlineErrorBox').style.display = 'flex';
-  }
-
-  function hideInlineError() {
-    document.getElementById('inlineErrorBox').style.display = 'none';
-  }
-
-  async function init() {
-    show('loadingState');
-    try {
-      const cred   = await signInWithEmailAndPassword(auth, EMAIL, TEMP_PW);
-      firebaseUser = cred.user;
-      if (!firebaseUser.emailVerified) {
-        await sendEmailVerification(firebaseUser);
-      }
-      show('verifyView');
-    } catch (err) {
-      document.getElementById('errorStateMsg').textContent =
-        'Could not send verification email. Please go back and try again. (' + err.message + ')';
-      show('errorState');
-    }
-  }
-
-  window.checkVerification = async function () {
-    hideInlineError();
-    const btn = document.getElementById('checkBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking…';
-
-    try {
-      await reload(firebaseUser);
-
-      if (!firebaseUser.emailVerified) {
-        showInlineError('Your email is not verified yet. Please click the link in your inbox first, then try again.');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-shield-check"></i> I\'ve Verified My Email';
-        return;
-      }
-
-      const res  = await fetch('verify_email.php', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body:    'ajax_mark_verified=1'
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        await signOut(auth);
-        show('successView');
-      } else {
-        showInlineError('Server error: ' + (data.error ?? 'Unknown error.'));
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-shield-check"></i> I\'ve Verified My Email';
-      }
-    } catch (err) {
-      showInlineError('An error occurred. Please try again.');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-shield-check"></i> I\'ve Verified My Email';
-    }
-  };
-
-  window.resendEmail = async function () {
-    if (resendOnCooldown) return;
-    hideInlineError();
-    try {
-      await sendEmailVerification(firebaseUser);
-      resendOnCooldown = true;
-      let secs     = 60;
-      const btn    = document.getElementById('resendBtn');
-      const txt    = document.getElementById('resendTimer');
-      btn.disabled = true;
-      const tick   = setInterval(() => {
-        secs--;
-        txt.textContent = 'You can resend in ' + secs + 's';
-        if (secs <= 0) {
-          clearInterval(tick);
-          btn.disabled     = false;
-          resendOnCooldown = false;
-          txt.textContent  = '';
-        }
-      }, 1000);
-    } catch (err) {
-      showInlineError('Could not resend. Please wait a moment and try again.');
-    }
-  };
-
-  document.addEventListener('DOMContentLoaded', init);
-</script>
 </body>
 </html>

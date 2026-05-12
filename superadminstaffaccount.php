@@ -173,7 +173,11 @@ $apResult  = sqlsrv_query($conn,
     "SELECT U.USER_ID, U.USERNAME, U.ROLE, U.POSITION, R.FIRST_NAME, R.LAST_NAME
      FROM USERS U
      LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID
-     WHERE U.ROLE IN ('resident','staff') AND U.USER_ID != ?",
+     WHERE U.USER_ID != ?
+       AND (
+         (U.ROLE = 'resident' AND LTRIM(RTRIM(U.STATUS)) = 'active')
+         OR U.ROLE = 'staff'
+       )",
     [$userId]
 );
 if ($apResult) {

@@ -5,79 +5,96 @@ $serverName = "LAPTOP-8KOIBQER\\SQLEXPRESS";
 
 $connectionOptions = [
     "Database" => "SocialMedia",
-    "Uid" => "",
-    "PWD" => "",
+    "Uid"      => "",
+    "PWD"      => "",
     "TrustServerCertificate" => true
 ];
 
 $conn = sqlsrv_connect($serverName, $connectionOptions);
 
+$dbError = false;
 if ($conn == false) {
-    die(print_r(sqlsrv_errors(), true));
+    $dbError = true;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
+$error    = null;
+$urlError = isset($_GET['error']) ? trim($_GET['error']) : '';
 
-    $sql = "SELECT * FROM USERS WHERE USERNAME = ?";
-    $params = [$username];
-    $stmt = sqlsrv_query($conn, $sql, $params);
+if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
-    if ($stmt && sqlsrv_has_rows($stmt)) {
-        $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+    if ($username === '' || $password === '') {
+        $error = "Username and password are required.";
+    } else {
+        $sql  = "SELECT * FROM USERS WHERE USERNAME = ?";
+        $stmt = sqlsrv_query($conn, $sql, [$username]);
 
-        if (rtrim($user['STATUS']) === 'PENDING') {
-            $error = "Your account is pending verification by the admin.";
-        } elseif ($password === rtrim($user['PASSWORD'])) {
-            $_SESSION['user_id'] = $user['USER_ID'];
-            $_SESSION['username'] = $user['USERNAME'];
-            $_SESSION['role'] = strtolower(trim($user['ROLE']));
+        if ($stmt && sqlsrv_has_rows($stmt)) {
+            $user = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
 
-            if ($_SESSION['role'] === 'superadmin') {
-                header('Location: superadmindashboard.php');
+            if (rtrim($user['STATUS']) === 'PENDING') {
+                header('Location: login.php?error=pending');
                 exit();
-            } elseif ($_SESSION['role'] === 'staff') {
-                header('Location: staffdashboard.php');
-                exit();
+            } elseif ($password === rtrim($user['PASSWORD'])) {
+                $_SESSION['user_id']  = $user['USER_ID'];
+                $_SESSION['username'] = $user['USERNAME'];
+                $_SESSION['role']     = strtolower(trim($user['ROLE']));
+                $_SESSION['position'] = strtolower(trim($user['POSITION'] ?? ''));
+
+                if ($_SESSION['role'] === 'superadmin') {
+                    header('Location: superadmindashboard.php');
+                    exit();
+                } elseif ($_SESSION['role'] === 'staff') {
+                    $position = $_SESSION['position'];
+                    if ($position === 'captain') {
+                        header('Location: captaindashboard.php');
+                    } elseif ($position === 'secretary') {
+                        header('Location: secretarydashboard.php');
+                    } elseif ($position === 'treasurer') {
+                        header('Location: treasurerdashboard.php');
+                    } elseif ($position === 'kagawad') {
+                        header('Location: kagawaddashboard.php');
+                    } else {
+                        header('Location: staffdashboard.php');
+                    }
+                    exit();
+                } else {
+                    header('Location: residentdashboard.php');
+                    exit();
+                }
             } else {
-                header('Location: residentdashboard.php');
-                exit();
+                $error = "Invalid username or password.";
             }
         } else {
             $error = "Invalid username or password.";
         }
-    } else {
-        $error = "Invalid username or password.";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BarangayKonek Login</title>
+<title>Barangay Alapan 1-A Login</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-/>
 
 <style>
   :root {
-    --dark: #051650;
-    --dark-hover: #0a2470;
-    --lime: #ccff00;
-    --white: #ffffff;
-    --red: #e03030;
-    --green: #2e7d32;
+    --dark:      #051650;
+    --dark-hover:#0a2470;
+    --lime:      #ccff00;
+    --white:     #ffffff;
+    --red:       #e03030;
+    --green:     #2e7d32;
+    --orange:    #d97706;
+    --blue:      #2563eb;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     font-family: Arial, sans-serif;
@@ -130,9 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     transition: color .2s;
   }
 
-  .nav-back:hover {
-    color: var(--lime);
-  }
+  .nav-back:hover { color: var(--lime); }
 
   .auth-card {
     background: var(--white);
@@ -202,12 +217,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     width: 14px;
   }
 
+  .password-wrapper {
+    position: relative;
+  }
+
   .field-input {
     width: 100%;
     background: var(--white);
     border: 1px solid #ccc;
     border-radius: 6px;
-    padding: 12px 14px;
+    padding: 12px 44px 12px 14px;
     color: var(--dark);
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -220,17 +239,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     box-shadow: 0 0 0 3px rgba(5,22,80,.10);
   }
 
+  .toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #999;
+    font-size: 15px;
+    line-height: 1;
+    transition: color .2s;
+  }
+
+  .toggle-password:hover { color: var(--dark); }
+
+  .forgot-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+    margin-bottom: 24px;
+  }
+
   .forgot-link {
     font-size: 13px;
     font-weight: 700;
     color: var(--dark);
     text-decoration: none;
-    float: right;
   }
 
-  .forgot-link:hover {
-    text-decoration: underline;
-  }
+  .forgot-link:hover { text-decoration: underline; }
 
   .btn-login {
     width: 100%;
@@ -250,9 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     gap: 9px;
   }
 
-  .btn-login:hover {
-    background: var(--dark-hover);
-  }
+  .btn-login:hover { background: var(--dark-hover); }
 
   .btn-google {
     width: 100%;
@@ -307,9 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     text-decoration: none;
   }
 
-  .register-link-text a:hover {
-    text-decoration: underline;
-  }
+  .register-link-text a:hover { text-decoration: underline; }
 
   .auth-note {
     font-size: 12px;
@@ -323,29 +359,255 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   @media (max-width: 480px) {
-    .auth-card {
-      padding: 28px 20px;
-    }
+    .auth-card { padding: 28px 20px; }
+  }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,22,80,0.55);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal-box {
+    background: var(--white);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(5,22,80,0.22);
+    overflow: hidden;
+    animation: modalIn .22s ease;
+  }
+
+  @keyframes modalIn {
+    from { transform: translateY(18px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .modal-top {
+    padding: 32px 32px 24px;
+    text-align: center;
+  }
+
+  .modal-icon-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 26px;
+  }
+
+  .modal-icon-wrap.orange {
+    background: #fff7ed;
+    color: var(--orange);
+    border: 2px solid #fed7aa;
+  }
+
+  .modal-icon-wrap.blue {
+    background: #eff6ff;
+    color: var(--blue);
+    border: 2px solid #bfdbfe;
+  }
+
+  .modal-icon-wrap.red {
+    background: #fff0f0;
+    color: var(--red);
+    border: 2px solid #f5c0c0;
+  }
+
+  .modal-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+
+  .modal-desc {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .modal-divider { height: 1px; background: #f0f0f0; }
+
+  .modal-footer {
+    padding: 18px 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-btn-primary {
+    width: 100%;
+    background: var(--dark);
+    color: var(--white);
+    border: none;
+    padding: 13px;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    transition: background .2s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .modal-btn-primary:hover {
+    background: var(--dark-hover);
+    color: var(--white);
+  }
+
+  .modal-btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: #777;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    transition: border-color .2s, color .2s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .modal-btn-secondary:hover {
+    border-color: var(--dark);
+    color: var(--dark);
   }
 </style>
 </head>
 
 <body class="d-flex flex-column min-vh-100">
 
+<!-- MODAL: Account Pending -->
+<div class="modal-overlay" id="modalPending">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon-wrap orange">
+        <i class="fa-solid fa-clock"></i>
+      </div>
+      <div class="modal-title">Account Pending Verification</div>
+      <p class="modal-desc">
+        Your account has been registered but is currently awaiting verification by a barangay administrator. You will be able to log in once your account has been approved.
+      </p>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-footer">
+      <a href="login.php" class="modal-btn-primary">
+        <i class="fa-solid fa-arrow-left"></i> Back to Login
+      </a>
+      <a href="home.html" class="modal-btn-secondary">
+        <i class="fa-solid fa-house"></i> Go to Home
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Google Account Not Found -->
+<div class="modal-overlay" id="modalNoGoogle">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon-wrap blue">
+        <i class="fa-brands fa-google"></i>
+      </div>
+      <div class="modal-title">No Account Found</div>
+      <p class="modal-desc">
+        The Google account you used is not linked to any Barangay Alapan 1-A profile. Please register first before signing in with Google.
+      </p>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-footer">
+      <a href="register.php" class="modal-btn-primary">
+        <i class="fa-solid fa-user-plus"></i> Create an Account
+      </a>
+      <a href="login.php" class="modal-btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Back to Login
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Database Connection Error -->
+<div class="modal-overlay" id="modalDbError">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon-wrap red">
+        <i class="fa-solid fa-server"></i>
+      </div>
+      <div class="modal-title">Service Unavailable</div>
+      <p class="modal-desc">
+        We were unable to connect to the database at this time. Please try again in a few moments or contact the barangay administrator if the problem persists.
+      </p>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-footer">
+      <a href="login.php" class="modal-btn-primary">
+        <i class="fa-solid fa-rotate-right"></i> Try Again
+      </a>
+      <a href="home.html" class="modal-btn-secondary">
+        <i class="fa-solid fa-house"></i> Go to Home
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Registration Successful -->
+<div class="modal-overlay" id="modalRegistered">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div class="modal-icon-wrap" style="background:rgba(204,255,0,0.15);border:2px solid var(--lime);">
+        <i class="fa-solid fa-circle-check" style="color:var(--dark);"></i>
+      </div>
+      <div class="modal-title">Account Created!</div>
+      <p class="modal-desc">
+        Your account has been successfully created and is now <strong>pending review</strong> by a barangay administrator. You will be notified once your account is approved and ready to use.
+      </p>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-footer">
+      <a href="login.php" class="modal-btn-primary">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+      </a>
+      <a href="home.html" class="modal-btn-secondary">
+        <i class="fa-solid fa-house"></i> Go to Home
+      </a>
+    </div>
+  </div>
+</div>
+
 <nav class="site-nav">
   <div class="container">
     <div class="d-flex align-items-center justify-content-between">
       <a href="home.html" class="d-flex align-items-center gap-2 text-decoration-none">
         <div class="nav-seal">
-          <img src="alapan.png" alt="Barangay Alapan Logo">
+          <img src="alapan.png" alt="Barangay Alapan 1-A Logo">
         </div>
-
         <div>
           <span class="nav-brgy">Barangay</span>
-          <span class="nav-name">BarangayKonek</span>
+          <span class="nav-name">Alapan 1-A</span>
         </div>
       </a>
-
       <a href="home.html" class="nav-back">
         <i class="fa-solid fa-arrow-left me-1"></i>Back to Home
       </a>
@@ -367,10 +629,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Login with your username to access barangay services and submit requests online.
       </p>
 
-      <?php if(isset($error)): ?>
+      <?php if ($error !== null): ?>
       <div class="alert-err">
         <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
-        <span><?php echo $error; ?></span>
+        <span><?php echo htmlspecialchars($error); ?></span>
       </div>
       <?php endif; ?>
 
@@ -379,7 +641,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label class="field-label" for="username">
             <i class="fa-solid fa-user"></i>Username
           </label>
-
           <input
             type="text"
             class="field-input"
@@ -391,23 +652,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
         </div>
 
-        <div class="mb-2">
+        <div class="mb-0">
           <label class="field-label" for="password">
             <i class="fa-solid fa-lock"></i>Password
           </label>
-
-          <input
-            type="password"
-            class="field-input"
-            id="password"
-            name="password"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
+          <div class="password-wrapper">
+            <input
+              type="password"
+              class="field-input"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye" id="toggleIcon"></i>
+            </button>
+          </div>
         </div>
 
-        <div class="mb-4 text-end">
+        <div class="forgot-row">
           <a href="forgotpassword.php" class="forgot-link">
             <i class="fa-solid fa-key me-1"></i>Forgot password?
           </a>
@@ -436,10 +701,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-note">
       <i class="fa-solid fa-shield-halved"></i>
-      BarangayKonek &middot; Official Portal &middot; 2026
+      Barangay Alapan 1-A &middot; Official Portal &middot; 2026
     </div>
   </div>
 </div>
+
+<script>
+  var toggleBtn  = document.getElementById('togglePassword');
+  var passwordEl = document.getElementById('password');
+  var toggleIcon = document.getElementById('toggleIcon');
+
+  toggleBtn.addEventListener('click', function() {
+    if (passwordEl.type === 'password') {
+      passwordEl.type = 'text';
+      toggleIcon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+      passwordEl.type = 'password';
+      toggleIcon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+  });
+
+  var urlError = <?php echo json_encode($urlError); ?>;
+  var dbError  = <?php echo json_encode($dbError); ?>;
+
+  if (dbError) {
+    document.getElementById('modalDbError').classList.add('active');
+  } else if (urlError === 'pending') {
+    document.getElementById('modalPending').classList.add('active');
+  } else if (urlError === 'no_google_account') {
+    document.getElementById('modalNoGoogle').classList.add('active');
+  } else if (new URLSearchParams(window.location.search).get('registered') === '1') {
+    document.getElementById('modalRegistered').classList.add('active');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+        if (window.location.search) {
+          window.history.replaceState({}, document.title, 'login.php');
+        }
+      }
+    });
+  });
+</script>
 
 </body>
 </html>

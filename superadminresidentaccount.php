@@ -53,15 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        /* Try to fetch proof of residency separately — graceful if column doesn't exist yet */
-        $proofPath = '';
-        $proofStmt = sqlsrv_query($conn,
-            "SELECT PROOF_OF_RESIDENCY FROM REGISTRATION WHERE USER_ID = ?", [$targetId]);
-        if ($proofStmt) {
-            $proofRow = sqlsrv_fetch_array($proofStmt, SQLSRV_FETCH_ASSOC);
-            if ($proofRow) $proofPath = rtrim($proofRow['PROOF_OF_RESIDENCY'] ?? '');
-        }
-
         function nullOrDash($val) {
             $v = rtrim($val ?? '');
             return $v === '' ? '——' : $v;
@@ -114,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'idType'     => nullOrDash($row['ID_TYPE']),
             'idPhoto'         => rtrim($row['ID_PHOTO_PATH']   ?? ''),
             'profilePic'      => rtrim($row['PROFILE_PICTURE'] ?? ''),
-            'proofOfResidency'=> $proofPath,
             'status'     => strtolower(rtrim($row['STATUS'] ?? '')),
             'registered' => $regDate,
             'lastLogin'  => $lastLogin,
@@ -186,8 +176,16 @@ $residents = [];
 if ($residentResult) { while ($r = sqlsrv_fetch_array($residentResult, SQLSRV_FETCH_ASSOC)) { $residents[] = $r; } }
 
 $pendingCount = 0;
-$r = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND STATUS = 'pending'");
-if ($r) { $row = sqlsrv_fetch_array($r, SQLSRV_FETCH_ASSOC); $pendingCount = (int)$row['CNT']; }
+$pcStmt = sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM USERS WHERE ROLE = 'resident' AND LTRIM(RTRIM(STATUS)) = 'pending'");
+if ($pcStmt) {
+    $pcRow = sqlsrv_fetch_array($pcStmt, SQLSRV_FETCH_ASSOC);
+    $pendingCount = (int)($pcRow['CNT'] ?? 0);
+}
+if ($pendingCount === 0) {
+    foreach ($residents as $_r) {
+        if (strtolower(trim($_r['STATUS'] ?? '')) === 'pending') $pendingCount++;
+    }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -541,13 +539,6 @@ function renderModal(d) {
           dv('ID Type', d.idType) +
         '</div>' +
         idPhotoHtml +
-      '</div>' +
-
-      '<div class="modal-section-block">' +
-        '<div class="modal-section-title">Proof of Residency</div>' +
-        (d.proofOfResidency
-          ? '<img src="' + escH(d.proofOfResidency) + '" alt="Proof of Residency" class="id-photo-img" style="margin-top:6px;">'
-          : '<div class="id-photo-none" style="margin-top:6px;"><i class="fa-solid fa-house"></i>\u2002No proof of residency provided</div>') +
       '</div>' +
 
     '</div>';

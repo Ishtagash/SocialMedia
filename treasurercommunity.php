@@ -1,2097 +1,1167 @@
+<?php
+session_start();
+if (
+    !isset($_SESSION['user_id']) ||
+    $_SESSION['role'] !== 'staff' ||
+    strtolower(trim($_SESSION['position'] ?? '')) !== 'treasurer'
+) {
+    header("Location: login.php"); exit();
+}
+
+$serverName        = "LAPTOP-8KOIBQER\SQLEXPRESS";
+$connectionOptions = ["Database" => "SocialMedia", "Uid" => "", "PWD" => "", "CharacterSet" => "UTF-8"];
+$conn              = sqlsrv_connect($serverName, $connectionOptions);
+
+$userId = $_SESSION['user_id'];
+
+$meRow = sqlsrv_fetch_array(
+    sqlsrv_query($conn, "SELECT R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE FROM REGISTRATION R WHERE R.USER_ID = ?", [$userId]),
+    SQLSRV_FETCH_ASSOC
+);
+$firstName = $meRow ? htmlspecialchars(rtrim($meRow['FIRST_NAME'])) : 'Treasurer';
+$lastName  = $meRow ? htmlspecialchars(rtrim($meRow['LAST_NAME']))  : '';
+$fullName  = trim("$firstName $lastName");
+$gender    = $meRow ? strtolower(rtrim($meRow['GENDER'] ?? '')) : '';
+
+if ($meRow && !empty($meRow['PROFILE_PICTURE'])) {
+    $profilePicture = htmlspecialchars($meRow['PROFILE_PICTURE']);
+} elseif ($gender === 'male')   { $profilePicture = 'default/male.png'; }
+elseif ($gender === 'female')   { $profilePicture = 'default/female.png'; }
+else                             { $profilePicture = 'default/neutral.png'; }
+
+$initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+
+function resolveAvatar($profilePic, $gdr) {
+    if (!empty($profilePic)) return htmlspecialchars($profilePic);
+    $g = strtolower(trim($gdr ?? ''));
+    if ($g === 'male')   return 'default/male.png';
+    if ($g === 'female') return 'default/female.png';
+    return 'default/neutral.png';
+}
+
+/* ── HANDLE ACTIONS ── */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $action = rtrim($_POST['action']);
+
+    if ($action === 'post') {
+        $body     = trim($_POST['body'] ?? '');
+        $hasFiles = !empty($_FILES['post_images']['name'][0]);
+        if (!empty($body) || $hasFiles) {
+            $insertPost = sqlsrv_query($conn,
+                "INSERT INTO POSTS (USER_ID, BODY, CREATED_AT) VALUES (?, ?, GETDATE())",
+                [$userId, $body]);
+            if ($insertPost !== false) {
+                $newPostRow = sqlsrv_fetch_array(
+                    sqlsrv_query($conn, "SELECT TOP 1 POST_ID FROM POSTS WHERE USER_ID = ? ORDER BY CREATED_AT DESC", [$userId]),
+                    SQLSRV_FETCH_ASSOC
+                );
+                $newPostId = $newPostRow ? (int)$newPostRow['POST_ID'] : 0;
+                if ($newPostId && $hasFiles) {
+                    $uploadDir = 'uploads/posts/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+                    for ($i = 0; $i < count($_FILES['post_images']['name']); $i++) {
+                        if ($_FILES['post_images']['error'][$i] === 0) {
+                            $ext      = pathinfo($_FILES['post_images']['name'][$i], PATHINFO_EXTENSION);
+                            $savePath = $uploadDir . uniqid('post_') . '.' . $ext;
+                            if (move_uploaded_file($_FILES['post_images']['tmp_name'][$i], $savePath)) {
+                                sqlsrv_query($conn,
+                                    "INSERT INTO POST_IMAGES (POST_ID, IMAGE_PATH, CREATED_AT) VALUES (?, ?, GETDATE())",
+                                    [$newPostId, $savePath]);
+                            }
+                        }
+                    }
+                }
+                sqlsrv_query($conn,
+                    "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'CREATE_POST', 'Treasurer created a community post', GETDATE())",
+                    [$userId]);
+            }
+        }
+        header("Location: treasurercommunity.php"); exit();
+    }
+
+    if ($action === 'read_notif' && isset($_POST['notif_id'])) {
+        $notifId = (int)$_POST['notif_id'];
+        sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE NOTIFICATION_ID = ? AND USER_ID = ?", [$notifId, $userId]);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]); exit();
+        }
+        $refId  = isset($_POST['ref_id']) ? (int)$_POST['ref_id'] : 0;
+        $anchor = $refId > 0 ? '#post-' . $refId : '';
+        header("Location: treasurercommunity.php" . $anchor); exit();
+    }
+
+    if ($action === 'get_post_modal' && isset($_POST['post_id'])) {
+        $pid = (int)$_POST['post_id'];
+        header('Content-Type: application/json');
+        $pRow = sqlsrv_fetch_array(
+            sqlsrv_query($conn,
+                "SELECT P.POST_ID, P.BODY, P.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE, P.USER_ID AS POSTER_ID
+                 FROM POSTS P JOIN REGISTRATION R ON P.USER_ID = R.USER_ID WHERE P.POST_ID = ?", [$pid]),
+            SQLSRV_FETCH_ASSOC
+        );
+        if (!$pRow) { echo json_encode(['ok'=>false]); exit(); }
+        $imgs = [];
+        $iStmt = sqlsrv_query($conn, "SELECT IMAGE_PATH FROM POST_IMAGES WHERE POST_ID = ? ORDER BY CREATED_AT ASC", [$pid]);
+        while ($ir = sqlsrv_fetch_array($iStmt, SQLSRV_FETCH_ASSOC)) $imgs[] = $ir['IMAGE_PATH'];
+        $coms = [];
+        $cStmt = sqlsrv_query($conn,
+            "SELECT C.BODY, C.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE
+             FROM COMMENTS C JOIN REGISTRATION R ON C.USER_ID = R.USER_ID
+             WHERE C.POST_ID = ? ORDER BY C.CREATED_AT ASC", [$pid]);
+        while ($cr = sqlsrv_fetch_array($cStmt, SQLSRV_FETCH_ASSOC)) {
+            $coms[] = [
+                'body'   => rtrim($cr['BODY']),
+                'time'   => $cr['CREATED_AT']->format('M d, Y g:i A'),
+                'name'   => htmlspecialchars(rtrim($cr['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($cr['LAST_NAME'])),
+                'avatar' => resolveAvatar($cr['PROFILE_PICTURE'], $cr['GENDER']),
+            ];
+        }
+        $reactSumStmt = sqlsrv_query($conn,
+            "SELECT REACTION_TYPE, COUNT(*) AS CNT FROM LIKES WHERE POST_ID = ? GROUP BY REACTION_TYPE ORDER BY CNT DESC", [$pid]);
+        $reactSum = [];
+        while ($rr = sqlsrv_fetch_array($reactSumStmt, SQLSRV_FETCH_ASSOC)) $reactSum[] = ['type'=>rtrim($rr['REACTION_TYPE']),'cnt'=>(int)$rr['CNT']];
+        $gdr    = strtolower(trim($pRow['GENDER'] ?? ''));
+        $avatar = resolveAvatar($pRow['PROFILE_PICTURE'], $gdr);
+        echo json_encode([
+            'ok'       => true, 'post_id' => $pid,
+            'name'     => htmlspecialchars(rtrim($pRow['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($pRow['LAST_NAME'])),
+            'body'     => rtrim($pRow['BODY']),
+            'time'     => $pRow['CREATED_AT']->format('M d, Y \• g:i A'),
+            'avatar'   => $avatar, 'images' => $imgs, 'comments' => $coms, 'reactions' => $reactSum,
+        ]); exit();
+    }
+
+    if ($action === 'mark_all_read') {
+        sqlsrv_query($conn, "UPDATE NOTIFICATIONS SET IS_READ = 1 WHERE USER_ID = ?", [$userId]);
+        header("Location: treasurercommunity.php"); exit();
+    }
+
+    if ($action === 'flag_post' && !empty($_POST['post_id'])) {
+        $pid = (int)$_POST['post_id'];
+        sqlsrv_query($conn,
+            "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'FLAG_POST', ?, GETDATE())",
+            [$userId, "Treasurer flagged Post #$pid"]);
+        header("Location: treasurercommunity.php"); exit();
+    }
+
+    if ($action === 'logout') {
+        sqlsrv_query($conn,
+            "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'LOGOUT', 'Treasurer logged out', GETDATE())",
+            [$userId]);
+        session_destroy();
+        header("Location: login.php"); exit();
+    }
+}
+
+/* ── PENDING BADGE ── */
+$pendingRow = sqlsrv_fetch_array(
+    sqlsrv_query($conn,
+        "SELECT COUNT(*) AS CNT FROM DOCUMENT_REQUESTS DR
+         WHERE DR.STATUS = 'APPROVED'
+           AND NOT EXISTS (SELECT 1 FROM PAYMENTS P WHERE P.REQUEST_ID = DR.REQUEST_ID AND P.PAYMENT_STATUS IN ('PAID','WAIVED'))"),
+    SQLSRV_FETCH_ASSOC
+);
+$pendingPaymentCount = $pendingRow ? (int)$pendingRow['CNT'] : 0;
+
+/* ── NOTIFICATIONS ── */
+$unreadRow = sqlsrv_fetch_array(
+    sqlsrv_query($conn, "SELECT COUNT(*) AS CNT FROM NOTIFICATIONS WHERE USER_ID = ? AND IS_READ = 0", [$userId]),
+    SQLSRV_FETCH_ASSOC
+);
+$unreadCount = $unreadRow ? (int)$unreadRow['CNT'] : 0;
+
+$notifStmt = sqlsrv_query($conn,
+    "SELECT TOP 15 N.NOTIFICATION_ID, N.MESSAGE, N.TYPE, N.IS_READ, N.CREATED_AT, N.REFERENCE_ID
+     FROM NOTIFICATIONS N WHERE N.USER_ID = ? ORDER BY N.CREATED_AT DESC", [$userId]);
+$notifications = [];
+while ($row = sqlsrv_fetch_array($notifStmt, SQLSRV_FETCH_ASSOC)) {
+    $refId = $row['REFERENCE_ID'] ? (int)$row['REFERENCE_ID'] : 0;
+    $postPreview = null;
+    if ($refId > 0 && in_array(rtrim($row['TYPE']), ['LIKE','COMMENT'])) {
+        $prevRow = sqlsrv_fetch_array(
+            sqlsrv_query($conn,
+                "SELECT P.BODY,
+                    (SELECT COUNT(*) FROM LIKES L WHERE L.POST_ID = P.POST_ID) AS LIKE_COUNT,
+                    (SELECT COUNT(*) FROM COMMENTS C WHERE C.POST_ID = P.POST_ID) AS COMMENT_COUNT,
+                    (SELECT TOP 1 IMAGE_PATH FROM POST_IMAGES WHERE POST_ID = P.POST_ID ORDER BY CREATED_AT ASC) AS THUMB
+                 FROM POSTS P WHERE P.POST_ID = ?", [$refId]),
+            SQLSRV_FETCH_ASSOC
+        );
+        if ($prevRow) $postPreview = $prevRow;
+    }
+    $row['POST_PREVIEW'] = $postPreview;
+    $notifications[] = $row;
+}
+
+/* ── POSTS ── */
+$postsStmt = sqlsrv_query($conn,
+    "SELECT P.POST_ID, P.USER_ID AS POSTER_ID, P.BODY, P.CREATED_AT,
+            R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE,
+            (SELECT COUNT(*) FROM LIKES L WHERE L.POST_ID = P.POST_ID) AS REACT_COUNT,
+            (SELECT COUNT(*) FROM COMMENTS C WHERE C.POST_ID = P.POST_ID) AS COMMENT_COUNT,
+            (SELECT TOP 1 REACTION_TYPE FROM LIKES WHERE POST_ID = P.POST_ID AND USER_ID = ?) AS MY_REACTION
+     FROM POSTS P JOIN REGISTRATION R ON P.USER_ID = R.USER_ID
+     ORDER BY P.CREATED_AT DESC", [$userId]);
+$posts = [];
+while ($row = sqlsrv_fetch_array($postsStmt, SQLSRV_FETCH_ASSOC)) $posts[] = $row;
+
+/* ── ANNOUNCEMENTS ── */
+$annsStmt = sqlsrv_query($conn,
+    "SELECT TOP 5 TITLE, BODY, CREATED_AT FROM ANNOUNCEMENTS WHERE IS_ACTIVE = 1 ORDER BY CREATED_AT DESC");
+$announcements = [];
+while ($row = sqlsrv_fetch_array($annsStmt, SQLSRV_FETCH_ASSOC)) $announcements[] = $row;
+
+$imageExts    = ['jpg','jpeg','png','gif','webp','bmp'];
+$reactionMeta = [
+    'LIKE'  => ['icon'=>'fa-solid fa-thumbs-up',    'label'=>'Like',  'color'=>'#1877f2'],
+    'LOVE'  => ['icon'=>'fa-solid fa-heart',         'label'=>'Love',  'color'=>'#f33e58'],
+    'HAHA'  => ['icon'=>'fa-solid fa-face-laugh',    'label'=>'Haha',  'color'=>'#f7b125'],
+    'WOW'   => ['icon'=>'fa-solid fa-face-surprise', 'label'=>'Wow',   'color'=>'#f7b125'],
+    'SAD'   => ['icon'=>'fa-solid fa-face-sad-tear', 'label'=>'Sad',   'color'=>'#f7b125'],
+    'ANGRY' => ['icon'=>'fa-solid fa-face-angry',    'label'=>'Angry', 'color'=>'#e9710f'],
+];
+?>
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Treasurer Community — BarangayKonek</title>
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
-
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    />
-
-    <style>
-      :root {
-        --navy: #051650;
-        --navy-mid: #0a2160;
-        --lime: #ccff00;
-
-        --surface: #ffffff;
-        --soft-bg: #f8fafc;
-        --page-bg: #eef3fb;
-        --border: #e3e7f0;
-
-        --text: #1a2240;
-        --text-muted: #7a869a;
-
-        --sidebar-w: 228px;
-        --sidebar-mini: 64px;
-        --topbar-h: 62px;
-
-        --green-bg: #f0fdf4;
-        --green-text: #166534;
-
-        --blue-bg: #eff6ff;
-        --blue-text: #1e40af;
-
-        --amber-bg: #fffbeb;
-        --amber-text: #92400e;
-
-        --red-bg: #fef2f2;
-        --red-text: #991b1b;
-
-        --shadow-light: 0 8px 24px rgba(5, 22, 80, 0.08);
-        --shadow-hover: 0 16px 34px rgba(5, 22, 80, 0.13);
-        --shadow-sidebar: 6px 0 18px rgba(5, 22, 80, 0.14);
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        font-family: "DM Sans", sans-serif;
-        background:
-          radial-gradient(
-            circle at top left,
-            rgba(204, 255, 0, 0.1),
-            transparent 32%
-          ),
-          linear-gradient(135deg, #f8fbff 0%, #eef3fb 100%);
-        color: var(--text);
-        min-height: 100vh;
-        overflow-x: hidden;
-      }
-
-      a {
-        text-decoration: none;
-      }
-
-      button,
-      input,
-      textarea,
-      select {
-        font-family: inherit;
-      }
-
-      @keyframes treasurercommunityFadeUp {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes treasurercommunityBellShake {
-        0%,
-        100% {
-          transform: rotate(0deg);
-        }
-
-        20% {
-          transform: rotate(14deg);
-        }
-
-        40% {
-          transform: rotate(-12deg);
-        }
-
-        60% {
-          transform: rotate(8deg);
-        }
-
-        80% {
-          transform: rotate(-6deg);
-        }
-      }
-
-      .treasurercommunity-page {
-        display: flex;
-        min-height: 100vh;
-      }
-
-      .treasurercommunity-sidebar {
-        width: var(--sidebar-w);
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 40;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        background:
-          radial-gradient(
-            circle at top left,
-            rgba(204, 255, 0, 0.14),
-            transparent 28%
-          ),
-          linear-gradient(180deg, #051650 0%, #081d63 56%, #040f3b 100%);
-        box-shadow: var(--shadow-sidebar);
-        transition: width 0.25s ease;
-      }
-
-      .treasurercommunity-sidebar.mini {
-        width: var(--sidebar-mini);
-      }
-
-      .treasurercommunity-toggle-wrap {
-        position: fixed;
-        top: 50%;
-        left: var(--sidebar-w);
-        transform: translate(-50%, -50%);
-        z-index: 200;
-        transition: left 0.25s ease;
-      }
-
-      .treasurercommunity-toggle-wrap.mini {
-        left: var(--sidebar-mini);
-      }
-
-      .treasurercommunity-toggle-btn {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        box-shadow: 0 5px 12px rgba(5, 22, 80, 0.18);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        padding: 0;
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .treasurercommunity-toggle-btn:hover {
-        background: var(--lime);
-        border-color: var(--lime);
-        transform: scale(1.05);
-      }
-
-      .treasurercommunity-toggle-btn i {
-        font-size: 10px;
-        color: var(--navy);
-        transition: transform 0.25s ease;
-      }
-
-      .treasurercommunity-toggle-wrap.mini .treasurercommunity-toggle-btn i {
-        transform: rotate(180deg);
-      }
-
-      .treasurercommunity-identity {
-        height: var(--topbar-h);
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 0 15px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        white-space: nowrap;
-        overflow: hidden;
-      }
-
-      .treasurercommunity-identity-logo {
-        width: 38px;
-        height: 38px;
-        border-radius: 14px;
-        overflow: hidden;
-        flex-shrink: 0;
-        background: rgba(255, 255, 255, 0.12);
-      }
-
-      .treasurercommunity-identity-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .treasurercommunity-identity-name {
-        font-size: 14px;
-        font-weight: 800;
-        color: #ffffff;
-        line-height: 1.2;
-      }
-
-      .treasurercommunity-identity-chip {
-        display: inline-flex;
-        align-items: center;
-        margin-top: 5px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 11px;
-        font-weight: 800;
-        line-height: 1;
-      }
-
-      .treasurercommunity-sidebar.mini .treasurercommunity-identity-name,
-      .treasurercommunity-sidebar.mini .treasurercommunity-identity-chip {
-        opacity: 0;
-        width: 0;
-        pointer-events: none;
-      }
-
-      .treasurercommunity-sidebar.mini .treasurercommunity-identity-logo {
-        margin: 0 auto;
-      }
-
-      .treasurercommunity-menu {
-        flex: 1;
-        padding: 16px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-
-      .treasurercommunity-menu-divider {
-        height: 1px;
-        background: rgba(255, 255, 255, 0.08);
-        margin: 8px;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-menu-link {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 13px;
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.66);
-        cursor: pointer;
-        white-space: nowrap;
-        overflow: hidden;
-        flex-shrink: 0;
-        text-decoration: none;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .treasurercommunity-menu-link:hover {
-        background: rgba(255, 255, 255, 0.09);
-        color: #ffffff;
-        transform: translateX(3px);
-      }
-
-      .treasurercommunity-menu-link.active {
-        background: var(--lime);
-        color: var(--navy);
-      }
-
-      .treasurercommunity-menu-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-      }
-
-      .treasurercommunity-menu-left i {
-        width: 18px;
-        text-align: center;
-        font-size: 13px;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-menu-label {
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .treasurercommunity-sidebar.mini .treasurercommunity-menu-label {
-        opacity: 0;
-        width: 0;
-        pointer-events: none;
-      }
-
-      .treasurercommunity-menu-count {
-        font-size: 10px;
-        font-weight: 800;
-        background: rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.85);
-        min-width: 22px;
-        height: 22px;
-        padding: 0 6px;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-menu-link.active .treasurercommunity-menu-count {
-        background: rgba(5, 22, 80, 0.18);
-        color: var(--navy);
-      }
-
-      .treasurercommunity-sidebar.mini .treasurercommunity-menu-count {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .treasurercommunity-sidebar-footer {
-        padding: 13px 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .treasurercommunity-logout {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 11px 13px;
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.46);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        width: 100%;
-        text-align: left;
-        white-space: nowrap;
-        text-decoration: none;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .treasurercommunity-logout:hover {
-        background: rgba(239, 68, 68, 0.14);
-        color: #fca5a5;
-        transform: translateX(3px);
-      }
-
-      .treasurercommunity-main {
-        margin-left: var(--sidebar-w);
-        flex: 1;
-        min-height: 100vh;
-        min-width: 0;
-        transition: margin-left 0.25s ease;
-      }
-
-      .treasurercommunity-main.shifted {
-        margin-left: var(--sidebar-mini);
-      }
-
-      .treasurercommunity-topbar {
-        height: var(--topbar-h);
-        background: #ffffff;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 0 24px;
-        position: sticky;
-        top: 0;
-        z-index: 30;
-      }
-
-      .treasurercommunity-topbar-search {
-        flex: 1;
-        max-width: 390px;
-        height: 38px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 14px;
-        background: var(--soft-bg);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease;
-      }
-
-      .treasurercommunity-topbar-search:focus-within {
-        border-color: var(--navy);
-        background: #ffffff;
-      }
-
-      .treasurercommunity-topbar-search i {
-        color: var(--text-muted);
-        font-size: 12px;
-      }
-
-      .treasurercommunity-topbar-search input {
-        flex: 1;
-        border: none;
-        outline: none;
-        background: transparent;
-        font-size: 13px;
-        color: var(--text);
-      }
-
-      .treasurercommunity-topbar-right {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .treasurercommunity-notification-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
-        background: var(--soft-bg);
-        border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-muted);
-        font-size: 13px;
-        cursor: pointer;
-        position: relative;
-        transition:
-          border-color 0.18s ease,
-          color 0.18s ease,
-          background 0.18s ease;
-      }
-
-      .treasurercommunity-notification-btn:hover {
-        border-color: var(--navy);
-        color: var(--navy);
-        background: #ffffff;
-      }
-
-      .treasurercommunity-notification-btn:hover i {
-        animation: treasurercommunityBellShake 0.55s ease;
-      }
-
-      .treasurercommunity-notification-count {
-        position: absolute;
-        top: -6px;
-        right: -5px;
-        min-width: 17px;
-        height: 17px;
-        padding: 0 5px;
-        border-radius: 999px;
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 10px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .treasurercommunity-profile {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 5px 13px 5px 5px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--soft-bg);
-        cursor: pointer;
-        transition:
-          border-color 0.18s ease,
-          background 0.18s ease;
-      }
-
-      .treasurercommunity-profile:hover {
-        border-color: var(--navy);
-        background: #ffffff;
-      }
-
-      .treasurercommunity-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
-        background: var(--navy);
-        color: var(--lime);
-        font-size: 10px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-profile-name {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--navy);
-        white-space: nowrap;
-      }
-
-      .treasurercommunity-profile-role {
-        font-size: 11px;
-        color: var(--text-muted);
-        line-height: 1;
-      }
-
-      .treasurercommunity-body {
-        padding: 24px 26px 44px;
-      }
-
-      .treasurercommunity-page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 18px;
-        animation: treasurercommunityFadeUp 0.28s ease both;
-      }
-
-      .treasurercommunity-page-title h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .treasurercommunity-page-title p {
-        margin: 6px 0 0;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-muted);
-      }
-
-      .treasurercommunity-page-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .treasurercommunity-btn {
-        min-height: 38px;
-        padding: 0 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 800;
-        border: 1px solid transparent;
-        cursor: pointer;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        position: relative;
-        overflow: hidden;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-btn::after,
-      .treasurercommunity-action-btn::after,
-      .treasurercommunity-tool-btn::after,
-      .treasurercommunity-post-menu-btn::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.22);
-        opacity: 0;
-        transition: opacity 0.18s ease;
-        pointer-events: none;
-      }
-
-      .treasurercommunity-btn:hover,
-      .treasurercommunity-action-btn:hover,
-      .treasurercommunity-tool-btn:hover,
-      .treasurercommunity-post-menu-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.12);
-      }
-
-      .treasurercommunity-btn:hover::after,
-      .treasurercommunity-action-btn:hover::after,
-      .treasurercommunity-tool-btn:hover::after,
-      .treasurercommunity-post-menu-btn:hover::after {
-        opacity: 1;
-      }
-
-      .treasurercommunity-btn:active,
-      .treasurercommunity-action-btn:active,
-      .treasurercommunity-tool-btn:active,
-      .treasurercommunity-post-menu-btn:active {
-        transform: translateY(0);
-        box-shadow: none;
-      }
-
-      .treasurercommunity-btn-navy {
-        background: var(--navy);
-        border-color: var(--navy);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-btn-navy:hover {
-        background: var(--lime);
-        border-color: var(--lime);
-        color: var(--navy);
-      }
-
-      .treasurercommunity-btn-soft {
-        background: #ffffff;
-        border-color: var(--border);
-        color: var(--navy);
-      }
-
-      .treasurercommunity-btn-soft:hover {
-        background: var(--navy);
-        border-color: var(--navy);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-card {
-        background: #ffffff;
-        border: 1px solid var(--border);
-        border-radius: 28px;
-        box-shadow: var(--shadow-light);
-        animation: treasurercommunityFadeUp 0.28s ease both;
-        transition:
-          box-shadow 0.2s ease,
-          transform 0.2s ease,
-          border-color 0.2s ease;
-      }
-
-      .treasurercommunity-card:hover {
-        box-shadow: var(--shadow-hover);
-        transform: translateY(-2px);
-        border-color: #d7deea;
-      }
-
-      .treasurercommunity-composer {
-        padding: 18px;
-        margin-bottom: 16px;
-      }
-
-      .treasurercommunity-composer-top {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .treasurercommunity-composer-avatar,
-      .treasurercommunity-post-avatar,
-      .treasurercommunity-comment-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
-        background: var(--navy);
-        color: var(--lime);
-        font-size: 12px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-composer-input {
-        flex: 1;
-        min-height: 44px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--soft-bg);
-        color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
-        cursor: pointer;
-        transition:
-          border-color 0.18s ease,
-          background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .treasurercommunity-composer-input:hover {
-        border-color: var(--navy);
-        background: #ffffff;
-        color: var(--navy);
-        transform: translateY(-1px);
-      }
-
-      .treasurercommunity-composer-actions {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-        padding-top: 14px;
-        margin-top: 14px;
-        border-top: 1px solid var(--border);
-      }
-
-      .treasurercommunity-tool-btn {
-        min-height: 36px;
-        padding: 0 13px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--soft-bg);
-        color: var(--text-muted);
-        font-size: 12px;
-        font-weight: 800;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-tool-btn:hover {
-        background: var(--navy);
-        color: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-post {
-        padding: 20px;
-        margin-bottom: 16px;
-      }
-
-      .treasurercommunity-post-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .treasurercommunity-post-user {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-      }
-
-      .treasurercommunity-post-name {
-        display: block;
-        font-size: 14px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .treasurercommunity-post-meta {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
-      }
-
-      .treasurercommunity-post-options {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-post-menu-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--soft-bg);
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-post-menu-btn:hover {
-        background: var(--navy);
-        color: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-dropdown-menu {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        box-shadow: 0 12px 28px rgba(5, 22, 80, 0.14);
-        padding: 8px;
-      }
-
-      .treasurercommunity-dropdown-item {
-        border-radius: 12px;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text);
-        padding: 9px 11px;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-      }
-
-      .treasurercommunity-dropdown-item:hover {
-        background: var(--soft-bg);
-        color: var(--navy);
-      }
-
-      .treasurercommunity-dropdown-item.flag {
-        color: var(--red-text);
-      }
-
-      .treasurercommunity-dropdown-item.flag:hover {
-        background: var(--red-bg);
-        color: var(--red-text);
-      }
-
-      .treasurercommunity-post-tag {
-        display: inline-flex;
-        align-items: center;
-        min-height: 28px;
-        padding: 0 11px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 800;
-        background: var(--green-bg);
-        color: var(--green-text);
-      }
-
-      .treasurercommunity-post-tag.resident {
-        background: var(--blue-bg);
-        color: var(--blue-text);
-      }
-
-      .treasurercommunity-post-tag.review {
-        background: var(--amber-bg);
-        color: var(--amber-text);
-      }
-
-      .treasurercommunity-post-text {
-        font-size: 13px;
-        color: var(--text);
-        line-height: 1.6;
-        margin-bottom: 14px;
-      }
-
-      .treasurercommunity-post-gallery {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 14px;
-      }
-
-      .treasurercommunity-post-photo {
-        min-height: 150px;
-        border-radius: 22px;
-        background:
-          linear-gradient(
-            135deg,
-            rgba(5, 22, 80, 0.08),
-            rgba(204, 255, 0, 0.12)
-          ),
-          #f3f6fb;
-        border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 800;
-        transition:
-          transform 0.18s ease,
-          border-color 0.18s ease;
-      }
-
-      .treasurercommunity-post-photo:hover {
-        transform: scale(1.01);
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-post-summary {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 11px 0;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        color: var(--text-muted);
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .treasurercommunity-post-actions {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .treasurercommunity-action-btn {
-        min-height: 36px;
-        border: none;
-        border-radius: 999px;
-        background: var(--soft-bg);
-        color: var(--text-muted);
-        font-size: 12px;
-        font-weight: 800;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        position: relative;
-        overflow: hidden;
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-action-btn:hover {
-        background: var(--navy);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-action-btn.flag:hover {
-        background: var(--red-text);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-comment-box {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-top: 14px;
-      }
-
-      .treasurercommunity-comment-input {
-        flex: 1;
-        height: 38px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--soft-bg);
-        padding: 0 14px;
-        font-size: 13px;
-        outline: none;
-      }
-
-      .treasurercommunity-comment-input:focus {
-        background: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-widget {
-        padding: 20px;
-        margin-bottom: 16px;
-      }
-
-      .treasurercommunity-widget-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .treasurercommunity-widget-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .treasurercommunity-widget-link {
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .treasurercommunity-widget-link:hover {
-        color: var(--navy-mid);
-        text-decoration: underline;
-      }
-
-      .treasurercommunity-announcement-item,
-      .treasurercommunity-moderation-row,
-      .treasurercommunity-staff-row {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: var(--soft-bg);
-        padding: 13px;
-        margin-bottom: 10px;
-        transition:
-          background 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease;
-      }
-
-      .treasurercommunity-announcement-item:hover,
-      .treasurercommunity-moderation-row:hover,
-      .treasurercommunity-staff-row:hover {
-        background: #ffffff;
-        border-color: var(--navy);
-        transform: translateY(-1px);
-      }
-
-      .treasurercommunity-announcement-label {
-        display: inline-flex;
-        align-items: center;
-        min-height: 24px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: var(--green-bg);
-        color: var(--green-text);
-        font-size: 10px;
-        font-weight: 800;
-        margin-bottom: 8px;
-      }
-
-      .treasurercommunity-announcement-title {
-        display: block;
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--navy);
-        margin-bottom: 4px;
-      }
-
-      .treasurercommunity-announcement-text {
-        font-size: 12px;
-        color: var(--text-muted);
-        line-height: 1.45;
-        margin: 0;
-      }
-
-      .treasurercommunity-moderation-row,
-      .treasurercommunity-staff-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .treasurercommunity-moderation-label,
-      .treasurercommunity-staff-name {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text-muted);
-      }
-
-      .treasurercommunity-moderation-count {
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--navy);
-      }
-
-      .treasurercommunity-moderation-count.warning {
-        color: var(--red-text);
-      }
-
-      .treasurercommunity-online-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 999px;
-        background: #22c55e;
-        flex-shrink: 0;
-      }
-
-      .treasurercommunity-staff-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .treasurercommunity-modal-content {
-        border: none;
-        border-radius: 28px;
-        overflow: hidden;
-      }
-
-      .treasurercommunity-modal-header {
-        border-bottom: 1px solid var(--border);
-      }
-
-      .treasurercommunity-modal-textarea {
-        width: 100%;
-        min-height: 150px;
-        border: 1px solid var(--border);
-        border-radius: 22px;
-        background: var(--soft-bg);
-        resize: none;
-        outline: none;
-        padding: 14px;
-        font-size: 14px;
-        color: var(--text);
-      }
-
-      .treasurercommunity-modal-textarea:focus {
-        background: #ffffff;
-        border-color: var(--navy);
-      }
-
-      @media (max-width: 992px) {
-        .treasurercommunity-widgets-column {
-          margin-top: 16px;
-        }
-
-        .treasurercommunity-page-head {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .treasurercommunity-page-actions {
-          width: 100%;
-        }
-      }
-
-      @media (max-width: 780px) {
-        .treasurercommunity-sidebar {
-          width: var(--sidebar-mini);
-        }
-
-        .treasurercommunity-main {
-          margin-left: var(--sidebar-mini);
-        }
-
-        .treasurercommunity-toggle-wrap {
-          left: var(--sidebar-mini);
-        }
-
-        .treasurercommunity-identity-name,
-        .treasurercommunity-identity-chip,
-        .treasurercommunity-menu-label,
-        .treasurercommunity-menu-count {
-          opacity: 0;
-          width: 0;
-          pointer-events: none;
-        }
-
-        .treasurercommunity-body {
-          padding: 18px 14px 36px;
-        }
-
-        .treasurercommunity-topbar {
-          padding: 0 14px;
-        }
-
-        .treasurercommunity-profile-name,
-        .treasurercommunity-profile-role {
-          display: none;
-        }
-
-        .treasurercommunity-topbar-search {
-          max-width: none;
-        }
-
-        .treasurercommunity-post-gallery {
-          grid-template-columns: 1fr;
-        }
-
-        .treasurercommunity-post-actions {
-          grid-template-columns: 1fr;
-        }
-
-        .treasurercommunity-page-actions .treasurercommunity-btn {
-          width: 100%;
-        }
-
-        .treasurercommunity-comment-box {
-          align-items: stretch;
-        }
-
-        .treasurercommunity-comment-box .treasurercommunity-btn {
-          min-width: 70px;
-        }
-      }
-      .treasurercommunity-toggle-btn,
-      .treasurercommunity-menu-link,
-      .treasurercommunity-logout,
-      .treasurercommunity-topbar-search,
-      .treasurercommunity-notification-btn,
-      .treasurercommunity-profile,
-      .treasurercommunity-page-head,
-      .treasurercommunity-card,
-      .treasurercommunity-btn,
-      .treasurercommunity-tool-btn,
-      .treasurercommunity-action-btn,
-      .treasurercommunity-post-menu-btn,
-      .treasurercommunity-composer-input,
-      .treasurercommunity-post-photo,
-      .treasurercommunity-comment-input,
-      .treasurercommunity-announcement-item,
-      .treasurercommunity-moderation-row,
-      .treasurercommunity-staff-row,
-      .treasurercommunity-dropdown-item,
-      .treasurercommunity-modal-textarea {
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-toggle-btn:hover {
-        transform: scale(1.05);
-      }
-
-      .treasurercommunity-menu-link:hover,
-      .treasurercommunity-logout:hover {
-        transform: translateX(3px);
-      }
-
-      .treasurercommunity-topbar-search:focus-within,
-      .treasurercommunity-comment-input:focus,
-      .treasurercommunity-modal-textarea:focus {
-        box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.08);
-      }
-
-      .treasurercommunity-notification-btn:hover,
-      .treasurercommunity-profile:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
-      }
-
-      .treasurercommunity-card:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-hover);
-        border-color: #d7deea;
-      }
-
-      .treasurercommunity-composer-input:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.06);
-      }
-
-      .treasurercommunity-btn:hover,
-      .treasurercommunity-tool-btn:hover,
-      .treasurercommunity-action-btn:hover,
-      .treasurercommunity-post-menu-btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .treasurercommunity-btn-navy:hover {
-        background: var(--lime);
-        border-color: var(--lime);
-        color: var(--navy);
-        box-shadow: 0 8px 16px rgba(204, 255, 0, 0.18);
-      }
-
-      .treasurercommunity-btn-soft:hover,
-      .treasurercommunity-tool-btn:hover,
-      .treasurercommunity-action-btn:hover,
-      .treasurercommunity-post-menu-btn:hover {
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.08);
-      }
-
-      .treasurercommunity-post:hover .treasurercommunity-post-avatar,
-      .treasurercommunity-composer:hover .treasurercommunity-composer-avatar {
-        transform: scale(1.05);
-        box-shadow: 0 8px 16px rgba(5, 22, 80, 0.12);
-      }
-
-      .treasurercommunity-post-avatar,
-      .treasurercommunity-composer-avatar,
-      .treasurercommunity-comment-avatar,
-      .treasurercommunity-avatar {
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-post-photo:hover {
-        transform: scale(1.015);
-        border-color: var(--navy);
-        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
-      }
-
-      .treasurercommunity-action-btn:hover {
-        background: var(--navy);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-action-btn.flag:hover {
-        background: var(--red-text);
-        color: #ffffff;
-      }
-
-      .treasurercommunity-post-menu-btn:hover {
-        background: var(--navy);
-        color: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-dropdown-item:hover {
-        transform: translateX(2px);
-      }
-
-      .treasurercommunity-dropdown-item.flag:hover {
-        background: var(--red-bg);
-        color: var(--red-text);
-      }
-
-      .treasurercommunity-announcement-item:hover,
-      .treasurercommunity-moderation-row:hover,
-      .treasurercommunity-staff-row:hover {
-        background: #ffffff;
-        border-color: #d7deea;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(5, 22, 80, 0.08);
-      }
-
-      .treasurercommunity-online-dot {
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
-      .treasurercommunity-staff-row:hover .treasurercommunity-online-dot {
-        transform: scale(1.15);
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
-      }
-
-      .treasurercommunity-comment-input:focus {
-        background: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-modal-textarea:focus {
-        background: #ffffff;
-        border-color: var(--navy);
-      }
-
-      .treasurercommunity-btn:active,
-      .treasurercommunity-tool-btn:active,
-      .treasurercommunity-action-btn:active,
-      .treasurercommunity-post-menu-btn:active {
-        transform: translateY(0);
-        box-shadow: none;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div
-      class="treasurercommunity-toggle-wrap"
-      id="treasurercommunity-toggle-wrap"
-    >
-      <button
-        class="treasurercommunity-toggle-btn"
-        id="treasurercommunity-toggle-button"
-        title="Collapse / Expand"
-      >
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Community Feed — BarangayKonek Treasurer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="base.css"/>
+<link rel="stylesheet" href="resident.css"/>
+<style>
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.08);margin:6px 14px;}
+.community-main-header{position:sticky;top:16px;z-index:50;}
+.community-widgets-column{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;scrollbar-width:none;}
+.community-widgets-column::-webkit-scrollbar{display:none;}
+
+.reaction-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted);padding-bottom:10px;border-bottom:1px solid var(--border);}
+.reaction-bar-item{display:inline-flex;align-items:center;gap:4px;}
+.reaction-btn-wrap{position:relative;display:inline-flex;justify-content:center;}
+.reaction-picker{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 10px;display:flex;gap:2px;box-shadow:0 8px 24px rgba(5,22,80,0.18);opacity:0;pointer-events:none;transition:opacity 0.15s,transform 0.15s;z-index:10000;white-space:nowrap;}
+.reaction-picker.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0);}
+.reaction-option{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 7px;border-radius:8px;transition:transform 0.15s,background 0.15s;border:none;background:none;font-family:inherit;}
+.reaction-option:hover{transform:scale(1.35) translateY(-4px);background:rgba(5,22,80,0.04);}
+.reaction-option .r-icon{font-size:20px;line-height:1;}
+.reaction-option .r-label{font-size:9px;font-weight:700;color:var(--text-muted);}
+
+.lightbox-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;padding:16px;}
+.lightbox-overlay.open{display:flex;}
+.lightbox-overlay img{max-width:90vw;max-height:90vh;border-radius:6px;object-fit:contain;box-shadow:0 8px 48px rgba(0,0,0,0.6);}
+.lightbox-close{position:absolute;top:16px;right:20px;background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.lightbox-close:hover{background:rgba(255,255,255,0.24);}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:18px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.lightbox-nav:hover{background:rgba(255,255,255,0.24);}
+.lightbox-prev{left:16px;}.lightbox-next{right:16px;}
+.lightbox-counter{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;background:rgba(0,0,0,0.4);padding:4px 14px;border-radius:999px;}
+
+.post-modal-overlay{position:fixed;inset:0;z-index:9000;background:rgba(5,22,80,0.65);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:24px;}
+.post-modal-overlay.open{display:flex;}
+.post-modal-box{background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 16px 60px rgba(5,22,80,0.28);border-top:4px solid #ccff00;}
+.post-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:2;border-radius:16px 16px 0 0;}
+.post-modal-header h3{font-size:15px;font-weight:700;color:#051650;}
+.post-modal-close{background:rgba(5,22,80,0.06);border:none;color:#555;font-size:16px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.post-modal-close:hover{background:rgba(5,22,80,0.12);color:#051650;}
+.post-modal-body{padding:20px;}
+.media-cell img{cursor:pointer;transition:opacity 0.15s;}.media-cell img:hover{opacity:0.9;}
+
+.post-highlight{animation:highlightPost 2.5s ease;}
+@keyframes highlightPost{0%{box-shadow:0 0 0 3px #ccff00;}100%{box-shadow:none;}}
+.search-hidden{display:none !important;}
+.community-action{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;color:var(--text-muted);text-decoration:none;transition:background 0.15s;font-weight:600;}
+.community-action:hover{background:rgba(5,22,80,0.06);color:var(--navy);}
+.comment-section{border-top:1px solid var(--border);margin-top:8px;display:none;}
+.comment-section.open{display:block;}
+.comment-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;}
+.comment-avatar img{width:100%;height:100%;object-fit:cover;}
+.poster-link{color:var(--text);text-decoration:none;font-weight:700;font-size:15px;}
+.poster-link:hover{color:var(--navy);text-decoration:underline;}
+
+.logout-confirm-overlay{position:fixed;inset:0;z-index:2000;background:rgba(5,22,80,0.65);display:none;align-items:center;justify-content:center;}
+.logout-confirm-overlay.open{display:flex;}
+.logout-confirm-box{background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:90%;text-align:center;border-top:4px solid #ccff00;box-shadow:0 16px 48px rgba(5,22,80,0.28);}
+.logout-confirm-icon{width:56px;height:56px;border-radius:50%;background:#051650;color:#ccff00;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;}
+.logout-confirm-box h3{font-size:20px;font-weight:700;color:#051650;margin-bottom:8px;}
+.logout-confirm-box p{font-size:14px;color:#666;margin-bottom:24px;line-height:1.6;}
+.logout-confirm-btns{display:flex;gap:10px;justify-content:center;}
+.btn-logout-confirm{background:#051650;color:#ccff00;border:none;padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:8px;}
+.btn-logout-cancel{background:transparent;color:#051650;border:1px solid rgba(5,22,80,0.25);padding:11px 28px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* FLAG BADGE for treasurer */
+.tc-flag-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:#fef2f2;color:#991b1b;font-size:11px;font-weight:800;border:1px solid #fca5a5;cursor:pointer;transition:background 0.15s;}
+.tc-flag-tag:hover{background:#fee2e2;}
+
+/* TOPBAR badge */
+.tc-topbar-badge{position:absolute;top:-6px;right:-5px;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:#ccff00;color:#051650;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.tc-bell-icon-wrap{position:relative;display:inline-flex;}
+</style>
+</head>
+<body>
+
+<div class="logout-confirm-overlay" id="logoutModal">
+  <div class="logout-confirm-box">
+    <div class="logout-confirm-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+    <h3>Log out?</h3>
+    <p>You will be returned to the login page.</p>
+    <div class="logout-confirm-btns">
+      <button type="button" class="btn-logout-cancel" onclick="closeLogout()">Cancel</button>
+      <form method="POST" style="display:inline;">
+        <input type="hidden" name="action" value="logout"/>
+        <button type="submit" class="btn-logout-confirm"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
+      </form>
     </div>
-
-    <div class="treasurercommunity-page">
-      <aside class="treasurercommunity-sidebar" id="treasurercommunity-sidebar">
-        <div class="treasurercommunity-identity">
-          <div class="treasurercommunity-identity-logo">
-            <img src="alapan.png" alt="Alapan logo" />
-          </div>
-
-          <div>
-            <div class="treasurercommunity-identity-name">BarangayKonek</div>
-            <span class="treasurercommunity-identity-chip">
-              Treasurer Portal
-            </span>
-          </div>
-        </div>
-
-        <nav class="treasurercommunity-menu">
-          <a
-            href="treasurerdashboard.html"
-            class="treasurercommunity-menu-link"
-          >
-            <div class="treasurercommunity-menu-left">
-              <i class="fa-solid fa-house"></i>
-              <span class="treasurercommunity-menu-label">Dashboard</span>
-            </div>
-          </a>
-
-          <a
-            href="treasurertransaction.html"
-            class="treasurercommunity-menu-link"
-          >
-            <div class="treasurercommunity-menu-left">
-              <i class="fa-solid fa-coins"></i>
-              <span class="treasurercommunity-menu-label">Transactions</span>
-            </div>
-
-            <span class="treasurercommunity-menu-count">8</span>
-          </a>
-
-          <a href="treasurerhistory.html" class="treasurercommunity-menu-link">
-            <div class="treasurercommunity-menu-left">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-              <span class="treasurercommunity-menu-label"
-                >Transaction History</span
-              >
-            </div>
-          </a>
-
-          <a
-            href="treasurercommunity.html"
-            class="treasurercommunity-menu-link active"
-          >
-            <div class="treasurercommunity-menu-left">
-              <i class="fa-solid fa-people-group"></i>
-              <span class="treasurercommunity-menu-label">Community</span>
-            </div>
-          </a>
-
-          <div class="treasurercommunity-menu-divider"></div>
-
-          <a href="treasurersettings.html" class="treasurercommunity-menu-link">
-            <div class="treasurercommunity-menu-left">
-              <i class="fa-solid fa-gear"></i>
-              <span class="treasurercommunity-menu-label">Settings</span>
-            </div>
-          </a>
-        </nav>
-
-        <div class="treasurercommunity-sidebar-footer">
-          <a href="home.html" class="treasurercommunity-logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span class="treasurercommunity-menu-label">Log Out</span>
-          </a>
-        </div>
-      </aside>
-
-      <main class="treasurercommunity-main" id="treasurercommunity-main">
-        <header class="treasurercommunity-topbar">
-          <div class="treasurercommunity-topbar-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input
-              type="text"
-              placeholder="Search posts, residents, or financial announcements..."
-            />
-          </div>
-
-          <div class="treasurercommunity-topbar-right">
-            <div class="treasurercommunity-notification-btn">
-              <i class="fa-solid fa-bell"></i>
-              <span class="treasurercommunity-notification-count">2</span>
-            </div>
-
-            <div class="treasurercommunity-profile">
-              <div class="treasurercommunity-avatar">LR</div>
-
-              <div>
-                <div class="treasurercommunity-profile-name">Luz Reyes</div>
-                <div class="treasurercommunity-profile-role">Treasurer</div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div class="treasurercommunity-body">
-          <div class="row g-3">
-            <div class="col-lg-8 col-xl-9">
-              <section
-                class="treasurercommunity-card treasurercommunity-composer"
-              >
-                <div class="treasurercommunity-composer-top">
-                  <div class="treasurercommunity-composer-avatar">LR</div>
-
-                  <div
-                    class="treasurercommunity-composer-input"
-                    data-bs-toggle="modal"
-                    data-bs-target="#treasurercommunityPostModal"
-                  >
-                    Share a financial update or announcement with the
-                    community...
-                  </div>
-                </div>
-
-                <div class="treasurercommunity-composer-actions">
-                  <div class="d-flex flex-wrap gap-2">
-                    <button
-                      class="treasurercommunity-tool-btn"
-                      data-bs-toggle="modal"
-                      data-bs-target="#treasurercommunityPostModal"
-                    >
-                      <i class="fa-regular fa-image"></i>
-                      Photo
-                    </button>
-
-                    <button
-                      class="treasurercommunity-tool-btn"
-                      data-bs-toggle="modal"
-                      data-bs-target="#treasurercommunityPostModal"
-                    >
-                      <i class="fa-solid fa-paperclip"></i>
-                      File
-                    </button>
-                  </div>
-
-                  <button
-                    class="treasurercommunity-btn treasurercommunity-btn-navy"
-                    data-bs-toggle="modal"
-                    data-bs-target="#treasurercommunityPostModal"
-                  >
-                    Post Financial Update
-                  </button>
-                </div>
-              </section>
-
-              <article class="treasurercommunity-card treasurercommunity-post">
-                <div class="treasurercommunity-post-head">
-                  <div class="treasurercommunity-post-user">
-                    <div class="treasurercommunity-post-avatar">LR</div>
-
-                    <div>
-                      <span class="treasurercommunity-post-name">
-                        Luz Reyes
-                      </span>
-                      <span class="treasurercommunity-post-meta">
-                        Treasurer · Apr 14, 2026 · 9:30 AM
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="treasurercommunity-post-options">
-                    <span class="treasurercommunity-post-tag">Official</span>
-
-                    <div class="dropdown">
-                      <button
-                        class="treasurercommunity-post-menu-btn"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <i class="fa-solid fa-ellipsis"></i>
-                      </button>
-
-                      <ul
-                        class="dropdown-menu dropdown-menu-end treasurercommunity-dropdown-menu"
-                      >
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-eye"></i>
-                            View Details
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-pen"></i>
-                            Edit Post
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item flag"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-flag"></i>
-                            Flag Post
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <p class="treasurercommunity-post-text">
-                  📢 Reminder: Payment cut-off for document requests is on
-                  <strong>April 20, 2026</strong> at 3:00 PM. Residents with
-                  pending document service payments are encouraged to settle
-                  before release. Official receipts will be issued at the
-                  Treasurer desk.
-                </p>
-
-                <div class="treasurercommunity-post-summary">
-                  <span>42 reactions</span>
-                  <span>12 comments</span>
-                </div>
-
-                <div class="treasurercommunity-post-actions">
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-thumbs-up"></i>
-                    Like
-                  </button>
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-comment"></i>
-                    Comment
-                  </button>
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-solid fa-share"></i>
-                    Share
-                  </button>
-                </div>
-
-                <div class="treasurercommunity-comment-box">
-                  <div class="treasurercommunity-comment-avatar">LR</div>
-                  <input
-                    class="treasurercommunity-comment-input"
-                    type="text"
-                    placeholder="Write a comment..."
-                  />
-                  <button
-                    class="treasurercommunity-btn treasurercommunity-btn-navy"
-                  >
-                    Send
-                  </button>
-                </div>
-              </article>
-
-              <article class="treasurercommunity-card treasurercommunity-post">
-                <div class="treasurercommunity-post-head">
-                  <div class="treasurercommunity-post-user">
-                    <div class="treasurercommunity-post-avatar">AL</div>
-
-                    <div>
-                      <span class="treasurercommunity-post-name">
-                        Ana Lopez
-                      </span>
-                      <span class="treasurercommunity-post-meta">
-                        Resident · Apr 13, 2026 · 5:15 PM
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="treasurercommunity-post-options">
-                    <span class="treasurercommunity-post-tag resident">
-                      Resident Post
-                    </span>
-
-                    <div class="dropdown">
-                      <button
-                        class="treasurercommunity-post-menu-btn"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <i class="fa-solid fa-ellipsis"></i>
-                      </button>
-
-                      <ul
-                        class="dropdown-menu dropdown-menu-end treasurercommunity-dropdown-menu"
-                      >
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-eye"></i>
-                            View Details
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-eye-slash"></i>
-                            Hide Post
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item flag"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-flag"></i>
-                            Flag Post
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <p class="treasurercommunity-post-text">
-                  Good afternoon po. May update po ba kung kailan puwede kunin
-                  ang official receipt for my barangay clearance payment?
-                  Salamat po.
-                </p>
-
-                <div class="treasurercommunity-post-summary">
-                  <span>18 reactions</span>
-                  <span>5 comments</span>
-                </div>
-
-                <div class="treasurercommunity-post-actions">
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-thumbs-up"></i>
-                    Like
-                  </button>
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-comment"></i>
-                    Comment
-                  </button>
-                  <button class="treasurercommunity-action-btn flag">
-                    <i class="fa-solid fa-flag"></i>
-                    Flag
-                  </button>
-                </div>
-              </article>
-
-              <article class="treasurercommunity-card treasurercommunity-post">
-                <div class="treasurercommunity-post-head">
-                  <div class="treasurercommunity-post-user">
-                    <div class="treasurercommunity-post-avatar">RC</div>
-
-                    <div>
-                      <span class="treasurercommunity-post-name">
-                        Ramon Cruz
-                      </span>
-                      <span class="treasurercommunity-post-meta">
-                        Barangay Captain · Apr 12, 2026 · 8:40 AM
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="treasurercommunity-post-options">
-                    <span class="treasurercommunity-post-tag">Official</span>
-
-                    <div class="dropdown">
-                      <button
-                        class="treasurercommunity-post-menu-btn"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <i class="fa-solid fa-ellipsis"></i>
-                      </button>
-
-                      <ul
-                        class="dropdown-menu dropdown-menu-end treasurercommunity-dropdown-menu"
-                      >
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-eye"></i>
-                            View Details
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-pen"></i>
-                            Edit Post
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item treasurercommunity-dropdown-item flag"
-                            href="#"
-                          >
-                            <i class="fa-solid fa-flag"></i>
-                            Flag Post
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <p class="treasurercommunity-post-text">
-                  The Treasurer office will post the updated list of paid and
-                  pending document service transactions this week. Please keep
-                  your transaction reference for easier verification.
-                </p>
-
-                <div class="treasurercommunity-post-gallery">
-                  <div class="treasurercommunity-post-photo">
-                    Announcement Image
-                  </div>
-                  <div class="treasurercommunity-post-photo">
-                    Schedule Preview
-                  </div>
-                </div>
-
-                <div class="treasurercommunity-post-summary">
-                  <span>31 reactions</span>
-                  <span>6 comments</span>
-                </div>
-
-                <div class="treasurercommunity-post-actions">
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-thumbs-up"></i>
-                    Like
-                  </button>
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-regular fa-comment"></i>
-                    Comment
-                  </button>
-                  <button class="treasurercommunity-action-btn">
-                    <i class="fa-solid fa-share"></i>
-                    Share
-                  </button>
-                </div>
-              </article>
-
-              <div class="text-center mt-3">
-                <button
-                  class="treasurercommunity-btn treasurercommunity-btn-navy"
-                >
-                  <i class="fa-solid fa-chevron-down"></i>
-                  Load More Posts
-                </button>
-              </div>
-            </div>
-
-            <aside class="col-lg-4 col-xl-3 treasurercommunity-widgets-column">
-              <section
-                class="treasurercommunity-card treasurercommunity-widget"
-              >
-                <div class="treasurercommunity-widget-head">
-                  <h3 class="treasurercommunity-widget-title">
-                    Latest Announcements
-                  </h3>
-                  <a href="#" class="treasurercommunity-widget-link">Manage</a>
-                </div>
-
-                <div class="treasurercommunity-announcement-item">
-                  <span class="treasurercommunity-announcement-label">
-                    Official
-                  </span>
-                  <span class="treasurercommunity-announcement-title">
-                    April Collection Update
-                  </span>
-                  <p class="treasurercommunity-announcement-text">
-                    Document service collections for April are being reconciled.
-                    Residents with pending payments may settle during office
-                    hours.
-                  </p>
-                </div>
-
-                <div class="treasurercommunity-announcement-item">
-                  <span class="treasurercommunity-announcement-label">
-                    Official
-                  </span>
-                  <span class="treasurercommunity-announcement-title">
-                    Official Receipts
-                  </span>
-                  <p class="treasurercommunity-announcement-text">
-                    Official receipts are available after payment verification
-                    and document release confirmation.
-                  </p>
-                </div>
-
-                <button
-                  class="treasurercommunity-btn treasurercommunity-btn-navy w-100"
-                >
-                  <i class="fa-solid fa-plus"></i>
-                  Post Financial Notice
-                </button>
-              </section>
-
-              <section
-                class="treasurercommunity-card treasurercommunity-widget"
-              >
-                <div class="treasurercommunity-widget-head">
-                  <h3 class="treasurercommunity-widget-title">Payment Watch</h3>
-                  <a href="#" class="treasurercommunity-widget-link"
-                    >View All</a
-                  >
-                </div>
-
-                <div class="treasurercommunity-moderation-row">
-                  <span class="treasurercommunity-moderation-label">
-                    Payment Questions
-                  </span>
-                  <span class="treasurercommunity-moderation-count">12</span>
-                </div>
-
-                <div class="treasurercommunity-moderation-row">
-                  <span class="treasurercommunity-moderation-label">
-                    Flagged Posts
-                  </span>
-                  <span class="treasurercommunity-moderation-count warning">
-                    2
-                  </span>
-                </div>
-
-                <div class="treasurercommunity-moderation-row">
-                  <span class="treasurercommunity-moderation-label">
-                    Active Notices
-                  </span>
-                  <span class="treasurercommunity-moderation-count">84</span>
-                </div>
-              </section>
-
-              <section
-                class="treasurercommunity-card treasurercommunity-widget"
-              >
-                <div class="treasurercommunity-widget-head">
-                  <h3 class="treasurercommunity-widget-title">Online Staff</h3>
-                </div>
-
-                <div class="treasurercommunity-staff-row">
-                  <div class="treasurercommunity-staff-left">
-                    <span class="treasurercommunity-online-dot"></span>
-                    <span class="treasurercommunity-staff-name">
-                      Barangay Captain
-                    </span>
-                  </div>
-                </div>
-
-                <div class="treasurercommunity-staff-row">
-                  <div class="treasurercommunity-staff-left">
-                    <span class="treasurercommunity-online-dot"></span>
-                    <span class="treasurercommunity-staff-name">
-                      Treasurer
-                    </span>
-                  </div>
-                </div>
-
-                <div class="treasurercommunity-staff-row">
-                  <div class="treasurercommunity-staff-left">
-                    <span class="treasurercommunity-online-dot"></span>
-                    <span class="treasurercommunity-staff-name">
-                      Treasurer
-                    </span>
-                  </div>
-                </div>
-              </section>
-            </aside>
-          </div>
-        </div>
-      </main>
-    </div>
-
-    <div
-      class="modal fade"
-      id="treasurercommunityPostModal"
-      tabindex="-1"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content treasurercommunity-modal-content">
-          <div class="modal-header treasurercommunity-modal-header">
-            <h5 class="modal-title fw-bold text-primary-emphasis">
-              Create Community Post
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-
-          <div class="modal-body">
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <div class="treasurercommunity-avatar">LR</div>
-              <div>
-                <div class="fw-bold text-primary-emphasis">Luz Reyes</div>
-                <small class="text-muted">Posting as Treasurer</small>
-              </div>
-            </div>
-
-            <textarea
-              class="treasurercommunity-modal-textarea"
-              placeholder="Share a payment reminder, collection update, or official financial announcement..."
-            ></textarea>
-
-            <div class="form-check mt-3">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="treasurercommunityAnnouncementCheck"
-              />
-              <label
-                class="form-check-label fw-semibold"
-                for="treasurercommunityAnnouncementCheck"
-              >
-                Post as official announcement
-              </label>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="treasurercommunity-btn treasurercommunity-btn-soft"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              class="treasurercommunity-btn treasurercommunity-btn-navy"
-            >
-              <i class="fa-solid fa-paper-plane"></i>
-              Post
-            </button>
-          </div>
-        </div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightboxOnBg(event)">
+  <button class="lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+  <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+  <img id="lightboxImg" src="" alt="Photo"/>
+  <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<div class="post-modal-overlay" id="postModalOverlay" onclick="closePostModalOnBg(event)">
+  <div class="post-modal-box" id="postModalBox">
+    <div class="post-modal-header">
+      <h3><i class="fa-solid fa-comment-dots" style="color:#ccff00;margin-right:8px;"></i>Post</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a id="postModalGotoLink" href="#" onclick="goToPostInFeed(event)"
+          style="display:none;font-size:12px;font-weight:700;color:#051650;text-decoration:none;background:rgba(204,255,0,0.18);padding:5px 12px;border-radius:20px;white-space:nowrap;align-items:center;gap:6px;">
+          <i class="fa-solid fa-arrow-right"></i><span>Go to post in feed</span>
+        </a>
+        <button class="post-modal-close" onclick="closePostModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
+    <div class="post-modal-body" id="postModalBody">
+      <div id="postModalLoading" style="text-align:center;padding:40px 20px;color:#888;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>
+        Loading post...
+      </div>
+    </div>
+    <div id="postModalCommentForm" style="display:none;padding:12px 20px 16px;border-top:1px solid #eee;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="comment-avatar"><img src="<?= $profilePicture ?>" alt="<?= $fullName ?>"/></div>
+        <input type="text" id="modalCommentInput" placeholder="Write a comment..."
+          style="flex:1;border:1px solid #ddd;border-radius:20px;padding:8px 14px;font-size:13px;font-family:inherit;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();submitModalComment();}"/>
+        <button type="button" onclick="submitModalComment()"
+          style="background:#051650;color:#ccff00;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"
+          id="modalCommentSendBtn">Send</button>
+      </div>
+      <div id="modalCommentError" style="display:none;font-size:12px;color:#e03030;margin-top:6px;padding-left:44px;"></div>
+    </div>
+  </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- COMPOSE MODAL -->
+<div class="modal-overlay" id="composeModalOverlay" onclick="closeComposeModalOnBg(event)" style="position:fixed;inset:0;z-index:8000;background:rgba(5,22,80,0.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 16px 60px rgba(5,22,80,0.28);border-top:4px solid #ccff00;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:2;border-radius:16px 16px 0 0;">
+      <h3 style="font-size:15px;font-weight:700;color:#051650;margin:0;"><i class="fa-solid fa-pen-to-square" style="color:#ccff00;margin-right:8px;"></i>Create Post</h3>
+      <button onclick="closeComposeModal()" style="background:rgba(5,22,80,0.06);border:none;color:#555;font-size:16px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding:20px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <img src="<?= $profilePicture ?>" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #ccff00;" alt="<?= $fullName ?>"/>
+        <div><strong style="font-size:15px;color:#051650;"><?= $fullName ?></strong><p style="font-size:12px;color:#888;margin:0;">Posting as Treasurer</p></div>
+      </div>
+      <form method="POST" enctype="multipart/form-data" id="composeForm">
+        <input type="hidden" name="action" value="post"/>
+        <textarea name="body" id="composerTextarea" rows="5"
+          style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:15px;font-family:inherit;resize:vertical;outline:none;color:#333;"
+          placeholder="Share an update or financial notice with the community..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button type="button" onclick="triggerFile('image')"
+            style="background:rgba(5,22,80,0.06);border:none;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background 0.15s;"
+            title="Add image"><i class="fa-regular fa-image" style="color:#1877f2;"></i></button>
+        </div>
+        <input type="file" name="post_images[]" id="singleFileInput" style="display:none;" multiple accept="image/*" onchange="handleFileSelect(this)"/>
+        <div id="mediaPreviewWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+        <button type="submit" id="composeSubmitBtn"
+          style="width:100%;margin-top:12px;background:#051650;color:#ccff00;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.2s;"
+          onmouseover="this.style.background='#0a2470'" onmouseout="this.style.background='#051650'">
+          <i class="fa-solid fa-paper-plane" style="margin-right:8px;"></i>Post
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 
-    <script>
-      var treasurercommunitySidebar = document.getElementById(
-        "treasurercommunity-sidebar",
-      );
+<div class="container">
+  <aside class="sidebar resident-community-sidebar">
+    <div class="sidebar-brand"><h2>BarangayKonek</h2><span>Treasurer</span></div>
+    <div class="profile profile--compact">
+      <div class="avatar-ring"><img src="<?= $profilePicture ?>" alt="Treasurer Photo"/></div>
+      <div class="profile-meta">
+        <h3><?= $fullName ?></h3>
+        <p>City of Imus, Alapan 1-B</p>
+        <span class="portal-badge">Treasurer Portal</span>
+      </div>
+    </div>
+    <nav class="menu menu--community">
+      <a href="treasurerdashboard.php"><i class="fa-solid fa-house nav-icon"></i><span>Dashboard</span></a>
+      <a href="treasurertransactions.php"><i class="fa-solid fa-coins nav-icon"></i><span>Transactions</span>
+        <?php if ($pendingPaymentCount > 0): ?><span style="margin-left:auto;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);min-width:20px;height:20px;padding:0 5px;border-radius:999px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;"><?= $pendingPaymentCount ?></span><?php endif; ?>
+      </a>
+      <a href="treasurerhistory.php"><i class="fa-solid fa-clock-rotate-left nav-icon"></i><span>History</span></a>
+      <a href="treasurercommunity.php" class="active"><i class="fa-solid fa-users nav-icon"></i><span>Community</span></a>
+    </nav>
+    <div class="sidebar-divider"></div>
+    <nav class="menu">
+      <a href="treasurerprofile.php"><i class="fa-solid fa-gear nav-icon"></i><span>Settings</span></a>
+    </nav>
+    <div style="flex:1;"></div>
+    <button type="button" class="logout" onclick="openLogout()" style="background:none;border:none;width:100%;text-align:left;cursor:pointer;font-family:inherit;">
+      <i class="fa-solid fa-right-from-bracket nav-icon"></i><span>Logout</span>
+    </button>
+  </aside>
 
-      var treasurercommunityMainArea = document.getElementById(
-        "treasurercommunity-main",
-      );
+  <main class="content community-page-content">
+    <div class="content-inner community-page-shell">
 
-      var treasurercommunityToggleWrap = document.getElementById(
-        "treasurercommunity-toggle-wrap",
-      );
+      <header class="community-main-header">
+        <div class="community-main-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="feedSearch" placeholder="Search posts, residents, or announcements..."/>
+        </div>
+        <div class="community-main-actions">
+          <div class="bell-wrap-pos">
+            <button type="button" class="community-header-icon community-bell-link" id="bellBtn" onclick="toggleNotif()">
+              <i class="fa-regular fa-bell community-bell-icon"></i>
+              <?php if ($unreadCount > 0): ?>
+              <span class="community-bell-count"><?= $unreadCount ?></span>
+              <?php endif; ?>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-dropdown-header">
+                <h4>Notifications <?php if ($unreadCount > 0): ?><span style="font-size:11px;color:#888;font-weight:400;">(<?= $unreadCount ?> unread)</span><?php endif; ?></h4>
+                <?php if ($unreadCount > 0): ?>
+                <form method="POST" action="treasurercommunity.php" style="margin:0;">
+                  <input type="hidden" name="action" value="mark_all_read">
+                  <button type="submit" class="notif-mark-all">Mark all read</button>
+                </form>
+                <?php endif; ?>
+              </div>
+              <?php if (empty($notifications)): ?>
+              <div class="notif-empty"><i class="fa-regular fa-bell" style="font-size:28px;display:block;margin-bottom:8px;"></i>No notifications yet.</div>
+              <?php else: ?>
+              <?php foreach ($notifications as $notif):
+                $isUnread = !(bool)$notif['IS_READ'];
+                $notifId  = (int)$notif['NOTIFICATION_ID'];
+                $refId    = $notif['REFERENCE_ID'] ? (int)$notif['REFERENCE_ID'] : 0;
+                $typeKey  = rtrim($notif['TYPE']);
+                $iconMap  = [
+                    'LIKE'=>'fa-thumbs-up','COMMENT'=>'fa-comment',
+                    'ANNOUNCEMENT'=>'fa-bullhorn',
+                    'PAYMENT_RECEIVED'=>'fa-coins','PAYMENT_WAIVED'=>'fa-ban',
+                    'NEW_REQUEST'=>'fa-file-circle-plus','DOCUMENT_APPROVED'=>'fa-file-circle-check',
+                    'FLAG_POST'=>'fa-flag',
+                ];
+                $icon    = $iconMap[$typeKey] ?? 'fa-bell';
+                $timeAgo = $notif['CREATED_AT']->format('M d, g:i A');
+                $preview = $notif['POST_PREVIEW'];
+              ?>
+              <button type="button" class="notif-item <?= $isUnread ? 'unread' : '' ?>"
+                onclick="handleNotifClick(<?= $notifId ?>, <?= $refId ?>, '<?= $typeKey ?>', this)">
+                <div class="notif-item-top">
+                  <div class="notif-item-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                  <div class="notif-item-text">
+                    <?= htmlspecialchars(rtrim($notif['MESSAGE'])) ?>
+                    <div class="notif-item-time"><?= $timeAgo ?></div>
+                  </div>
+                  <?php if ($isUnread): ?><div class="notif-unread-dot"></div><?php endif; ?>
+                </div>
+                <?php if ($preview): ?>
+                <div class="notif-post-preview">
+                  <?php if ($preview['THUMB']): ?><img src="<?= htmlspecialchars($preview['THUMB']) ?>" class="notif-post-preview-thumb" alt="Post"/><?php endif; ?>
+                  <div class="notif-post-preview-info">
+                    <div class="notif-post-preview-body"><?= $preview['BODY'] ? htmlspecialchars(mb_strimwidth(rtrim($preview['BODY']),0,80,'...')) : '(No text)' ?></div>
+                    <div class="notif-post-preview-stats">
+                      <span><i class="fa-solid fa-thumbs-up"></i> <?= (int)$preview['LIKE_COUNT'] ?></span>
+                      <span><i class="fa-solid fa-comment"></i> <?= (int)$preview['COMMENT_COUNT'] ?></span>
+                    </div>
+                  </div>
+                </div>
+                <?php endif; ?>
+              </button>
+              <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="community-header-user">
+            <span class="community-header-user-name"><?= $fullName ?></span>
+            <div class="community-header-user-avatar">
+              <img src="<?= $profilePicture ?>" alt="Treasurer Photo"/>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      var treasurercommunityToggleButton = document.getElementById(
-        "treasurercommunity-toggle-button",
-      );
+      <div class="community-board-layout">
+        <section class="community-feed-column" id="feedColumn">
 
-      treasurercommunityToggleButton.addEventListener("click", function () {
-        var treasurercommunityIsSidebarMini =
-          treasurercommunitySidebar.classList.toggle("mini");
+          <div class="community-composer-card panel">
+            <div class="community-composer-top" onclick="openComposeModal()" style="cursor:pointer;">
+              <img src="<?= $profilePicture ?>" alt="Treasurer" class="community-composer-avatar"/>
+              <div style="flex:1;background:#f0f3f9;border-radius:999px;padding:10px 18px;font-size:14px;color:#93a0bb;border:1px solid #e4e8f0;">
+                Share a financial update or announcement...
+              </div>
+            </div>
+            <div class="community-composer-bottom" style="border-top:1px solid #eee;margin-top:12px;padding-top:10px;">
+              <div class="community-composer-tools">
+                <button type="button" class="composer-tool-btn" onclick="openComposeModal('image')" title="Add image"><i class="fa-regular fa-image"></i></button>
+              </div>
+            </div>
+          </div>
 
-        treasurercommunityMainArea.classList.toggle(
-          "shifted",
-          treasurercommunityIsSidebarMini,
-        );
+          <?php foreach ($posts as $postIdx => $post):
+            $postId       = (int)$post['POST_ID'];
+            $posterId     = (int)$post['POSTER_ID'];
+            $postName     = htmlspecialchars(rtrim($post['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($post['LAST_NAME']));
+            $postAvatar   = resolveAvatar($post['PROFILE_PICTURE'], $post['GENDER']);
+            $reactCount   = (int)$post['REACT_COUNT'];
+            $commentCount = (int)$post['COMMENT_COUNT'];
+            $myReaction   = $post['MY_REACTION'] ? rtrim($post['MY_REACTION']) : null;
+            $postTime     = $post['CREATED_AT']->format('M d, Y \• g:i A');
+            $myMeta       = $myReaction ? ($reactionMeta[$myReaction] ?? $reactionMeta['LIKE']) : null;
+            $isOwnPost    = ($posterId === $userId);
 
-        treasurercommunityToggleWrap.classList.toggle(
-          "mini",
-          treasurercommunityIsSidebarMini,
-        );
-      });
-    </script>
-  </body>
+            $imgStmt = sqlsrv_query($conn, "SELECT IMAGE_PATH FROM POST_IMAGES WHERE POST_ID = ? ORDER BY CREATED_AT ASC", [$postId]);
+            $postImages = [];
+            while ($ir = sqlsrv_fetch_array($imgStmt, SQLSRV_FETCH_ASSOC)) $postImages[] = $ir;
+            $imgCount = count($postImages);
+
+            $commStmt = sqlsrv_query($conn,
+                "SELECT C.BODY, C.CREATED_AT, R.FIRST_NAME, R.LAST_NAME, R.GENDER, R.PROFILE_PICTURE
+                 FROM COMMENTS C JOIN REGISTRATION R ON C.USER_ID = R.USER_ID
+                 WHERE C.POST_ID = ? ORDER BY C.CREATED_AT ASC", [$postId]);
+            $comments = [];
+            while ($cr = sqlsrv_fetch_array($commStmt, SQLSRV_FETCH_ASSOC)) $comments[] = $cr;
+
+            $reactSumStmt = sqlsrv_query($conn,
+                "SELECT REACTION_TYPE, COUNT(*) AS CNT FROM LIKES WHERE POST_ID = ? GROUP BY REACTION_TYPE ORDER BY CNT DESC", [$postId]);
+            $reactionSummary = [];
+            while ($rr = sqlsrv_fetch_array($reactSumStmt, SQLSRV_FETCH_ASSOC)) $reactionSummary[] = $rr;
+          ?>
+          <article class="community-stream-card panel"
+                   id="post-<?= $postId ?>"
+                   data-post-index="<?= $postIdx ?>"
+                   data-poster="<?= strtolower($postName) ?>"
+                   data-body="<?= strtolower(htmlspecialchars(rtrim($post['BODY']))) ?>">
+
+            <div class="community-stream-head">
+              <div class="community-stream-user">
+                <div class="community-stream-avatar resident">
+                  <img src="<?= $postAvatar ?>" alt="<?= $postName ?>"/>
+                </div>
+                <div class="community-stream-meta">
+                  <span class="poster-link"><?= $postName ?></span>
+                  <p style="cursor:pointer;" onclick="openPostModal(<?= $postId ?>)">
+                    <?= $isOwnPost ? 'Treasurer (You)' : 'Resident Post' ?> • <?= $postTime ?>
+                  </p>
+                </div>
+              </div>
+              <!-- TREASURER FLAG PRIVILEGE -->
+              <?php if (!$isOwnPost): ?>
+              <form method="POST" action="treasurercommunity.php" style="margin:0;">
+                <input type="hidden" name="action" value="flag_post"/>
+                <input type="hidden" name="post_id" value="<?= $postId ?>"/>
+                <button type="submit" class="tc-flag-tag" title="Flag this post" onclick="return confirm('Flag this post for review?')">
+                  <i class="fa-solid fa-flag"></i> Flag
+                </button>
+              </form>
+              <?php endif; ?>
+            </div>
+
+            <div class="community-stream-tagline">
+              <span class="community-post-tag <?= $isOwnPost ? 'official' : 'resident' ?>">
+                <?= $isOwnPost ? 'Official' : 'Resident' ?>
+              </span>
+            </div>
+
+            <?php if (!empty(trim($post['BODY']))): ?>
+            <div class="community-stream-body">
+              <p><?= nl2br(htmlspecialchars(rtrim($post['BODY']))) ?></p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($imgCount > 0): ?>
+            <div class="post-media-grid count-<?= min($imgCount,4) ?>">
+              <?php
+                $allImagePaths = [];
+                foreach ($postImages as $pi) {
+                    $ext2 = strtolower(pathinfo($pi['IMAGE_PATH'], PATHINFO_EXTENSION));
+                    if (in_array($ext2, $imageExts)) $allImagePaths[] = $pi['IMAGE_PATH'];
+                }
+                $imgPathsJson = htmlspecialchars(json_encode($allImagePaths), ENT_QUOTES);
+                $imgIdx = 0;
+              ?>
+              <?php foreach (array_slice($postImages,0,4) as $idx => $img):
+                $ext   = strtolower(pathinfo($img['IMAGE_PATH'], PATHINFO_EXTENSION));
+                $isImg = in_array($ext, $imageExts);
+                $single= ($imgCount === 1) ? 'single' : '';
+              ?>
+              <div class="media-cell <?= $single ?>">
+                <?php if ($isImg): ?>
+                <img src="<?= htmlspecialchars($img['IMAGE_PATH']) ?>" alt="Post image"
+                     onclick="openLightbox(<?= $imgPathsJson ?>, <?= $imgIdx ?>)" style="cursor:pointer;"/>
+                <?php $imgIdx++; ?>
+                <?php else: ?>
+                <a href="<?= htmlspecialchars($img['IMAGE_PATH']) ?>" class="file-link" target="_blank">
+                  <i class="fa-solid fa-file"></i><?= htmlspecialchars(basename($img['IMAGE_PATH'])) ?>
+                </a>
+                <?php endif; ?>
+                <?php if ($idx === 3 && $imgCount > 4): ?><div class="more-overlay">+<?= $imgCount - 4 ?></div><?php endif; ?>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <div class="reaction-bar">
+              <?php foreach ($reactionSummary as $rs):
+                $rType = rtrim($rs['REACTION_TYPE']);
+                $rMeta = $reactionMeta[$rType] ?? $reactionMeta['LIKE'];
+              ?>
+              <span class="reaction-bar-item">
+                <i class="<?= $rMeta['icon'] ?> r-icon" style="color:<?= $rMeta['color'] ?>;font-size:14px;"></i>
+                <span><?= (int)$rs['CNT'] ?></span>
+              </span>
+              <?php endforeach; ?>
+              <?php if ($reactCount === 0): ?><span style="color:var(--text-muted);font-size:12px;">No reactions yet</span><?php endif; ?>
+              <span data-comment-toggle style="margin-left:auto;cursor:pointer;" onclick="toggleComments(<?= $postId ?>)">
+                <i class="fa-regular fa-comment"></i>
+                <?= $commentCount ?> <?= $commentCount === 1 ? 'comment' : 'comments' ?>
+              </span>
+            </div>
+
+            <div style="display:flex;border-top:1px solid var(--border);margin-top:8px;">
+              <div class="reaction-btn-wrap" id="rbw-<?= $postId ?>" style="flex:1;display:flex;justify-content:center;">
+                <button type="button" id="react-btn-<?= $postId ?>"
+                  data-post-id="<?= $postId ?>"
+                  data-reaction="<?= htmlspecialchars($myReaction ?? '') ?>"
+                  style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;border-radius:0;<?= $myMeta ? 'color:'.$myMeta['color'].';' : 'color:#65676b;' ?>">
+                  <?php if ($myMeta): ?>
+                    <i class="<?= $myMeta['icon'] ?>" style="font-size:18px;"></i> <?= $myMeta['label'] ?>
+                  <?php else: ?>
+                    <i class="fa-regular fa-thumbs-up" style="font-size:18px;"></i> Like
+                  <?php endif; ?>
+                </button>
+                <div class="reaction-picker" data-post-id="<?= $postId ?>">
+                  <?php foreach ($reactionMeta as $rKey => $rMeta): ?>
+                  <button type="button" class="reaction-option" onclick="setReaction(<?= $postId ?>, '<?= $rKey ?>')" title="<?= $rMeta['label'] ?>">
+                    <i class="<?= $rMeta['icon'] ?> r-icon" style="color:<?= $rMeta['color'] ?>;"></i>
+                    <span class="r-label"><?= $rMeta['label'] ?></span>
+                  </button>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+              <div style="width:1px;background:var(--border);margin:6px 0;"></div>
+              <button type="button" id="comment-btn-<?= $postId ?>" onclick="toggleComments(<?= $postId ?>)"
+                style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;color:#65676b;border-radius:0;">
+                <i class="fa-regular fa-comment" style="font-size:18px;"></i> Comment
+              </button>
+            </div>
+
+            <div class="comment-section" id="comments-<?= $postId ?>">
+              <?php if (!empty($comments)): ?>
+              <div style="padding:12px 16px 0;display:flex;flex-direction:column;gap:10px;">
+                <?php foreach ($comments as $com):
+                  $comAvatar = resolveAvatar($com['PROFILE_PICTURE'], $com['GENDER']);
+                  $comName   = htmlspecialchars(rtrim($com['FIRST_NAME'])) . ' ' . htmlspecialchars(rtrim($com['LAST_NAME']));
+                ?>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div class="comment-avatar"><img src="<?= $comAvatar ?>" alt="<?= $comName ?>"/></div>
+                  <div style="background:#f5f6fa;border-radius:8px;padding:8px 12px;flex:1;">
+                    <strong style="font-size:13px;color:#051650;display:block;"><?= $comName ?></strong>
+                    <p style="font-size:13px;color:#555;margin:2px 0 0;"><?= nl2br(htmlspecialchars(rtrim($com['BODY']))) ?></p>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
+              <div style="padding:10px 16px 14px;">
+                <form method="POST" action="react.php" style="display:flex;gap:8px;align-items:center;">
+                  <input type="hidden" name="action" value="comment"/>
+                  <input type="hidden" name="post_id" value="<?= $postId ?>"/>
+                  <input type="hidden" name="redirect" value="treasurercommunity.php#post-<?= $postId ?>"/>
+                  <div class="comment-avatar"><img src="<?= $profilePicture ?>" alt="<?= $fullName ?>"/></div>
+                  <input type="text" name="comment_body" placeholder="Write a comment…"
+                    style="flex:1;border:1px solid #ddd;border-radius:20px;padding:8px 14px;font-size:13px;font-family:inherit;outline:none;" required/>
+                  <button type="submit"
+                    style="background:#051650;color:#ccff00;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Send</button>
+                </form>
+              </div>
+            </div>
+
+          </article>
+          <?php endforeach; ?>
+
+          <?php if (empty($posts)): ?>
+          <div class="panel" style="padding:32px;text-align:center;color:#aaa;">
+            <i class="fa-solid fa-comments" style="font-size:32px;margin-bottom:12px;display:block;"></i>
+            No posts yet. Be the first to share something with your barangay!
+          </div>
+          <?php endif; ?>
+
+          <?php if (count($posts) > 10): ?>
+          <div id="loadMoreWrap" style="text-align:center;padding:10px 0 20px;">
+            <button type="button" id="loadMoreBtn" onclick="loadMorePosts()"
+              style="background:#051650;color:#ccff00;border:none;border-radius:10px;padding:12px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+              <i class="fa-solid fa-chevron-down" style="margin-right:8px;"></i>Load more posts
+            </button>
+          </div>
+          <?php endif; ?>
+        </section>
+
+        <aside class="community-widgets-column">
+          <div class="panel community-widget-card">
+            <div class="community-widget-head"><h3>Latest Announcements</h3></div>
+            <div class="community-widget-list community-widget-list--stacked" id="announcementsList">
+              <?php if (empty($announcements)): ?>
+              <p style="font-size:13px;color:#aaa;">No announcements at this time.</p>
+              <?php else: foreach ($announcements as $ann): ?>
+              <div class="community-mini-post" data-ann-title="<?= strtolower(htmlspecialchars(rtrim($ann['TITLE']))) ?>">
+                <span class="community-pinned-type official">Official</span>
+                <h4><?= htmlspecialchars(rtrim($ann['TITLE'])) ?></h4>
+                <p><?= htmlspecialchars(mb_strimwidth(rtrim($ann['BODY']),0,80,'...')) ?></p>
+              </div>
+              <?php endforeach; endif; ?>
+            </div>
+          </div>
+          <div class="panel community-widget-card">
+            <div class="community-widget-head"><h3>Treasurer Tools</h3></div>
+            <div class="community-channel-list">
+              <a href="treasurertransactions.php" class="community-channel-item">
+                <span class="community-channel-avatar official">TX</span><span>Pending Transactions</span>
+                <?php if ($pendingPaymentCount > 0): ?><span style="margin-left:auto;background:#ccff00;color:#051650;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;"><?= $pendingPaymentCount ?></span><?php endif; ?>
+              </a>
+              <a href="treasurerhistory.php" class="community-channel-item">
+                <span class="community-channel-avatar event">HX</span><span>Transaction History</span>
+              </a>
+              <a href="treasurerfee.php" class="community-channel-item">
+                <span class="community-channel-avatar alert">FE</span><span>Fee Records</span>
+              </a>
+            </div>
+          </div>
+          <div class="panel community-widget-card">
+            <div class="community-widget-head"><h3>Barangay Contacts</h3></div>
+            <div class="community-contact-list">
+              <div class="community-contact-item"><span class="community-contact-status"></span><span>Barangay Captain</span></div>
+              <div class="community-contact-item"><span class="community-contact-status"></span><span>Barangay Secretary</span></div>
+              <div class="community-contact-item"><span class="community-contact-status"></span><span>Health Desk</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* COMPOSE MODAL */
+function openComposeModal(trigger) {
+  document.getElementById('composeModalOverlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() {
+    var ta = document.getElementById('composerTextarea');
+    if (ta) ta.focus();
+    if (trigger === 'image') setTimeout(function(){ document.getElementById('singleFileInput').click(); }, 200);
+  }, 80);
+}
+function closeComposeModal() {
+  document.getElementById('composeModalOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function closeComposeModalOnBg(e) {
+  if (e.target === document.getElementById('composeModalOverlay')) closeComposeModal();
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeComposeModal(); } });
+
+/* NOTIFICATION BELL */
+function toggleNotif() { document.getElementById('notifDropdown').classList.toggle('open'); }
+document.addEventListener('click', function(e) {
+  var btn = document.getElementById('bellBtn');
+  var dd  = document.getElementById('notifDropdown');
+  if (!btn.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
+});
+
+function openLogout()  { document.getElementById('logoutModal').classList.add('open'); }
+function closeLogout() { document.getElementById('logoutModal').classList.remove('open'); }
+document.getElementById('logoutModal').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('logoutModal')) closeLogout();
+});
+
+function handleNotifClick(notifId, refId, typeKey, btn) {
+  if (btn.classList.contains('unread')) {
+    btn.classList.remove('unread');
+    var dot = btn.querySelector('.notif-unread-dot');
+    if (dot) dot.remove();
+    var countEl = document.querySelector('.community-bell-count');
+    if (countEl) {
+      var cur = parseInt(countEl.textContent) - 1;
+      if (cur <= 0) countEl.remove(); else countEl.textContent = cur;
+    }
+    var fd = new FormData();
+    fd.append('action', 'read_notif');
+    fd.append('notif_id', notifId);
+    fd.append('ajax', '1');
+    fetch('treasurercommunity.php', { method: 'POST', body: fd }).catch(function(){});
+  }
+  document.getElementById('notifDropdown').classList.remove('open');
+  if (refId > 0 && (typeKey === 'LIKE' || typeKey === 'COMMENT')) {
+    openPostModalFull(refId);
+  }
+}
+
+/* COMMENTS */
+function toggleComments(postId) {
+  var section = document.getElementById('comments-' + postId);
+  var btn     = document.getElementById('comment-btn-' + postId);
+  var isOpen  = section.classList.contains('open');
+  section.classList.toggle('open', !isOpen);
+  if (!isOpen) section.querySelector('input[name="comment_body"]')?.focus();
+}
+
+/* REACTION PICKER */
+var pickerTimers = {};
+var reactionMeta = {
+  LIKE: {icon:'fa-solid fa-thumbs-up',label:'Like',color:'#1877f2'},
+  LOVE: {icon:'fa-solid fa-heart',label:'Love',color:'#f33e58'},
+  HAHA: {icon:'fa-solid fa-face-laugh',label:'Haha',color:'#f7b125'},
+  WOW:  {icon:'fa-solid fa-face-surprise',label:'Wow',color:'#f7b125'},
+  SAD:  {icon:'fa-solid fa-face-sad-tear',label:'Sad',color:'#f7b125'},
+  ANGRY:{icon:'fa-solid fa-face-angry',label:'Angry',color:'#e9710f'},
+};
+
+function openPicker(postId) {
+  clearTimeout(pickerTimers[postId]);
+  document.querySelectorAll('.reaction-picker.open').forEach(function(p) {
+    if (p.dataset.postId !== String(postId)) p.classList.remove('open');
+  });
+  var picker = document.querySelector('.reaction-picker[data-post-id="' + postId + '"]');
+  if (picker) picker.classList.add('open');
+}
+function schedulClose(postId) {
+  pickerTimers[postId] = setTimeout(function() {
+    var picker = document.querySelector('.reaction-picker[data-post-id="' + postId + '"]');
+    if (picker) picker.classList.remove('open');
+  }, 320);
+}
+function bindPickerEvents(wrap) {
+  var postId  = wrap.closest('article')?.id?.replace('post-', '');
+  if (!postId) return;
+  var trigger = wrap.querySelector('#react-btn-' + postId);
+  var picker  = wrap.querySelector('.reaction-picker');
+  if (!trigger || !picker) return;
+  trigger.addEventListener('mouseenter', function(){ openPicker(postId); });
+  trigger.addEventListener('mouseleave', function(){ schedulClose(postId); });
+  picker.addEventListener('mouseenter',  function(){ clearTimeout(pickerTimers[postId]); });
+  picker.addEventListener('mouseleave',  function(){ schedulClose(postId); });
+}
+document.querySelectorAll('.reaction-btn-wrap').forEach(bindPickerEvents);
+
+function setReaction(postId, type) {
+  var picker = document.querySelector('.reaction-picker[data-post-id="' + postId + '"]');
+  if (picker) picker.classList.remove('open');
+  var btn = document.getElementById('react-btn-' + postId);
+  var fd = new FormData();
+  fd.append('post_id', postId);
+  fd.append('reaction_type', type);
+  fd.append('ajax', '1');
+  fetch('react.php', { method: 'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (!btn) return;
+      if (data.removed) {
+        btn.dataset.reaction = '';
+        btn.style.color = '';
+        btn.innerHTML = '<i class="fa-regular fa-thumbs-up"></i> React';
+      } else {
+        var meta = reactionMeta[type];
+        btn.dataset.reaction = type;
+        btn.style.color = meta.color;
+        btn.innerHTML = '<i class="' + meta.icon + '"></i> ' + meta.label;
+      }
+      var bar = document.querySelector('#post-' + postId + ' .reaction-bar');
+      if (bar && data.summary !== undefined) updateReactionBar(bar, data.summary, data.total);
+    }).catch(function(){});
+}
+
+function updateReactionBar(bar, summary, total) {
+  var commentSpan = bar.querySelector('[data-comment-toggle]');
+  bar.innerHTML = '';
+  if (total === 0) {
+    var s = document.createElement('span');
+    s.style.cssText = 'color:var(--text-muted);font-size:12px;';
+    s.textContent = 'No reactions yet';
+    bar.appendChild(s);
+  } else {
+    summary.forEach(function(r) {
+      var meta = reactionMeta[r.type];
+      if (!meta) return;
+      var span = document.createElement('span');
+      span.className = 'reaction-bar-item';
+      span.innerHTML = '<i class="' + meta.icon + ' r-icon" style="color:' + meta.color + ';font-size:14px;"></i><span>' + r.cnt + '</span>';
+      bar.appendChild(span);
+    });
+  }
+  if (commentSpan) bar.appendChild(commentSpan);
+}
+
+/* POST MODAL */
+var _currentModalPostId = null;
+function openPostModal(postId) { openPostModalFull(postId); }
+function closePostModal() {
+  document.getElementById('postModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closePostModalOnBg(e) {
+  if (e.target === document.getElementById('postModalOverlay')) closePostModal();
+}
+
+function openPostModalFull(postId) {
+  _currentModalPostId = postId;
+  var overlay = document.getElementById('postModalOverlay');
+  var body    = document.getElementById('postModalBody');
+  var cfForm  = document.getElementById('postModalCommentForm');
+  var gotoLink= document.getElementById('postModalGotoLink');
+  body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#888;"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>Loading post...</div>';
+  cfForm.style.display = 'none'; gotoLink.style.display = 'none';
+  overlay.classList.add('open'); document.body.style.overflow = 'hidden';
+  var fd = new FormData();
+  fd.append('action', 'get_post_modal');
+  fd.append('post_id', postId);
+  fetch('treasurercommunity.php', { method: 'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (!data.ok) { body.innerHTML = '<p style="padding:20px;color:#aaa;">Post not found.</p>'; return; }
+      var imageExtsLocal = ['jpg','jpeg','png','gif','webp','bmp'];
+      var html = '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">'
+        + '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;">'
+        + '<img src="' + data.avatar + '" style="width:100%;height:100%;object-fit:cover;"/></div>'
+        + '<div><strong style="font-size:15px;color:#051650;">' + escHtml(data.name) + '</strong>'
+        + '<p style="font-size:12px;color:#888;margin-top:2px;">' + escHtml(data.time) + '</p></div></div>';
+      if (data.body) html += '<div style="font-size:15px;line-height:1.7;color:#333;white-space:pre-wrap;border-top:1px solid #eee;padding-top:14px;margin-bottom:14px;">' + escHtml(data.body) + '</div>';
+      if (data.images && data.images.length > 0) {
+        html += '<div style="display:grid;gap:4px;border-radius:8px;overflow:hidden;margin-bottom:14px;grid-template-columns:' + (data.images.length===1?'1fr':'1fr 1fr') + ';">';
+        var imgPaths = data.images.filter(function(p){ return imageExtsLocal.includes(p.split('.').pop().toLowerCase()); });
+        var imgPathsJson = JSON.stringify(imgPaths);
+        data.images.slice(0,4).forEach(function(src, idx) {
+          var ext = src.split('.').pop().toLowerCase();
+          var isImg = imageExtsLocal.includes(ext);
+          html += '<div style="position:relative;background:#f0f2fa;">';
+          if (isImg) html += '<img src="' + escHtml(src) + '" style="width:100%;height:180px;object-fit:cover;display:block;cursor:pointer;" onclick=\'openLightbox(' + imgPathsJson + ', ' + idx + ')\' />';
+          else html += '<a href="' + escHtml(src) + '" target="_blank" style="display:flex;align-items:center;gap:10px;padding:14px;text-decoration:none;color:#051650;font-size:13px;font-weight:600;"><i class="fa-solid fa-file"></i>' + escHtml(src.split('/').pop()) + '</a>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      if (data.reactions && data.reactions.length > 0) {
+        html += '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:12px;">';
+        var iconMap={LIKE:'fa-solid fa-thumbs-up',LOVE:'fa-solid fa-heart',HAHA:'fa-solid fa-face-laugh',WOW:'fa-solid fa-face-surprise',SAD:'fa-solid fa-face-sad-tear',ANGRY:'fa-solid fa-face-angry'};
+        var colorMap={LIKE:'#1877f2',LOVE:'#f33e58',HAHA:'#f7b125',WOW:'#f7b125',SAD:'#f7b125',ANGRY:'#e9710f'};
+        data.reactions.forEach(function(r){
+          html += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#555;"><i class="'+(iconMap[r.type]||'fa-solid fa-thumbs-up')+'" style="color:'+(colorMap[r.type]||'#888')+';font-size:15px;"></i>'+r.cnt+'</span>';
+        });
+        html += '</div>';
+      }
+      if (data.comments && data.comments.length > 0) {
+        html += '<div style="font-size:13px;font-weight:700;color:#051650;margin-bottom:10px;"><i class="fa-regular fa-comment" style="margin-right:6px;"></i>' + data.comments.length + ' Comment' + (data.comments.length!==1?'s':'') + '</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+        data.comments.forEach(function(c) {
+          html += '<div style="display:flex;gap:10px;align-items:flex-start;">'
+            + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #ccff00;"><img src="'+escHtml(c.avatar)+'" style="width:100%;height:100%;object-fit:cover;"/></div>'
+            + '<div style="background:#f5f6fa;border-radius:8px;padding:8px 12px;flex:1;">'
+            + '<strong style="font-size:13px;color:#051650;display:block;">'+escHtml(c.name)+'</strong>'
+            + '<p style="font-size:13px;color:#555;margin:2px 0 0;">'+escHtml(c.body).replace(/\n/g,'<br>')+'</p>'
+            + '</div></div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<p style="font-size:13px;color:#aaa;text-align:center;padding:10px 0;">No comments yet.</p>';
+      }
+      body.innerHTML = html;
+      cfForm.style.display = 'block';
+      gotoLink.style.display = 'inline-flex';
+      document.getElementById('modalCommentInput').value = '';
+      document.getElementById('modalCommentError').style.display = 'none';
+    }).catch(function(){ body.innerHTML = '<p style="padding:20px;color:#aaa;">Could not load post.</p>'; });
+}
+
+function submitModalComment() {
+  var input = document.getElementById('modalCommentInput');
+  var errEl = document.getElementById('modalCommentError');
+  var btn   = document.getElementById('modalCommentSendBtn');
+  var body  = input.value.trim();
+  errEl.style.display = 'none';
+  if (!body) { errEl.textContent = 'Please write a comment first.'; errEl.style.display = 'block'; return; }
+  if (!_currentModalPostId) return;
+  btn.disabled = true; btn.textContent = 'Sending...';
+  var fd = new FormData();
+  fd.append('action', 'comment');
+  fd.append('post_id', _currentModalPostId);
+  fd.append('comment_body', body);
+  fd.append('redirect', 'treasurercommunity.php#post-' + _currentModalPostId);
+  fetch('react.php', { method: 'POST', body: fd })
+    .then(function() {
+      closePostModal();
+      setTimeout(function(){ location.reload(); }, 400);
+    }).catch(function() {
+      btn.disabled = false; btn.textContent = 'Send';
+      errEl.textContent = 'Failed to send. Please try again.';
+      errEl.style.display = 'block';
+    });
+}
+
+function goToPostInFeed(e) {
+  e.preventDefault(); closePostModal();
+  var postId = _currentModalPostId;
+  if (!postId) return;
+  var target = document.getElementById('post-' + postId);
+  if (target) {
+    setTimeout(function() {
+      toggleComments(postId);
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('post-highlight');
+    }, 100);
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* FILE HANDLING */
+var selectedFiles = [];
+var imageExts = ['jpg','jpeg','png','gif','webp','bmp'];
+function triggerFile(type) {
+  var input = document.getElementById('singleFileInput');
+  input.accept = type === 'image' ? 'image/*' : '';
+  input.click();
+}
+function handleFileSelect(input) {
+  Array.from(input.files).forEach(function(file) {
+    var already = selectedFiles.some(function(f){ return f.name === file.name && f.size === file.size; });
+    if (!already) selectedFiles.push(file);
+  });
+  input.value = ''; renderPreviews(); syncFiles();
+}
+function renderPreviews() {
+  var wrap = document.getElementById('mediaPreviewWrap');
+  wrap.innerHTML = '';
+  selectedFiles.forEach(function(file, idx) {
+    var ext = file.name.split('.').pop().toLowerCase();
+    var isImage = imageExts.includes(ext);
+    var item = document.createElement('div');
+    item.style.cssText = 'position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;background:#f0f2fa;';
+    if (isImage) {
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      item.appendChild(img);
+    } else {
+      item.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;"><i class="fa-solid fa-file" style="color:#051650;"></i></div>';
+    }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.innerHTML = '&times;';
+    btn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;';
+    btn.onclick = function(){ selectedFiles.splice(idx,1); renderPreviews(); syncFiles(); };
+    item.appendChild(btn);
+    wrap.appendChild(item);
+  });
+}
+function syncFiles() {
+  var dt = new DataTransfer();
+  selectedFiles.forEach(function(f){ dt.items.add(f); });
+  document.getElementById('singleFileInput').files = dt.files;
+}
+
+/* LOAD MORE */
+var POSTS_PER_PAGE = 10;
+var visiblePostCount = POSTS_PER_PAGE;
+function initPostVisibility() {
+  var posts = document.querySelectorAll('#feedColumn .community-stream-card');
+  posts.forEach(function(post, idx) { post.style.display = idx < POSTS_PER_PAGE ? '' : 'none'; });
+  var wrap = document.getElementById('loadMoreWrap');
+  if (wrap) wrap.style.display = posts.length > POSTS_PER_PAGE ? '' : 'none';
+}
+function loadMorePosts() {
+  var posts = document.querySelectorAll('#feedColumn .community-stream-card');
+  var next = visiblePostCount + POSTS_PER_PAGE;
+  posts.forEach(function(post, idx) { if (idx >= visiblePostCount && idx < next) post.style.display = ''; });
+  visiblePostCount = next;
+  var wrap = document.getElementById('loadMoreWrap');
+  if (visiblePostCount >= posts.length && wrap) wrap.style.display = 'none';
+}
+initPostVisibility();
+
+/* SEARCH */
+document.getElementById('feedSearch').addEventListener('input', function() {
+  var query = this.value.toLowerCase().trim();
+  var wrap  = document.getElementById('loadMoreWrap');
+  if (query !== '') {
+    document.querySelectorAll('#feedColumn .community-stream-card').forEach(function(card) {
+      var match = (card.dataset.poster||'').includes(query) || (card.dataset.body||'').includes(query);
+      card.style.display = match ? '' : 'none';
+      card.classList.toggle('search-hidden', !match);
+    });
+    if (wrap) wrap.style.display = 'none';
+  } else {
+    document.querySelectorAll('#feedColumn .community-stream-card').forEach(function(card){ card.classList.remove('search-hidden'); });
+    initPostVisibility();
+  }
+  document.querySelectorAll('#announcementsList .community-mini-post').forEach(function(ann) {
+    ann.classList.toggle('search-hidden', query !== '' && !(ann.dataset.annTitle||'').includes(query));
+  });
+});
+
+/* LIGHTBOX */
+var lbImages = [], lbIndex = 0;
+function openLightbox(images, idx) {
+  lbImages = images; lbIndex = idx; showLightboxImage();
+  document.getElementById('lightboxOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function showLightboxImage() {
+  document.getElementById('lightboxImg').src = lbImages[lbIndex];
+  var counter = document.getElementById('lightboxCounter');
+  if (lbImages.length > 1) { counter.textContent = (lbIndex+1)+' / '+lbImages.length; counter.style.display = 'block'; }
+  else { counter.style.display = 'none'; }
+  document.querySelector('.lightbox-prev').style.display = lbImages.length > 1 ? 'flex' : 'none';
+  document.querySelector('.lightbox-next').style.display = lbImages.length > 1 ? 'flex' : 'none';
+}
+function lightboxNav(dir) { lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length; showLightboxImage(); }
+function closeLightbox() { document.getElementById('lightboxOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+function closeLightboxOnBg(e) { if (e.target === document.getElementById('lightboxOverlay')) closeLightbox(); }
+document.addEventListener('keydown', function(e) {
+  var lb = document.getElementById('lightboxOverlay');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lightboxNav(-1);
+  if (e.key === 'ArrowRight') lightboxNav(1);
+});
+
+/* HASH NAVIGATION */
+var hash = window.location.hash;
+if (hash && hash.startsWith('#post-')) {
+  var postId = parseInt(hash.replace('#post-', ''));
+  var target = document.getElementById('post-' + postId);
+  if (target) {
+    document.querySelectorAll('#feedColumn .community-stream-card').forEach(function(p){ p.style.display = ''; });
+    visiblePostCount = document.querySelectorAll('#feedColumn .community-stream-card').length;
+    setTimeout(function() {
+      toggleComments(postId);
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('post-highlight');
+    }, 150);
+  }
+}
+</script>
+</body>
 </html>
