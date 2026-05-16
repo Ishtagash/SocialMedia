@@ -12,6 +12,8 @@ $conn = sqlsrv_connect($serverName, $connectionOptions);
 
 $userId = $_SESSION['user_id'];
 
+require_once 'email_helper.php';
+
 $nameRow = sqlsrv_fetch_array(
     sqlsrv_query($conn, "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$userId]),
     SQLSRV_FETCH_ASSOC
@@ -115,23 +117,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'verify' && $targetId) {
         $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
-            "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
-        $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
-        $rName = trim($rName) ?: "User #$targetId";
+            "SELECT R.FIRST_NAME, R.LAST_NAME, U.EMAIL FROM REGISTRATION R
+             JOIN USERS U ON U.USER_ID = R.USER_ID WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+        $rName  = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+        $rName  = trim($rName) ?: "User #$targetId";
+        $rEmail = rtrim($nr['EMAIL'] ?? '');
         sqlsrv_query($conn, "UPDATE USERS SET STATUS = 'active' WHERE USER_ID = ? AND ROLE = 'resident'", [$targetId]);
         sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Verify Resident', ?, ?)",
             [$userId, "Verified $rName — account set to active", $now]);
+        if ($rEmail) { sendAccountNotification($rEmail, $rName, 'approved'); }
         header("Location: superadminresidentaccount.php?success=" . urlencode("$rName has been verified successfully.")); exit();
     }
 
     if ($action === 'reject' && $targetId) {
         $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
-            "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
-        $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
-        $rName = trim($rName) ?: "User #$targetId";
+            "SELECT R.FIRST_NAME, R.LAST_NAME, U.EMAIL FROM REGISTRATION R
+             JOIN USERS U ON U.USER_ID = R.USER_ID WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+        $rName  = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+        $rName  = trim($rName) ?: "User #$targetId";
+        $rEmail = rtrim($nr['EMAIL'] ?? '');
         sqlsrv_query($conn, "UPDATE USERS SET STATUS = 'rejected' WHERE USER_ID = ? AND ROLE = 'resident'", [$targetId]);
         sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Reject Resident', ?, ?)",
             [$userId, "Rejected $rName — account denied", $now]);
+        if ($rEmail) { sendAccountNotification($rEmail, $rName, 'rejected'); }
         header("Location: superadminresidentaccount.php?success=" . urlencode("$rName's account has been rejected.")); exit();
     }
 
@@ -139,13 +147,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newStatus = trim($_POST['new_status'] ?? '');
         if (in_array($newStatus, ['active', 'inactive'])) {
             $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
-                "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
-            $rName = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
-            $rName = trim($rName) ?: "User #$targetId";
-            $label = $newStatus === 'active' ? 'Enabled' : 'Disabled';
+                "SELECT R.FIRST_NAME, R.LAST_NAME, U.EMAIL FROM REGISTRATION R
+                 JOIN USERS U ON U.USER_ID = R.USER_ID WHERE R.USER_ID = ?", [$targetId]), SQLSRV_FETCH_ASSOC);
+            $rName  = rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '');
+            $rName  = trim($rName) ?: "User #$targetId";
+            $rEmail = rtrim($nr['EMAIL'] ?? '');
+            $label  = $newStatus === 'active' ? 'Enabled' : 'Disabled';
             sqlsrv_query($conn, "UPDATE USERS SET STATUS = ? WHERE USER_ID = ? AND ROLE = 'resident'", [$newStatus, $targetId]);
             sqlsrv_query($conn, "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, ?, ?, ?)",
                 [$userId, "$label Resident Account", "$label $rName's account — set to $newStatus", $now]);
+            if ($rEmail) {
+                sendAccountNotification($rEmail, $rName, $newStatus === 'active' ? 'enabled' : 'disabled');
+            }
             header("Location: superadminresidentaccount.php?success=" . urlencode("$rName's account has been $label.")); exit();
         }
     }

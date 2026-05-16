@@ -517,7 +517,7 @@ if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
       <a href="login.php" class="modal-btn-primary">
         <i class="fa-solid fa-arrow-left"></i> Back to Login
       </a>
-      <a href="home.html" class="modal-btn-secondary">
+      <a href="home.php" class="modal-btn-secondary">
         <i class="fa-solid fa-house"></i> Go to Home
       </a>
     </div>
@@ -565,7 +565,7 @@ if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
       <a href="login.php" class="modal-btn-primary">
         <i class="fa-solid fa-rotate-right"></i> Try Again
       </a>
-      <a href="home.html" class="modal-btn-secondary">
+      <a href="home.php" class="modal-btn-secondary">
         <i class="fa-solid fa-house"></i> Go to Home
       </a>
     </div>
@@ -589,7 +589,7 @@ if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
       <a href="login.php" class="modal-btn-primary">
         <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
       </a>
-      <a href="home.html" class="modal-btn-secondary">
+      <a href="home.php" class="modal-btn-secondary">
         <i class="fa-solid fa-house"></i> Go to Home
       </a>
     </div>
@@ -599,7 +599,7 @@ if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <nav class="site-nav">
   <div class="container">
     <div class="d-flex align-items-center justify-content-between">
-      <a href="home.html" class="d-flex align-items-center gap-2 text-decoration-none">
+      <a href="home.php" class="d-flex align-items-center gap-2 text-decoration-none">
         <div class="nav-seal">
           <img src="alapan.png" alt="Barangay Alapan 1-A Logo">
         </div>
@@ -608,7 +608,7 @@ if (!$dbError && $_SERVER['REQUEST_METHOD'] === 'POST') {
           <span class="nav-name">Alapan 1-A</span>
         </div>
       </a>
-      <a href="home.html" class="nav-back">
+      <a href="home.php" class="nav-back">
         <i class="fa-solid fa-arrow-left me-1"></i>Back to Home
       </a>
     </div>

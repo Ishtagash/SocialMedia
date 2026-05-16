@@ -16,6 +16,8 @@ if (!$conn) {
 
 $userId = $_SESSION['user_id'];
 
+require_once 'email_helper.php';
+
 $nameRow = sqlsrv_fetch_array(
     sqlsrv_query($conn, "SELECT R.FIRST_NAME, R.LAST_NAME FROM REGISTRATION R WHERE R.USER_ID = ?", [$userId]),
     SQLSRV_FETCH_ASSOC
@@ -115,22 +117,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             /* ── Write audit entries based on what actually changed ── */
 
+            $emailForId = function($uid) use ($conn) {
+                $r = sqlsrv_fetch_array(
+                    sqlsrv_query($conn, "SELECT U.EMAIL, R.FIRST_NAME, R.LAST_NAME FROM USERS U LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID WHERE U.USER_ID = ?", [$uid]),
+                    SQLSRV_FETCH_ASSOC
+                );
+                return [
+                    'email' => rtrim($r['EMAIL'] ?? ''),
+                    'name'  => trim(rtrim($r['FIRST_NAME'] ?? '') . ' ' . rtrim($r['LAST_NAME'] ?? '')) ?: "User #$uid",
+                ];
+            };
+
             /* 1. People who had a position before and still have one (same or different) */
             foreach ($before as $uid => $oldPos) {
                 $name   = $nameForId($uid);
                 $newPos = $after[$uid] ?? null;
                 if ($newPos === null) {
-                    /* Was staff, now removed → Revert to Resident */
                     sqlsrv_query($conn,
                         "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Revert to Resident', ?, ?)",
                         [$userId, "$name was removed from $oldPos and reverted to resident", $now]);
+                    $info = $emailForId($uid);
+                    if ($info['email']) sendAccountNotification($info['email'], $info['name'], 'reverted');
                 } elseif ($newPos !== $oldPos) {
-                    /* Position changed → Change Position */
                     sqlsrv_query($conn,
                         "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Change Position', ?, ?)",
                         [$userId, "$name moved from $oldPos to $newPos", $now]);
+                    $info = $emailForId($uid);
+                    if ($info['email']) sendAccountNotification($info['email'], $info['name'], 'position_changed', $newPos);
                 }
-                /* Same position — no log entry needed */
             }
 
             /* 2. People who are newly assigned (weren't staff before) → Assign Position */
@@ -140,6 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     sqlsrv_query($conn,
                         "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, 'Assign Position', ?, ?)",
                         [$userId, "$name assigned as $pos", $now]);
+                    $info = $emailForId($uid);
+                    if ($info['email']) sendAccountNotification($info['email'], $info['name'], 'promoted', $pos);
                 }
             }
 
@@ -152,6 +168,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetId  = (int)($_POST['target_id'] ?? 0);
         $newStatus = trim($_POST['new_status'] ?? '');
         if ($targetId && in_array($newStatus, ['active','inactive'])) {
+            $nr = sqlsrv_fetch_array(sqlsrv_query($conn,
+                "SELECT U.EMAIL, R.FIRST_NAME, R.LAST_NAME FROM USERS U LEFT JOIN REGISTRATION R ON R.USER_ID = U.USER_ID WHERE U.USER_ID = ?", [$targetId]),
+                SQLSRV_FETCH_ASSOC);
+            $rEmail = rtrim($nr['EMAIL'] ?? '');
+            $rName  = trim(rtrim($nr['FIRST_NAME'] ?? '') . ' ' . rtrim($nr['LAST_NAME'] ?? '')) ?: "User #$targetId";
             sqlsrv_query($conn,
                 "UPDATE USERS SET STATUS = ? WHERE USER_ID = ? AND ROLE = 'staff'",
                 [$newStatus, $targetId]);
@@ -159,6 +180,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sqlsrv_query($conn,
                 "INSERT INTO AUDIT_LOGS (USER_ID, ACTION, DETAILS, CREATED_AT) VALUES (?, ?, ?, ?)",
                 [$userId, "$label Staff Account", "Staff USER_ID $targetId set to $newStatus", $now]);
+            if ($rEmail) {
+                sendAccountNotification($rEmail, $rName, $newStatus === 'active' ? 'staff_enabled' : 'staff_disabled');
+            }
             header("Location: superadminstaffaccount.php?msg=" . urlencode("Account $label successfully."));
             exit();
         }

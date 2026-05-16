@@ -316,10 +316,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
               </div>
 
-              <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">
-                <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>
-                Name, username, and gender can only be changed by staff.
-              </p>
 
               <div class="save-bar">
                 <button type="submit" class="btn btn--primary">
